@@ -1,0 +1,6 @@
+{
+  "name": "SiAP - Sistem Aduan Pelanggan",
+  "description": "Platform digital pengurusan aduan pelanggan bersepadu dengan integrasi Telegram Bot, Google Sheets, emel notifikasi, dan dashboard admin analitik.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

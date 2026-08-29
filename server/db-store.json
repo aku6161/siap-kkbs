@@ -1,0 +1,268 @@
+{
+  "complaints": [
+    {
+      "id": "c_1787669438610",
+      "noRujukan": "SIAP-2026-00006",
+      "tarikhMasa": "Tue Aug 25 2026 14:50:38 GMT+0800 (Singapore Standard Time)",
+      "namaPengadu": "gggg",
+      "emel": "aku6161@gmail.com",
+      "kategoriNama": "Perkhidmatan",
+      "kategori": "PERKHIDMATAN",
+      "tajukAduan": "ggg",
+      "butiranAduan": "ggg",
+      "lokasi": "gg",
+      "tarikhKejadian": "Tue Aug 25 2026 00:00:00 GMT+0800 (Singapore Standard Time)",
+      "lampiranDriveUrl": "https://drive.google.com/drive/folders/1bQ1l9Q_Kz0JcUQsGVRxPkWQrj66yq8Qr?usp=sharing",
+      "status": "MENUNGGU",
+      "telegramGroup": "SiAP - Perkhidmatan & Lain-lain",
+      "telegramMessageId": "",
+      "telegramUserId": "",
+      "namaPegawai": "",
+      "tarikhDiambilTindakan": "",
+      "tindakanTerkini": "Aduan baharu diterima dan dihantar ke saluran Telegram petugas.",
+      "tarikhSelesai": "",
+      "ulasanPelanggan": ""
+    },
+    {
+      "id": "c_1787665992045",
+      "noRujukan": "SIAP-2026-00002",
+      "tarikhMasa": "Tue Aug 25 2026 13:53:12 GMT+0800 (Singapore Standard Time)",
+      "namaPengadu": "ww",
+      "emel": "aku6161@gmail.com",
+      "kategoriNama": "Kemudahan & Infrastruktur",
+      "kategori": "KEMUDAHAN",
+      "tajukAduan": "ss",
+      "butiranAduan": "ss",
+      "lokasi": "ss",
+      "tarikhKejadian": "Tue Aug 25 2026 00:00:00 GMT+0800 (Singapore Standard Time)",
+      "lampiranDriveUrl": "https://drive.google.com/file/d/1QQ65l5ImSPnt70Dr51z474Jfkgersnhz/view?usp=drivesdk",
+      "status": "MENUNGGU",
+      "telegramGroup": "SiAP – Kemudahan",
+      "telegramMessageId": "",
+      "telegramUserId": "",
+      "namaPegawai": "",
+      "tarikhDiambilTindakan": "",
+      "tindakanTerkini": "Aduan baharu diterima dan dihantar ke saluran Telegram petugas.",
+      "tarikhSelesai": "",
+      "ulasanPelanggan": ""
+    },
+    {
+      "id": "c_1787665810763",
+      "noRujukan": "SIAP-2026-00001",
+      "tarikhMasa": "Tue Aug 25 2026 13:50:10 GMT+0800 (Singapore Standard Time)",
+      "namaPengadu": "sss",
+      "emel": "aku6161@gmail.com",
+      "kategoriNama": "Kemudahan & Infrastruktur",
+      "kategori": "KEMUDAHAN",
+      "tajukAduan": "sss",
+      "butiranAduan": "sss",
+      "lokasi": "sss",
+      "tarikhKejadian": "Tue Aug 25 2026 00:00:00 GMT+0800 (Singapore Standard Time)",
+      "lampiranDriveUrl": "https://drive.google.com/file/d/1iEtcXa5HPB5ILNnqG7QJ0z8HhALPZvMi/view?usp=drivesdk",
+      "status": "MENUNGGU",
+      "telegramGroup": "SiAP – Kemudahan",
+      "telegramMessageId": "",
+      "telegramUserId": "",
+      "namaPegawai": "",
+      "tarikhDiambilTindakan": "",
+      "tindakanTerkini": "Aduan baharu diterima dan dihantar ke saluran Telegram petugas.",
+      "tarikhSelesai": "",
+      "ulasanPelanggan": ""
+    }
+  ],
+  "tindakan": [],
+  "logs": [
+    {
+      "id": "log_1787669438610_kgb4",
+      "tarikhMasa": "Tue Aug 25 2026 14:50:38 GMT+0800 (Singapore Standard Time)",
+      "jenisAktiviti": "ADUAN_DITERIMA",
+      "noRujukan": "SIAP-2026-00006",
+      "keterangan": "Aduan baharu didaftarkan: \"ggg\" oleh gggg.",
+      "dilakukanOleh": "Portal Web SiAP"
+    },
+    {
+      "id": "log_1787665992064_winr",
+      "tarikhMasa": "Tue Aug 25 2026 13:53:12 GMT+0800 (Singapore Standard Time)",
+      "jenisAktiviti": "EMEL_DIHANTAR",
+      "noRujukan": "SIAP-2026-00002",
+      "keterangan": "Emel notifikasi \"[SiAP] Aduan SIAP-2026-00002 Telah Diterima\" dihantar kepada aku6161@gmail.com.",
+      "dilakukanOleh": "SiAP Mailer Engine"
+    },
+    {
+      "id": "log_1787665992059_ntvu",
+      "tarikhMasa": "Tue Aug 25 2026 13:53:12 GMT+0800 (Singapore Standard Time)",
+      "jenisAktiviti": "TELEGRAM_DIHANTAR",
+      "noRujukan": "SIAP-2026-00002",
+      "keterangan": "Notifikasi dihantar ke Telegram group: SiAP – Kemudahan (ID: -3546212661).",
+      "dilakukanOleh": "SiAP Telegram Engine"
+    },
+    {
+      "id": "log_1787665992045_d2hg",
+      "tarikhMasa": "Tue Aug 25 2026 13:53:12 GMT+0800 (Singapore Standard Time)",
+      "jenisAktiviti": "ADUAN_DITERIMA",
+      "noRujukan": "SIAP-2026-00002",
+      "keterangan": "Aduan baharu didaftarkan: \"ss\" oleh ww.",
+      "dilakukanOleh": "Portal Web SiAP"
+    },
+    {
+      "id": "log_1787665810776_orjz",
+      "tarikhMasa": "Tue Aug 25 2026 13:50:10 GMT+0800 (Singapore Standard Time)",
+      "jenisAktiviti": "EMEL_DIHANTAR",
+      "noRujukan": "SIAP-2026-00001",
+      "keterangan": "Emel notifikasi \"[SiAP] Aduan SIAP-2026-00001 Telah Diterima\" dihantar kepada aku6161@gmail.com.",
+      "dilakukanOleh": "SiAP Mailer Engine"
+    },
+    {
+      "id": "log_1787665810771_w5sz",
+      "tarikhMasa": "Tue Aug 25 2026 13:50:10 GMT+0800 (Singapore Standard Time)",
+      "jenisAktiviti": "TELEGRAM_DIHANTAR",
+      "noRujukan": "SIAP-2026-00001",
+      "keterangan": "Notifikasi dihantar ke Telegram group: SiAP – Kemudahan (ID: -3546212661).",
+      "dilakukanOleh": "SiAP Telegram Engine"
+    },
+    {
+      "id": "log_1787665810764_x0x5",
+      "tarikhMasa": "Tue Aug 25 2026 13:50:10 GMT+0800 (Singapore Standard Time)",
+      "jenisAktiviti": "ADUAN_DITERIMA",
+      "noRujukan": "SIAP-2026-00001",
+      "keterangan": "Aduan baharu didaftarkan: \"sss\" oleh sss.",
+      "dilakukanOleh": "Portal Web SiAP"
+    }
+  ],
+  "emails": [
+    {
+      "id": "em_1787669451324_dhcu",
+      "tarikhMasa": "2026-08-25 14:50:51",
+      "noRujukan": "SIAP-2026-00006",
+      "penerima": "aku6161@gmail.com",
+      "subjek": "[SiAP] Aduan SIAP-2026-00006 Telah Diterima",
+      "kandungan": "Status: MENUNGGU. Notifikasi automatik SiAP.",
+      "status": "Dihantar"
+    },
+    {
+      "id": "em_1787669074354_ot07",
+      "tarikhMasa": "2026-08-25 14:44:34",
+      "noRujukan": "SIAP-2026-00006",
+      "penerima": "aku6161@gmail.com",
+      "subjek": "[SiAP] Aduan SIAP-2026-00006 Telah Diterima",
+      "kandungan": "Status: MENUNGGU. Notifikasi automatik SiAP.",
+      "status": "Dihantar"
+    },
+    {
+      "id": "em_1787668799498_2iq3",
+      "tarikhMasa": "2026-08-25 14:39:59",
+      "noRujukan": "SIAP-2026-00006",
+      "penerima": "aku6161@gmail.com",
+      "subjek": "[SiAP] Aduan SIAP-2026-00006 Telah Diterima",
+      "kandungan": "Status: MENUNGGU. Notifikasi automatik SiAP.",
+      "status": "Dihantar"
+    },
+    {
+      "id": "em_1787668429199_757h",
+      "tarikhMasa": "2026-08-25 14:33:49",
+      "noRujukan": "SIAP-2026-00006",
+      "penerima": "aku6161@gmail.com",
+      "subjek": "[SiAP] Aduan SIAP-2026-00006 Telah Diterima",
+      "kandungan": "Status: MENUNGGU. Notifikasi automatik SiAP.",
+      "status": "Dihantar"
+    },
+    {
+      "id": "em_1787668402015_80qp",
+      "tarikhMasa": "2026-08-25 14:33:22",
+      "noRujukan": "SIAP-2026-00006",
+      "penerima": "aku6161@gmail.com",
+      "subjek": "[SiAP] Aduan SIAP-2026-00006 Telah Diterima",
+      "kandungan": "Status: MENUNGGU. Notifikasi automatik SiAP.",
+      "status": "Dihantar"
+    },
+    {
+      "id": "em_1787668126545_5gzo",
+      "tarikhMasa": "2026-08-25 14:28:46",
+      "noRujukan": "SIAP-2026-00006",
+      "penerima": "aku6161@gmail.com",
+      "subjek": "[SiAP] Aduan SIAP-2026-00006 Telah Diterima",
+      "kandungan": "Status: MENUNGGU. Notifikasi automatik SiAP.",
+      "status": "Dihantar"
+    },
+    {
+      "id": "em_1787667851085_y0w2",
+      "tarikhMasa": "2026-08-25 14:24:11",
+      "noRujukan": "SIAP-2026-00008",
+      "penerima": "aku6161@gmail.com",
+      "subjek": "[SiAP] Aduan SIAP-2026-00008 Telah Diterima",
+      "kandungan": "Status: MENUNGGU. Notifikasi automatik SiAP.",
+      "status": "Dihantar"
+    },
+    {
+      "id": "em_1787667816517_e0zz",
+      "tarikhMasa": "2026-08-25 14:23:36",
+      "noRujukan": "SIAP-2026-00007",
+      "penerima": "aku6161@gmail.com",
+      "subjek": "[SiAP] Aduan SIAP-2026-00007 Telah Diterima",
+      "kandungan": "Status: MENUNGGU. Notifikasi automatik SiAP.",
+      "status": "Dihantar"
+    },
+    {
+      "id": "em_1787667796918_lrna",
+      "tarikhMasa": "2026-08-25 14:23:16",
+      "noRujukan": "SIAP-2026-00006",
+      "penerima": "aku6161@gmail.com",
+      "subjek": "[SiAP] Aduan SIAP-2026-00006 Telah Diterima",
+      "kandungan": "Status: MENUNGGU. Notifikasi automatik SiAP.",
+      "status": "Dihantar"
+    },
+    {
+      "id": "em_1787667574820_pwxf",
+      "tarikhMasa": "2026-08-25 14:19:34",
+      "noRujukan": "SIAP-2026-00006",
+      "penerima": "aku6161@gmail.com",
+      "subjek": "[SiAP] Aduan SIAP-2026-00006 Telah Diterima",
+      "kandungan": "Status: MENUNGGU. Notifikasi automatik SiAP.",
+      "status": "Dihantar"
+    },
+    {
+      "id": "em_1787667052594_v3yq",
+      "tarikhMasa": "2026-08-25 14:10:52",
+      "noRujukan": "SIAP-2026-00006",
+      "penerima": "aku6161@gmail.com",
+      "subjek": "[SiAP] Aduan SIAP-2026-00006 Telah Diterima",
+      "kandungan": "Status: MENUNGGU. Notifikasi automatik SiAP.",
+      "status": "Dihantar"
+    },
+    {
+      "id": "em_1787665992062_89oe",
+      "tarikhMasa": "2026-08-25 13:53:12",
+      "noRujukan": "SIAP-2026-00002",
+      "penerima": "aku6161@gmail.com",
+      "subjek": "[SiAP] Aduan SIAP-2026-00002 Telah Diterima",
+      "kandungan": "Status: MENUNGGU. Notifikasi automatik SiAP.",
+      "status": "Dihantar"
+    },
+    {
+      "id": "em_1787665810774_22fv",
+      "tarikhMasa": "2026-08-25 13:50:10",
+      "noRujukan": "SIAP-2026-00001",
+      "penerima": "aku6161@gmail.com",
+      "subjek": "[SiAP] Aduan SIAP-2026-00001 Telah Diterima",
+      "kandungan": "Status: MENUNGGU. Notifikasi automatik SiAP.",
+      "status": "Dihantar"
+    }
+  ],
+  "config": {
+    "googleSheetId": "1PEsqqZJL6az5Np-BTojlOCgPX9gD6Iip4zemQQ11W9U",
+    "googleAppsScriptUrl": "https://script.google.com/macros/s/AKfycbwqLeg4K5ffhrxvcC8TuxY5mlM8ZHtsdbCfXWtZ3MOiB0C01Yd8nOlw90po-vhDljx2jw/exec",
+    "googleDriveFolderId": "1bQ1l9Q_Kz0JcUQsGVRxPkWQrj66yq8Qr",
+    "googleDriveFolderUrl": "https://drive.google.com/drive/folders/1bQ1l9Q_Kz0JcUQsGVRxPkWQrj66yq8Qr?usp=sharing",
+    "telegramBotToken": "8238304961:AAG44pdgon1zFkqacccsk7da8iEPv83HPkQ",
+    "telegramChatIdKemudahan": "-1003546212661",
+    "telegramChatIdSistem": "-1003763181014",
+    "telegramChatIdPerkhidmatan": "-1004423616468",
+    "telegramChatIdKebersihan": "-1003921165191",
+    "emailSenderName": "SiAP – Sistem Aduan Pelanggan",
+    "smtpHost": "",
+    "smtpPort": "587",
+    "smtpUser": "aku6161@gmail.com",
+    "smtpPass": "wjir zsas zjfw iwpi"
+  },
+  "lastSequenceNumber": 6
+}
