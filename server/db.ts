@@ -1,4 +1,20 @@
 import { Complaint, ComplaintCategory, ComplaintStatus, EmailLog, LogItem, SystemStats, TindakanItem } from '../src/types';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import fs from 'fs';
+import path from 'path';
+
+// ─── Supabase Client Setup ───
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
+const isSupabaseConfigured = !!(SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes('your-supabase-project'));
+
+let supabaseClient: SupabaseClient | null = null;
+if (isSupabaseConfigured) {
+  supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  console.log('✅ Supabase client initialized.');
+} else {
+  console.warn('⚠️  Supabase not configured – running on local file DB only.');
+}
 
 // In-memory + persisted store
 export interface DBStore {
@@ -30,8 +46,7 @@ const INITIAL_TINDAKAN: TindakanItem[] = [];
 const INITIAL_LOGS: LogItem[] = [];
 const INITIAL_EMAILS: EmailLog[] = [];
 
-import fs from 'fs';
-import path from 'path';
+// fs and path are imported at top of file
 
 const DB_FILE_PATH = process.env.VERCEL 
   ? path.join('/tmp', 'db-store.json')
@@ -108,6 +123,108 @@ class Database {
     } catch (e) {
       console.error('Error saving database to file:', e);
     }
+  }
+
+  // ─── Supabase Helpers ───
+
+  /** Load all data from Supabase into in-memory store (called once at startup) */
+  public async initFromSupabase(): Promise<void> {
+    if (!supabaseClient) return;
+    try {
+      const [compRes, tindRes, logRes, emailRes, cfgRes] = await Promise.all([
+        supabaseClient.from('complaints').select('*').order('"tarikhMasa"', { ascending: false }),
+        supabaseClient.from('tindakan').select('*').order('"tarikhMasa"', { ascending: false }),
+        supabaseClient.from('logs').select('*').order('"tarikhMasa"', { ascending: false }),
+        supabaseClient.from('emails').select('*').order('"tarikhMasa"', { ascending: false }),
+        supabaseClient.from('config').select('*').eq('id', 'system_config').maybeSingle(),
+      ]);
+
+      const isSupabaseEmpty = !compRes.data || compRes.data.length === 0;
+
+      if (isSupabaseEmpty) {
+        // Auto-migrate from local file to Supabase
+        console.log('🚀 Supabase empty – migrating local data to Supabase...');
+        await this.migrateLocalToSupabase();
+      } else {
+        // Load from Supabase
+        this.store.complaints = (compRes.data || []) as Complaint[];
+        this.store.tindakan = (tindRes.data || []) as TindakanItem[];
+        this.store.logs = (logRes.data || []) as LogItem[];
+        this.store.emails = (emailRes.data || []) as EmailLog[];
+
+        if (cfgRes.data) {
+          const { id: _id, lastSequenceNumber, ...configData } = cfgRes.data as any;
+          this.store.config = { ...this.store.config, ...configData };
+          this.store.lastSequenceNumber = lastSequenceNumber || this.store.lastSequenceNumber;
+        }
+
+        // Recalculate lastSequenceNumber
+        let maxSeq = this.store.lastSequenceNumber;
+        for (const c of this.store.complaints) {
+          const parts = c.noRujukan.split('-');
+          if (parts.length === 3) {
+            const seq = parseInt(parts[2], 10);
+            if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
+          }
+        }
+        this.store.lastSequenceNumber = maxSeq;
+        console.log(`✅ Loaded ${this.store.complaints.length} complaints from Supabase.`);
+      }
+    } catch (e: any) {
+      console.error('❌ Error loading from Supabase:', e.message);
+    }
+  }
+
+  /** Migrate all local data to Supabase (one-time on first deployment) */
+  private async migrateLocalToSupabase(): Promise<void> {
+    if (!supabaseClient) return;
+    try {
+      const tasks: Promise<any>[] = [];
+      if (this.store.complaints.length > 0) {
+        tasks.push(supabaseClient.from('complaints').upsert(this.store.complaints) as unknown as Promise<any>);
+      }
+      if (this.store.tindakan.length > 0) {
+        tasks.push(supabaseClient.from('tindakan').upsert(this.store.tindakan) as unknown as Promise<any>);
+      }
+      if (this.store.logs.length > 0) {
+        tasks.push(supabaseClient.from('logs').upsert(this.store.logs) as unknown as Promise<any>);
+      }
+      if (this.store.emails.length > 0) {
+        tasks.push(supabaseClient.from('emails').upsert(this.store.emails) as unknown as Promise<any>);
+      }
+      // Migrate config
+      tasks.push(supabaseClient.from('config').upsert({
+        id: 'system_config',
+        ...this.store.config,
+        lastSequenceNumber: this.store.lastSequenceNumber,
+      }) as unknown as Promise<any>);
+
+      await Promise.allSettled(tasks);
+      console.log('✅ Local data migration to Supabase complete.');
+    } catch (e: any) {
+      console.error('❌ Migration failed:', e.message);
+    }
+  }
+
+  /** Background write a single record to Supabase (non-blocking) */
+  private sbUpsert(table: string, record: Record<string, any>): void {
+    if (!supabaseClient) return;
+    supabaseClient.from(table).upsert(record).then(({ error }) => {
+      if (error) console.error(`Supabase upsert error (${table}):`, error.message);
+    });
+  }
+
+  /** Return full snapshot of current in-memory data (used by backup cron) */
+  public getFullSnapshot() {
+    return {
+      complaints: [...this.store.complaints],
+      tindakan: [...this.store.tindakan],
+      logs: [...this.store.logs],
+      emails: [...this.store.emails],
+      config: { ...this.store.config },
+      lastSequenceNumber: this.store.lastSequenceNumber,
+      generatedAt: new Date().toISOString(),
+    };
   }
 
   public getComplaints(): Complaint[] {
@@ -206,6 +323,8 @@ class Database {
     });
 
     this.saveToFile();
+    // Background write to Supabase
+    this.sbUpsert('complaints', { ...newComplaint });
     return newComplaint;
   }
 
@@ -230,6 +349,8 @@ class Database {
     }
 
     this.saveToFile();
+    // Background write to Supabase
+    this.sbUpsert('complaints', { ...comp });
     return comp;
   }
 
@@ -310,6 +431,9 @@ class Database {
     });
 
     this.saveToFile();
+    // Background write to Supabase
+    this.sbUpsert('tindakan', { ...tindakan });
+    if (comp) this.sbUpsert('complaints', { ...comp });
     return tindakan;
   }
 
@@ -347,6 +471,8 @@ class Database {
     });
 
     this.saveToFile();
+    // Background write to Supabase
+    this.sbUpsert('complaints', { ...comp });
     return { success: true, message: 'Penilaian kepuasan berjaya direkodkan. Terima kasih!', complaint: comp };
   }
 
@@ -359,6 +485,8 @@ class Database {
     };
     this.store.logs.unshift(log);
     this.saveToFile();
+    // Background write to Supabase
+    this.sbUpsert('logs', { ...log });
     return log;
   }
 
@@ -375,6 +503,8 @@ class Database {
     };
     this.store.emails.unshift(item);
     this.saveToFile();
+    // Background write to Supabase
+    this.sbUpsert('emails', { ...item });
     return item;
   }
 
@@ -389,6 +519,8 @@ class Database {
   public updateConfig(newConfig: Partial<DBStore['config']>) {
     Object.assign(this.store.config, newConfig);
     this.saveToFile();
+    // Background write to Supabase
+    this.sbUpsert('config', { id: 'system_config', ...this.store.config, lastSequenceNumber: this.store.lastSequenceNumber });
     return { ...this.store.config };
   }
 

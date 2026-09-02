@@ -8,6 +8,8 @@ import { getGoogleAppsScriptTemplate, syncWithGoogleSheets } from './sheets';
 import { processTelegramOfficerAction, sendTelegramNotification } from './telegram';
 import { CATEGORIES } from '../src/data/categories';
 import { ComplaintCategory, ComplaintStatus } from '../src/types';
+import { handleBackupCron } from '../api/cron/backup';
+
 
 const app = express();
 
@@ -602,6 +604,10 @@ if (!fs.existsSync(uploadsPath)) {
   fs.mkdirSync(uploadsPath, { recursive: true });
 }
 app.use('/uploads', express.static(uploadsPath));
+
+// Weekly Backup Cron Endpoint (triggered by Vercel Cron or admin manual trigger)
+app.post('/api/cron/backup', handleBackupCron);
+
 
 // Background auto-pull from Google Sheets every 10 seconds (only if not in serverless/Vercel)
 if (!process.env.VERCEL) {

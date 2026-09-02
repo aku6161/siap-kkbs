@@ -631,10 +631,79 @@ function doPost(e) {
       }
     }
 
+    // 5. Aksi Sandaran JSON ke Google Drive (CREATE_BACKUP)
+    // Simpan snapshot data penuh ke Google Drive dan padam sandaran lama (kekal 2 terkini sahaja)
+    if (action === "CREATE_BACKUP") {
+      try {
+        var folderId = payload.folderId || "";
+        var fileName = payload.fileName || ("siap_backup_" + new Date().toISOString().substring(0, 10) + ".json");
+        var content = payload.content || "{}";
+        var maxBackups = payload.maxBackups || 2;
+
+        var folder;
+        try {
+          folder = DriveApp.getFolderById(folderId);
+        } catch (folderErr) {
+          // Fallback: cari atau buat folder SiAP_Backups
+          var backupFolders = DriveApp.getFoldersByName("SiAP_Backups");
+          if (backupFolders.hasNext()) {
+            folder = backupFolders.next();
+          } else {
+            folder = DriveApp.createFolder("SiAP_Backups");
+          }
+        }
+
+        // Cipta fail sandaran baharu
+        var blob = Utilities.newBlob(content, "application/json", fileName);
+        var newFile = folder.createFile(blob);
+        newFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+        // Padam fail sandaran lama – kekal maxBackups terkini sahaja
+        var allFiles = [];
+        var fileIter = folder.getFiles();
+        while (fileIter.hasNext()) {
+          var f = fileIter.next();
+          // Hanya proses fail sandaran SiAP (bermula dengan siap_backup_)
+          if (f.getName().indexOf("siap_backup_") === 0) {
+            allFiles.push({ name: f.getName(), id: f.getId(), date: f.getDateCreated() });
+          }
+        }
+
+        // Isih mengikut tarikh (terbaru dahulu)
+        allFiles.sort(function(a, b) { return b.date - a.date; });
+
+        // Padam sandaran yang melebihi had maxBackups
+        var deleted = [];
+        for (var i = maxBackups; i < allFiles.length; i++) {
+          try {
+            DriveApp.getFileById(allFiles[i].id).setTrashed(true);
+            deleted.push(allFiles[i].name);
+          } catch(delErr) {
+            Logger.log("Gagal padam: " + allFiles[i].name + " - " + delErr.toString());
+          }
+        }
+
+        return ContentService.createTextOutput(JSON.stringify({
+          status: "success",
+          message: "Sandaran \"" + fileName + "\" berjaya disimpan ke Google Drive! " + (deleted.length > 0 ? "Dipadam: " + deleted.join(", ") : ""),
+          fileName: fileName,
+          fileUrl: newFile.getUrl(),
+          deleted: deleted
+        })).setMimeType(ContentService.MimeType.JSON);
+
+      } catch (backupErr) {
+        return ContentService.createTextOutput(JSON.stringify({
+          status: "error",
+          message: "Ralat sandaran: " + backupErr.toString()
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+
     return ContentService.createTextOutput(JSON.stringify({
       status: "error",
       message: "Tindakan tidak dikenali"
     })).setMimeType(ContentService.MimeType.JSON);
+
 
   } catch(err) {
     return ContentService.createTextOutput(JSON.stringify({

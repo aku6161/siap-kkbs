@@ -5,9 +5,14 @@ import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { app } from './server/app';
+import { db } from './server/db';
+
 
 async function startServer() {
   const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+
+  // Load data from Supabase into memory (if configured)
+  await db.initFromSupabase();
 
   // ==========================================
   // VITE MIDDLEWARE (SPA & DEV)
