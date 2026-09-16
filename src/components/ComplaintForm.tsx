@@ -48,15 +48,56 @@ export const ComplaintForm: React.FC<ComplaintFormProps> = ({
   const [submittedComplaint, setSubmittedComplaint] = useState<Complaint | null>(null);
   const [copied, setCopied] = useState(false);
 
-  // File upload handler
+  // File upload handler with automatic client-side image compression
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setErrorMessage('Saiz fail melebihi had maksimum 5MB.');
-        return;
-      }
-      setLampiranNama(file.name);
+    if (!file) return;
+
+    if (file.size > 15 * 1024 * 1024) {
+      setErrorMessage('Saiz fail melebihi had maksimum 15MB.');
+      return;
+    }
+
+    setLampiranNama(file.name);
+
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1280;
+          const MAX_HEIGHT = 1280;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height = Math.round((height * MAX_WIDTH) / width);
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width = Math.round((width * MAX_HEIGHT) / height);
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+            setLampiran(compressedDataUrl);
+          } else {
+            setLampiran(event.target?.result as string);
+          }
+        };
+        img.src = event.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    } else {
       const reader = new FileReader();
       reader.onload = () => {
         setLampiran(reader.result as string);
@@ -105,15 +146,17 @@ export const ComplaintForm: React.FC<ComplaintFormProps> = ({
       });
 
       let data: any = null;
+      let rawText = '';
       try {
-        const text = await response.text();
-        data = text ? JSON.parse(text) : {};
+        rawText = await response.text();
+        data = rawText ? JSON.parse(rawText) : {};
       } catch (parseErr) {
-        data = { error: 'Pelayan mengembalikan format yang tidak sah.' };
+        data = null;
       }
 
       if (!response.ok) {
-        throw new Error(data?.error || `Ralat pelayan (${response.status}). Sila cuba sebentar lagi.`);
+        const errorMsg = data?.error || (rawText && rawText.length < 150 ? rawText : `Ralat pelayan (${response.status}). Sila cuba sebentar lagi.`);
+        throw new Error(errorMsg);
       }
 
       if (data?.complaint) {

@@ -279,7 +279,7 @@ class Database {
     let fileUrl = undefined;
     if (data.lampiran) {
       try {
-        const uploadsDir = path.join(process.cwd(), 'uploads');
+        const uploadsDir = process.env.VERCEL ? path.join('/tmp', 'uploads') : path.join(process.cwd(), 'uploads');
         if (!fs.existsSync(uploadsDir)) {
           fs.mkdirSync(uploadsDir, { recursive: true });
         }
@@ -300,8 +300,10 @@ class Database {
         
         fs.writeFileSync(filePath, buffer);
         
-        const appUrl = process.env.APP_URL || 'http://localhost:3001';
-        fileUrl = `${appUrl}/uploads/${fileName}`;
+        const appUrl = process.env.APP_URL || '';
+        if (appUrl) {
+          fileUrl = `${appUrl}/uploads/${fileName}`;
+        }
       } catch (err) {
         console.error('Error saving file locally:', err);
       }
@@ -320,7 +322,7 @@ class Database {
       butiranAduan: data.butiranAduan,
       lokasi: data.lokasi,
       tarikhKejadian: data.tarikhKejadian || now.substring(0, 10),
-      lampiran: data.lampiran,
+      lampiran: undefined, // Base64 excluded so payloads and Supabase remain ultra-light
       lampiranNama: data.lampiranNama,
       lampiranDriveUrl: fileUrl || data.lampiranDriveUrl,
       status: 'MENUNGGU',

@@ -646,10 +646,14 @@ app.post('/api/admin/sheets/pull', async (req, res) => {
   }
 });
 
-// Serve uploaded images/files locally to bypass Google Drive limitations
-const uploadsPath = path.join(process.cwd(), 'uploads');
-if (!fs.existsSync(uploadsPath)) {
-  fs.mkdirSync(uploadsPath, { recursive: true });
+// Serve uploaded images/files locally
+const uploadsPath = process.env.VERCEL ? path.join('/tmp', 'uploads') : path.join(process.cwd(), 'uploads');
+try {
+  if (!fs.existsSync(uploadsPath)) {
+    fs.mkdirSync(uploadsPath, { recursive: true });
+  }
+} catch (e) {
+  // Ignore read-only filesystem errors in serverless
 }
 app.use('/uploads', express.static(uploadsPath));
 
