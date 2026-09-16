@@ -280,7 +280,7 @@ router.post('/telegram/webhook', async (req, res, next) => {
               body: JSON.stringify({
                 callback_query_id: cq.id,
                 text: result.message,
-                show_alert: !result.success,
+                show_alert: true,
               }),
             }).catch(() => {});
           }
@@ -288,16 +288,33 @@ router.post('/telegram/webhook', async (req, res, next) => {
           // 2. Post reply message into the group chat
           const chatId = cq.message?.chat?.id || complaint?.telegramGroupId;
           if (chatId && result.replyMessage) {
-            await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                chat_id: chatId,
-                text: result.replyMessage,
-                parse_mode: 'HTML',
-                reply_to_message_id: cq.message?.message_id,
-              }),
-            }).catch(() => {});
+            try {
+              const sendRes = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  chat_id: chatId,
+                  text: result.replyMessage,
+                  parse_mode: 'HTML',
+                  reply_to_message_id: cq.message?.message_id,
+                }),
+              });
+              const sendData = await sendRes.json();
+              if (!sendData.ok) {
+                // Retry without reply_to_message_id if reply failed
+                await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    chat_id: chatId,
+                    text: result.replyMessage,
+                    parse_mode: 'HTML',
+                  }),
+                });
+              }
+            } catch (err: any) {
+              console.error('Telegram sendMessage webhook error:', err?.message);
+            }
           }
 
           // 3. Update the button markup on the original card
@@ -372,6 +389,7 @@ router.get('/telegram/webhook-info', async (req, res) => {
 // Telegram Operations Simulator API
 router.post('/telegram/simulate-action', async (req, res, next) => {
   try {
+    await ensureDbSynced();
     const { action, noRujukan, telegramUserId, namaPegawai, newStatus, catatan } = req.body || {};
 
     if (!action || !noRujukan || !namaPegawai) {
@@ -387,12 +405,8 @@ router.post('/telegram/simulate-action', async (req, res, next) => {
       catatan,
     });
 
-    if (!result.success) {
-      return res.status(400).json({ error: result.message, complaint: result.complaint });
-    }
-
     res.json({
-      success: true,
+      success: result.success,
       message: result.message,
       complaint: result.complaint,
       replyMessage: result.replyMessage,

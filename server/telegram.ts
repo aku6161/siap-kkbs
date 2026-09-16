@@ -229,7 +229,11 @@ export async function processTelegramOfficerAction(params: {
   const complaint = db.getComplaintByRef(noRujukan);
 
   if (!complaint) {
-    return { success: false, message: `Aduan ${noRujukan} tidak dijumpai dalam sistem.` };
+    return {
+      success: false,
+      message: `Aduan ${noRujukan} tidak dijumpai dalam sistem.`,
+      replyMessage: `⚠️ <b>PERHATIAN</b>: Aduan <code>${escapeHtml(noRujukan)}</code> tidak dijumpai dalam sistem SiAP.`,
+    };
   }
 
   if (action === 'AMBIL_TINDAKAN') {

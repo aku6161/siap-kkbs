@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Send,
   CheckCircle2,
@@ -34,25 +34,117 @@ export const AdminTelegramSimulator: React.FC<AdminTelegramSimulatorProps> = ({
     sender: 'bot' | 'officer' | 'system';
     text: string;
     time: string;
+    isHtml?: boolean;
     buttons?: string[];
-  }>>([
-    {
-      sender: 'bot',
-      text: '🚨 ADUAN BAHARU – SiAP\nNo. Rujukan: SIAP-2026-00005\n🏢 Kategori: Kemudahan & Infrastruktur\n📝 Tajuk: Lampu Tandas Aras Bawah Tidak Menyala\n📍 Lokasi: Blok Pentadbiran, Tandas Wanita\nStatus: 🟡 MENUNGGU TINDAKAN',
-      time: '16:20',
-      buttons: ['👁 LIHAT ADUAN', '✋ AMBIL TINDAKAN'],
-    },
-  ]);
+  }>>([]);
 
   const [isLoading, setIsLoading] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
 
+  // Fallback or selected complaint
   const selectedComplaint = complaints.find((c) => c.noRujukan === selectedRef) || complaints[0];
+
+  // Auto-sync selectedRef if complaints change
+  useEffect(() => {
+    if (complaints.length > 0 && !complaints.some((c) => c.noRujukan === selectedRef)) {
+      setSelectedRef(complaints[0].noRujukan);
+    }
+  }, [complaints, selectedRef]);
+
+  // Build the Telegram card and initial chat history for the selected complaint
+  useEffect(() => {
+    if (!selectedComplaint) {
+      setChatMessages([
+        {
+          sender: 'system',
+          text: 'Tiada rekod aduan untuk dipaparkan. Sila buat aduan baharu terlebih dahulu.',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ]);
+      return;
+    }
+
+    const isClaimed = Boolean(selectedComplaint.namaPegawai && selectedComplaint.status !== 'MENUNGGU');
+    const claimer = selectedComplaint.namaPegawai || 'Pegawai Bertugas';
+    const nowTime = selectedComplaint.tarikhMasa.split(' ')[1] || '12:00';
+
+    const cardText =
+      `🚨 <b>ADUAN BAHARU – SiAP</b>\n` +
+      `<b>No. Rujukan:</b> <code>${selectedComplaint.noRujukan}</code>\n` +
+      `🏢 <b>Kategori:</b> ${selectedComplaint.kategoriNama}\n` +
+      `📝 <b>Tajuk:</b> ${selectedComplaint.tajukAduan}\n` +
+      `📍 <b>Lokasi:</b> ${selectedComplaint.lokasi}\n` +
+      `👤 <b>Pengadu:</b> ${selectedComplaint.namaPengadu} (${selectedComplaint.telefon || '-'})\n` +
+      `<b>Status:</b> ${STATUS_CONFIG[selectedComplaint.status]?.emoji || '🟡'} ${STATUS_CONFIG[selectedComplaint.status]?.label || 'MENUNGGU TINDAKAN'}\n\n` +
+      `<b>Butiran:</b> ${selectedComplaint.butiranAduan}`;
+
+    const initialCard = {
+      sender: 'bot' as const,
+      text: cardText,
+      time: nowTime,
+      isHtml: true,
+      buttons: isClaimed
+        ? ['👁 LIHAT ADUAN', `🔒 DIAMBIL: ${claimer}`]
+        : ['👁 LIHAT ADUAN', '✋ AMBIL TINDAKAN'],
+    };
+
+    const logs: typeof chatMessages = [initialCard];
+
+    if (isClaimed) {
+      logs.push({
+        sender: 'bot',
+        text:
+          `🟠 <b>ADUAN TELAH DIAMBIL</b>\n\n` +
+          `<b>No. Rujukan:</b> <code>${selectedComplaint.noRujukan}</code>\n` +
+          `<b>Status:</b> 🟠 DALAM TINDAKAN\n` +
+          `<b>Pegawai Bertugas:</b> ${claimer}\n` +
+          `<b>Masa Diambil:</b> ${selectedComplaint.tarikhDiambilTindakan || selectedComplaint.tarikhMasa}\n\n` +
+          `<i>Aduan ini kini sedang dikendalikan oleh ${claimer}.</i>`,
+        time: (selectedComplaint.tarikhDiambilTindakan || '').split(' ')[1] || nowTime,
+        isHtml: true,
+      });
+    }
+
+    if (selectedComplaint.status === 'SELESAI') {
+      logs.push({
+        sender: 'bot',
+        text:
+          `🟢 <b>ADUAN SELESAI</b>\n\n` +
+          `<b>No. Rujukan:</b> <code>${selectedComplaint.noRujukan}</code>\n` +
+          `<b>Status:</b> 🟢 SELESAI\n` +
+          `<b>Pegawai Bertugas:</b> ${claimer}\n` +
+          `<b>Tindakan Akhir:</b> ${selectedComplaint.tindakanTerkini || 'Tindakan selesai'}\n` +
+          `<b>Tarikh Selesai:</b> ${selectedComplaint.tarikhSelesai || '-'}`,
+        time: (selectedComplaint.tarikhSelesai || '').split(' ')[1] || nowTime,
+        isHtml: true,
+      });
+    }
+
+    setChatMessages(logs);
+  }, [selectedRef, selectedComplaint?.status, selectedComplaint?.namaPegawai, selectedComplaint?.tindakanTerkini]);
 
   const handleAction = async (action: 'AMBIL_TINDAKAN' | 'KEMASKINI_STATUS' | 'TAMBAH_TINDAKAN' | 'SELESAIKAN') => {
     if (!selectedComplaint) return;
     setIsLoading(true);
     setFeedback(null);
+
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    // Append officer outgoing bubble immediately
+    const userLog: (typeof chatMessages)[0] = {
+      sender: 'officer',
+      time: now,
+      text:
+        action === 'AMBIL_TINDAKAN'
+          ? `[Menekan butang: ✋ AMBIL TINDAKAN]`
+          : action === 'TAMBAH_TINDAKAN'
+          ? `📝 Tambah Catatan: "${catatanText}"`
+          : action === 'KEMASKINI_STATUS'
+          ? `🔄 Tukar Status: ${selectedStatus}`
+          : `✅ Menandakan Aduan Sebagai Selesai`,
+    };
+
+    setChatMessages((prev) => [...prev, userLog]);
 
     try {
       const res = await fetch('/api/telegram/simulate-action', {
@@ -69,36 +161,62 @@ export const AdminTelegramSimulator: React.FC<AdminTelegramSimulatorProps> = ({
       });
 
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Gagal melaksanakan tindakan Telegram.');
+      const botReply = data.replyMessage || data.message || (data.success ? 'Tindakan berjaya disimpan.' : data.error);
+
+      // Append bot incoming reply bubble
+      if (botReply) {
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            sender: 'bot',
+            text: botReply,
+            time: now,
+            isHtml: true,
+          },
+        ]);
       }
 
-      // Append messages
-      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      
-      const newLogs: typeof chatMessages = [];
-      if (action === 'AMBIL_TINDAKAN') {
-        newLogs.push({ sender: 'officer', text: `[Menekan butang: ✋ AMBIL TINDAKAN]`, time: now });
-      } else if (action === 'TAMBAH_TINDAKAN') {
-        newLogs.push({ sender: 'officer', text: `📝 Tambah Catatan: "${catatanText}"`, time: now });
+      if (action === 'TAMBAH_TINDAKAN') {
         setCatatanText('');
-      } else if (action === 'KEMASKINI_STATUS') {
-        newLogs.push({ sender: 'officer', text: `🔄 Tukar Status: ${selectedStatus}`, time: now });
-      } else if (action === 'SELESAIKAN') {
-        newLogs.push({ sender: 'officer', text: `✅ Menandakan Aduan Sebagai Selesai`, time: now });
       }
 
-      if (data.replyMessage) {
-        newLogs.push({ sender: 'bot', text: data.replyMessage, time: now });
-      }
-
-      setChatMessages((prev) => [...prev, ...newLogs]);
-      setFeedback(data.message);
+      setFeedback(data.message || (data.success ? 'Tindakan berjaya diproses.' : data.error));
       onRefreshComplaints();
     } catch (e: any) {
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          sender: 'bot',
+          text: `⚠️ <b>RALAT:</b> ${e.message}`,
+          time: now,
+          isHtml: true,
+        },
+      ]);
       setFeedback(`Ralat: ${e.message}`);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleCardButtonClick = (buttonText: string) => {
+    if (!selectedComplaint) return;
+    if (buttonText.includes('LIHAT')) {
+      const url = `${window.location.origin}/?ref=${encodeURIComponent(selectedComplaint.noRujukan)}`;
+      window.open(url, '_blank');
+    } else if (buttonText.includes('AMBIL')) {
+      handleAction('AMBIL_TINDAKAN');
+    } else if (buttonText.includes('DIAMBIL')) {
+      const officer = selectedComplaint.namaPegawai || 'Pegawai Bertugas';
+      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          sender: 'bot',
+          text: `ℹ️ <b>PERHATIAN:</b> Aduan <code>${selectedComplaint.noRujukan}</code> telah pun diambil oleh <b>${officer}</b>.`,
+          time: now,
+          isHtml: true,
+        },
+      ]);
     }
   };
 
@@ -232,7 +350,7 @@ export const AdminTelegramSimulator: React.FC<AdminTelegramSimulatorProps> = ({
                 disabled={isLoading || !catatanText.trim()}
                 className="w-full py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-40 text-white font-bold text-xs shadow-xl shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 border border-white/20"
               >
-                <span>📝 TAMBAH CATATAN TINDAKAN KE GOOGLE SHEETS & NOTIFIKASI</span>
+                <span>📝 TAMBAH CATATAN TINDAKAN KE SUPABASE & NOTIFIKASI</span>
               </button>
             </div>
           </div>
@@ -271,7 +389,7 @@ export const AdminTelegramSimulator: React.FC<AdminTelegramSimulatorProps> = ({
                 <h4 className="text-sm font-bold text-white">
                   {selectedComplaint ? selectedComplaint.telegramGroup : 'SiAP – Telegram Ops'}
                 </h4>
-                <span className="text-[11px] text-emerald-400 font-medium">● 8 Ahli Petugas Bertugas</span>
+                <span className="text-[11px] text-emerald-400 font-medium">● Petugas SiAP Bersedia</span>
               </div>
             </div>
 
@@ -294,7 +412,14 @@ export const AdminTelegramSimulator: React.FC<AdminTelegramSimulatorProps> = ({
                       : 'bg-white/10 text-slate-100 border border-white/10 rounded-bl-xs font-sans backdrop-blur-md'
                   }`}
                 >
-                  <p>{msg.text}</p>
+                  {msg.isHtml ? (
+                    <div
+                      dangerouslySetInnerHTML={{ __html: msg.text }}
+                      className="space-y-1 [&>b]:font-bold [&>code]:bg-white/20 [&>code]:px-1.5 [&>code]:py-0.5 [&>code]:rounded [&>code]:font-mono [&>i]:italic"
+                    />
+                  ) : (
+                    <p>{msg.text}</p>
+                  )}
 
                   {/* Inline Telegram Buttons Mockup */}
                   {msg.buttons && (
@@ -302,18 +427,17 @@ export const AdminTelegramSimulator: React.FC<AdminTelegramSimulatorProps> = ({
                       {msg.buttons.map((btn, bIdx) => (
                         <button
                           key={bIdx}
-                          onClick={() => {
-                            if (btn.includes('AMBIL')) handleAction('AMBIL_TINDAKAN');
-                          }}
-                          className="py-1.5 px-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-sky-300 font-bold text-[11px] text-center border border-white/10 transition-colors cursor-pointer"
+                          onClick={() => handleCardButtonClick(btn)}
+                          className="py-2 px-2.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/35 text-sky-200 font-bold text-[11px] text-center border border-sky-400/30 transition-all cursor-pointer shadow-xs active:scale-96 flex items-center justify-center gap-1"
                         >
                           {btn}
+                          {btn.includes('LIHAT') && <ExternalLink className="w-3 h-3 inline ml-1 opacity-70" />}
                         </button>
                       ))}
                     </div>
                   )}
 
-                  <span className="block text-right text-[10px] text-slate-400 mt-1">
+                  <span className="block text-right text-[10px] text-slate-400 mt-2">
                     {msg.time}
                   </span>
                 </div>
@@ -324,7 +448,7 @@ export const AdminTelegramSimulator: React.FC<AdminTelegramSimulatorProps> = ({
           {/* Chat input footer */}
           <div className="pt-3 border-t border-white/10 flex items-center gap-2 text-xs text-slate-400">
             <span className="text-[11px]">
-              Simulator langsung menghantar mesej ke Telegram API sebenar jika <code>TELEGRAM_BOT_TOKEN</code> disediakan.
+              Simulator langsung disambungkan ke Supabase & Telegram API sebenar.
             </span>
           </div>
 
