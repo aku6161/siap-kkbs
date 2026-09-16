@@ -538,15 +538,14 @@ class Database {
   }
 
   public async addRating(noRujukan: string, rating: number, ulasan?: string): Promise<{ success: boolean; message: string; complaint?: Complaint }> {
-    const comp = this.getComplaintByRef(noRujukan);
+    let comp = this.getComplaintByRef(noRujukan);
+    if (!comp) {
+      comp = await this.findComplaintByRef(noRujukan);
+    }
     if (!comp) return { success: false, message: 'Aduan tidak dijumpai.' };
 
-    if (comp.status !== 'SELESAI') {
-      return { success: false, message: 'Penilaian hanya boleh diberikan untuk aduan yang telah Selesai.' };
-    }
-
-    if (comp.rating) {
-      return { success: false, message: 'Penilaian telah pun dihantar sebelum ini untuk nombor rujukan ini.' };
+    if (comp.status !== 'SELESAI' && comp.status !== 'TIDAK_DAPAT_DISELESAIKAN') {
+      return { success: false, message: 'Penilaian hanya boleh diberikan untuk aduan yang telah Selesai atau Tidak Dapat Diselesaikan.' };
     }
 
     const now = new Date().toISOString().replace('T', ' ').substring(0, 19);

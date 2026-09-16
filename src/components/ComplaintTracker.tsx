@@ -493,6 +493,13 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
                 </div>
               )}
 
+              {errorMsg && (
+                <div className="mb-6 p-4 rounded-2xl bg-red-50/80 backdrop-blur-md border border-red-200 text-red-700 text-xs sm:text-sm flex items-center gap-2 max-w-xl mx-auto shadow-xs">
+                  <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+                  <span className="font-bold">{errorMsg}</span>
+                </div>
+              )}
+
               {complaint.rating ? (
                 /* Already Rated */
                 <div className="bg-white/70 backdrop-blur-md p-6 rounded-2xl border border-white/80 max-w-xl mx-auto text-center space-y-3 shadow-sm">
