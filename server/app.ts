@@ -18,28 +18,10 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 let lastSyncTime = 0;
 const ensureDbSynced = async () => {
-  const config = db.getConfig();
-  const scriptUrl = config.googleAppsScriptUrl;
-  if (!scriptUrl) return;
-
   const now = Date.now();
-  if (now - lastSyncTime < 8000) return; // Throttle: only query Google Sheets at most once every 8 seconds
-
+  if (now - lastSyncTime < 2000) return; // Throttle to 2s for maximum real-time performance
   lastSyncTime = now;
-  try {
-    const resp = await fetch(scriptUrl, { method: 'GET', redirect: 'follow' });
-    const text = await resp.text();
-    const result = JSON.parse(text);
-    if (result.status === 'success') {
-      db.overwriteDatabase({
-        complaints: result.complaints || [],
-        tindakan: result.tindakan || [],
-        logs: result.logs || [],
-      });
-    }
-  } catch (e: any) {
-    console.error('Real-time sync failed:', e.message);
-  }
+  await db.initFromSupabase();
 };
 
 // ==========================================
