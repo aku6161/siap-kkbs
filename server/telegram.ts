@@ -266,8 +266,10 @@ export async function processTelegramOfficerAction(params: {
   newStatus?: ComplaintStatus;
   catatan?: string;
 }): Promise<{ success: boolean; message: string; complaint?: Complaint; replyMessage?: string }> {
-  const { action, noRujukan, telegramUserId, namaPegawai, newStatus, catatan } = params;
-  const complaint = db.getComplaintByRef(noRujukan);
+  let complaint = db.getComplaintByRef(noRujukan);
+  if (!complaint) {
+    complaint = await db.findComplaintByRef(noRujukan);
+  }
 
   if (!complaint) {
     return {

@@ -276,6 +276,27 @@ class Database {
     return this.store.complaints.find((c) => c.noRujukan.toUpperCase() === trimmed);
   }
 
+  public async findComplaintByRef(noRujukan: string): Promise<Complaint | undefined> {
+    const trimmed = noRujukan.trim().toUpperCase();
+    let comp = this.store.complaints.find((c) => c.noRujukan.toUpperCase() === trimmed);
+    if (comp) return comp;
+
+    if (supabaseClient) {
+      try {
+        const compTable = SUPABASE_TABLES.COMPLAINTS;
+        const { data } = await supabaseClient.from(compTable).select('*').eq('noRujukan', trimmed).maybeSingle();
+        if (data) {
+          comp = data as Complaint;
+          this.store.complaints.unshift(comp);
+          return comp;
+        }
+      } catch (err: any) {
+        console.error('findComplaintByRef error:', err.message);
+      }
+    }
+    return undefined;
+  }
+
   public async createComplaint(data: {
     namaPengadu: string;
     telefon: string;
