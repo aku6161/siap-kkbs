@@ -5,7 +5,13 @@ import { db } from './db.js';
 import { sendEmailNotification } from './email.js';
 import { analyzeComplaintWithAI } from './gemini.js';
 import { getGoogleAppsScriptTemplate, uploadAttachmentToGoogleDrive } from './sheets.js';
-import { CATEGORY_OFFICER_MAP, processTelegramOfficerAction, sendTelegramNotification } from './telegram.js';
+import {
+  CATEGORY_OFFICER_MAP,
+  processTelegramOfficerAction,
+  sendTelegramNotification,
+  getStatusMenuMarkup,
+  getStatusMenuText,
+} from './telegram.js';
 import { CATEGORIES } from '../src/data/categories.js';
 import { ComplaintCategory, ComplaintStatus } from '../src/types.js';
 import { handleBackupCron, runBackup } from './backup.js';
@@ -257,22 +263,66 @@ router.post('/telegram/webhook', async (req, res, next) => {
       const user = cq.from || {};
       const officerId = String(user.id || 'tg_unknown');
 
-      if (data.startsWith('claim:')) {
-        const noRujukan = data.replace('claim:', '').trim();
+      // Case 1: Open interactive status selection menu
+      if (data.startsWith('claim:') || data.startsWith('menu:')) {
+        const noRujukan = data.replace(/^(claim|menu):/, '').trim();
+        const complaint = db.getComplaintByRef(noRujukan);
+
+        if (token) {
+          if (cq.id) {
+            await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                callback_query_id: cq.id,
+                text: 'Sila pilih status tindakan bagi aduan ini.',
+                show_alert: false,
+              }),
+            }).catch(() => {});
+          }
+
+          const chatId = cq.message?.chat?.id || complaint?.telegramGroupId;
+          if (chatId && complaint) {
+            const menuText = getStatusMenuText(complaint);
+            const menuMarkup = getStatusMenuMarkup(noRujukan);
+
+            try {
+              await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  chat_id: chatId,
+                  text: menuText,
+                  parse_mode: 'HTML',
+                  reply_markup: menuMarkup,
+                  reply_to_message_id: cq.message?.message_id,
+                }),
+              });
+            } catch (err: any) {
+              console.error('Failed to send status menu to Telegram:', err?.message);
+            }
+          }
+        }
+      }
+      // Case 2: Officer clicked a specific status button
+      else if (data.startsWith('status:') || data.startsWith('set_status:')) {
+        const parts = data.split(':');
+        const noRujukan = parts[1]?.trim();
+        const newStatus = parts[2]?.trim() as ComplaintStatus;
+
         const complaint = db.getComplaintByRef(noRujukan);
         const designatedPic = (complaint && CATEGORY_OFFICER_MAP[complaint.kategori]) || 'Pegawai Bertugas';
-        const userFullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || 'Pegawai';
-        const officerName = userFullName ? `${userFullName} (${designatedPic})` : designatedPic;
 
         const result = await processTelegramOfficerAction({
-          action: 'AMBIL_TINDAKAN',
+          action: 'KEMASKINI_STATUS',
           noRujukan,
           telegramUserId: officerId,
-          namaPegawai: officerName,
+          namaPegawai: designatedPic,
+          newStatus: newStatus || 'DALAM_TINDAKAN',
         });
 
         if (token) {
-          // 1. Answer Telegram popup alert/notification
+          // 1. Answer Telegram popup alert
           if (cq.id) {
             await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
               method: 'POST',
@@ -285,9 +335,19 @@ router.post('/telegram/webhook', async (req, res, next) => {
             }).catch(() => {});
           }
 
-          // 2. Post reply message into the group chat
+          // 2. Post confirmation message into the group chat with option to change status again
           const chatId = cq.message?.chat?.id || complaint?.telegramGroupId;
           if (chatId && result.replyMessage) {
+            const checkUrl = `https://siapkkbs.vercel.app/?ref=${encodeURIComponent(noRujukan)}`;
+            const actionKeyboard = {
+              inline_keyboard: [
+                [
+                  { text: '🔄 TUKAR STATUS SEMULA', callback_data: `menu:${noRujukan}` },
+                  { text: '👁 LIHAT ADUAN', url: checkUrl },
+                ],
+              ],
+            };
+
             try {
               const sendRes = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
                 method: 'POST',
@@ -296,12 +356,12 @@ router.post('/telegram/webhook', async (req, res, next) => {
                   chat_id: chatId,
                   text: result.replyMessage,
                   parse_mode: 'HTML',
+                  reply_markup: actionKeyboard,
                   reply_to_message_id: cq.message?.message_id,
                 }),
               });
               const sendData = await sendRes.json();
               if (!sendData.ok) {
-                // Retry without reply_to_message_id if reply failed
                 await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -309,6 +369,7 @@ router.post('/telegram/webhook', async (req, res, next) => {
                     chat_id: chatId,
                     text: result.replyMessage,
                     parse_mode: 'HTML',
+                    reply_markup: actionKeyboard,
                   }),
                 });
               }
@@ -317,9 +378,18 @@ router.post('/telegram/webhook', async (req, res, next) => {
             }
           }
 
-          // 3. Update the button markup on the original card
+          // 3. Update original message buttons to show updated status
           if (chatId && cq.message?.message_id && result.success) {
             const checkUrl = `https://siapkkbs.vercel.app/?ref=${encodeURIComponent(noRujukan)}`;
+            const statusLabels: Record<string, string> = {
+              MENUNGGU: '🟡 MENUNGGU',
+              DALAM_SEMAKAN: '🔵 SEMAKAN',
+              DALAM_TINDAKAN: '🟠 TINDAKAN',
+              SELESAI: '🟢 SELESAI',
+              TIDAK_DAPAT_DISELESAIKAN: '🔴 DITUTUP',
+            };
+            const shortLabel = statusLabels[newStatus] || newStatus;
+
             await fetch(`https://api.telegram.org/bot${token}/editMessageReplyMarkup`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -330,7 +400,7 @@ router.post('/telegram/webhook', async (req, res, next) => {
                   inline_keyboard: [
                     [
                       { text: '👁 LIHAT ADUAN', url: checkUrl },
-                      { text: `🔒 DIAMBIL: ${userFullName.substring(0, 18)}`, callback_data: `info:${noRujukan}` },
+                      { text: `⚡ STATUS: ${shortLabel}`, callback_data: `menu:${noRujukan}` },
                     ],
                   ],
                 },
@@ -341,14 +411,14 @@ router.post('/telegram/webhook', async (req, res, next) => {
       } else if (data.startsWith('info:')) {
         const noRujukan = data.replace('info:', '').trim();
         const complaint = db.getComplaintByRef(noRujukan);
-        const officer = complaint?.namaPegawai || 'Pegawai Bertugas';
+        const officer = complaint?.namaPegawai || (complaint && CATEGORY_OFFICER_MAP[complaint.kategori]) || 'Pegawai Bertugas';
         if (token && cq.id) {
           await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               callback_query_id: cq.id,
-              text: `ℹ️ Aduan ${noRujukan} telah diambil oleh ${officer}.`,
+              text: `ℹ️ Aduan ${noRujukan} di bawah tanggungjawab ${officer} (Status: ${complaint?.status || 'MENUNGGU'}).`,
               show_alert: true,
             }),
           }).catch(() => {});

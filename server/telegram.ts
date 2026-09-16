@@ -27,6 +27,47 @@ function escapeHtml(text: string): string {
     .replace(/>/g, '&gt;');
 }
 
+export function getStatusMenuMarkup(noRujukan: string, appUrl: string = 'https://siapkkbs.vercel.app') {
+  const checkUrl = `${appUrl}/?ref=${encodeURIComponent(noRujukan)}`;
+  return {
+    inline_keyboard: [
+      [
+        { text: '🔵 DALAM SEMAKAN', callback_data: `status:${noRujukan}:DALAM_SEMAKAN` },
+        { text: '🟠 DALAM TINDAKAN', callback_data: `status:${noRujukan}:DALAM_TINDAKAN` },
+      ],
+      [
+        { text: '🟢 SELESAI', callback_data: `status:${noRujukan}:SELESAI` },
+        { text: '🔴 TIDAK DAPAT DISELESAIKAN', callback_data: `status:${noRujukan}:TIDAK_DAPAT_DISELESAIKAN` },
+      ],
+      [
+        { text: '👁 LIHAT ADUAN', url: checkUrl },
+      ],
+    ],
+  };
+}
+
+export function getStatusMenuText(complaint: Complaint): string {
+  const pic = CATEGORY_OFFICER_MAP[complaint.kategori] || 'Pegawai Bertugas';
+  const statusLabels: Record<string, string> = {
+    MENUNGGU: '🟡 Menunggu Tindakan',
+    DALAM_SEMAKAN: '🔵 Dalam Semakan',
+    DALAM_TINDAKAN: '🟠 Dalam Tindakan',
+    SELESAI: '🟢 Selesai',
+    TIDAK_DAPAT_DISELESAIKAN: '🔴 Tidak Dapat Diselesaikan',
+  };
+  const currentStatusLabel = statusLabels[complaint.status] || complaint.status;
+
+  return (
+    `⚡ <b>PILIH STATUS TINDAKAN</b>\n\n` +
+    `<b>No. Rujukan:</b> <code>${escapeHtml(complaint.noRujukan)}</code>\n` +
+    `🏢 <b>Kategori:</b> ${escapeHtml(complaint.kategoriNama)}\n` +
+    `📝 <b>Tajuk:</b> ${escapeHtml(complaint.tajukAduan)}\n` +
+    `👮 <b>Pegawai PIC:</b> ${escapeHtml(pic)}\n` +
+    `📊 <b>Status Semasa:</b> ${currentStatusLabel}\n\n` +
+    `<i>Sila pilih status tindakan baharu di bawah:</i>`
+  );
+}
+
 export function formatTelegramNewComplaintMessage(complaint: Complaint, appUrl: string): {
   text: string;
   plainText: string;
@@ -79,7 +120,7 @@ export function formatTelegramNewComplaintMessage(complaint: Complaint, appUrl: 
     inline_keyboard: [
       [
         { text: '👁 LIHAT ADUAN', url: checkUrl },
-        { text: '✋ AMBIL TINDAKAN', callback_data: `claim:${complaint.noRujukan}` },
+        { text: '⚡ AMBIL TINDAKAN', callback_data: `menu:${complaint.noRujukan}` },
       ],
     ],
   };
@@ -220,8 +261,8 @@ export async function sendTelegramNotification(complaint: Complaint): Promise<Te
 export async function processTelegramOfficerAction(params: {
   action: 'AMBIL_TINDAKAN' | 'KEMASKINI_STATUS' | 'TAMBAH_TINDAKAN' | 'SELESAIKAN';
   noRujukan: string;
-  telegramUserId: string;
-  namaPegawai: string;
+  telegramUserId?: string;
+  namaPegawai?: string;
   newStatus?: ComplaintStatus;
   catatan?: string;
 }): Promise<{ success: boolean; message: string; complaint?: Complaint; replyMessage?: string }> {
@@ -236,32 +277,79 @@ export async function processTelegramOfficerAction(params: {
     };
   }
 
-  if (action === 'AMBIL_TINDAKAN') {
-    const assignResult = await db.assignOfficer(noRujukan, { telegramUserId, namaPegawai });
-    if (!assignResult.success) {
-      return {
-        success: false,
-        message: assignResult.message,
-        complaint,
-        replyMessage: `⚠️ ${escapeHtml(assignResult.message)}`,
-      };
+  const pic = CATEGORY_OFFICER_MAP[complaint.kategori] || 'Pegawai Bertugas';
+  const officerName = namaPegawai || pic;
+  const userId = telegramUserId || 'tg_pic';
+
+  if (action === 'AMBIL_TINDAKAN' || action === 'KEMASKINI_STATUS') {
+    const targetStatus = newStatus || 'DALAM_TINDAKAN';
+    const note = catatan || (
+      targetStatus === 'SELESAI'
+        ? 'Aduan telah berjaya diselesaikan oleh pegawai bertugas.'
+        : targetStatus === 'DALAM_SEMAKAN'
+        ? 'Aduan dalam semakan dan siasatan awal oleh pegawai bertugas.'
+        : targetStatus === 'TIDAK_DAPAT_DISELESAIKAN'
+        ? 'Aduan tidak dapat diselesaikan atas kekangan di luar kawalan.'
+        : 'Aduan sedang dalam tindakan pembaikan/pembetulan aktif.'
+    );
+
+    await db.addTindakan({
+      noRujukan,
+      telegramUserId: userId,
+      namaPegawai: officerName,
+      status: targetStatus,
+      catatanTindakan: note,
+    });
+
+    const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    const updated = await db.updateComplaint(
+      noRujukan,
+      {
+        status: targetStatus,
+        namaPegawai: officerName,
+        tarikhDiambilTindakan: complaint.tarikhDiambilTindakan || now,
+        tindakanTerkini: note,
+        ...(targetStatus === 'SELESAI' ? { tarikhSelesai: now } : {}),
+      },
+      officerName
+    );
+
+    // Email notification to customer
+    if (updated) {
+      sendEmailNotification(updated, targetStatus, note);
     }
 
-    // Trigger Email to customer
-    sendEmailNotification(assignResult.complaint!, 'DALAM_TINDAKAN', `Aduan anda telah diambil oleh pegawai ${namaPegawai}. Tindakan siasatan sedang dijalankan.`);
+    const statusIcons: Record<string, string> = {
+      MENUNGGU: '🟡',
+      DALAM_SEMAKAN: '🔵',
+      DALAM_TINDAKAN: '🟠',
+      SELESAI: '🟢',
+      TIDAK_DAPAT_DISELESAIKAN: '🔴',
+    };
+    const statusLabels: Record<string, string> = {
+      MENUNGGU: 'Menunggu Tindakan',
+      DALAM_SEMAKAN: 'Dalam Semakan',
+      DALAM_TINDAKAN: 'Dalam Tindakan',
+      SELESAI: 'Selesai',
+      TIDAK_DAPAT_DISELESAIKAN: 'Tidak Dapat Diselesaikan',
+    };
+
+    const sIcon = statusIcons[targetStatus] || '⚡';
+    const sLabel = statusLabels[targetStatus] || targetStatus;
 
     const replyMessage =
-      `🟠 <b>ADUAN TELAH DIAMBIL</b>\n\n` +
+      `✅ <b>STATUS BERJAYA DIKEMASKINI</b>\n\n` +
       `<b>No. Rujukan:</b> <code>${escapeHtml(noRujukan)}</code>\n` +
-      `<b>Status:</b> 🟠 DALAM TINDAKAN\n` +
-      `<b>Pegawai Bertugas:</b> ${escapeHtml(namaPegawai)}\n` +
-      `<b>Masa Diambil:</b> ${new Date().toLocaleTimeString('ms-MY')}\n\n` +
-      `<i>Aduan ini kini sedang dikendalikan oleh ${escapeHtml(namaPegawai)}.</i>`;
+      `<b>Status Baharu:</b> ${sIcon} <b>${escapeHtml(sLabel.toUpperCase())}</b>\n` +
+      `👮 <b>Pegawai PIC:</b> ${escapeHtml(officerName)}\n` +
+      `🕐 <b>Masa:</b> ${new Date().toLocaleTimeString('ms-MY')}\n` +
+      `📝 <b>Catatan:</b> ${escapeHtml(note)}\n\n` +
+      `<i>Status telah dikemaskini secara automatik ke dalam database SiAP. Anda boleh menukar status semula pada bila-bila masa.</i>`;
 
     return {
       success: true,
-      message: `Aduan ${noRujukan} berjaya diambil oleh ${namaPegawai}.`,
-      complaint: assignResult.complaint,
+      message: `Status aduan ${noRujukan} dikemaskini kepada "${sLabel}".`,
+      complaint: updated || undefined,
       replyMessage,
     };
   }
@@ -270,8 +358,8 @@ export async function processTelegramOfficerAction(params: {
     const note = catatan || 'Tindakan susulan sedang diambil.';
     await db.addTindakan({
       noRujukan,
-      telegramUserId,
-      namaPegawai,
+      telegramUserId: userId,
+      namaPegawai: officerName,
       status: complaint.status,
       catatanTindakan: note,
     });
@@ -279,7 +367,7 @@ export async function processTelegramOfficerAction(params: {
     const replyMessage =
       `📝 <b>CATATAN TINDAKAN DITAMBAH</b>\n\n` +
       `<b>No. Rujukan:</b> <code>${escapeHtml(noRujukan)}</code>\n` +
-      `<b>Pegawai:</b> ${escapeHtml(namaPegawai)}\n` +
+      `👮 <b>Pegawai PIC:</b> ${escapeHtml(officerName)}\n` +
       `<b>Catatan:</b> ${escapeHtml(note)}\n` +
       `<b>Masa:</b> ${new Date().toLocaleTimeString('ms-MY')}`;
 
@@ -291,90 +379,15 @@ export async function processTelegramOfficerAction(params: {
     };
   }
 
-  if (action === 'KEMASKINI_STATUS') {
-    if (!newStatus) {
-      return { success: false, message: 'Status baharu diperlukan.' };
-    }
-    const note = catatan || `Status dikemaskini kepada ${newStatus} oleh ${namaPegawai}.`;
-    await db.addTindakan({
-      noRujukan,
-      telegramUserId,
-      namaPegawai,
-      status: newStatus,
-      catatanTindakan: note,
-    });
-
-    const updated = await db.updateComplaint(
-      noRujukan,
-      {
-        status: newStatus,
-        tindakanTerkini: note,
-        ...(newStatus === 'SELESAI' ? { tarikhSelesai: new Date().toISOString().replace('T', ' ').substring(0, 19) } : {}),
-      },
-      namaPegawai
-    );
-
-    // Email notification
-    if (updated) {
-      sendEmailNotification(updated, newStatus, note);
-    }
-
-    const replyMessage =
-      `🔄 <b>STATUS ADUAN DIKEMASKINI</b>\n\n` +
-      `<b>No. Rujukan:</b> <code>${escapeHtml(noRujukan)}</code>\n` +
-      `<b>Status Baharu:</b> ${escapeHtml(newStatus)}\n` +
-      `<b>Pegawai:</b> ${escapeHtml(namaPegawai)}\n` +
-      `<b>Catatan:</b> ${escapeHtml(note)}`;
-
-    return {
-      success: true,
-      message: `Status aduan ${noRujukan} berjaya dikemaskini.`,
-      complaint: updated || undefined,
-      replyMessage,
-    };
-  }
-
   if (action === 'SELESAIKAN') {
-    const note = catatan || 'Tindakan pembaikan telah selesai dan diuji sepenuhnya.';
-    const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
-
-    await db.addTindakan({
+    return processTelegramOfficerAction({
+      action: 'KEMASKINI_STATUS',
       noRujukan,
-      telegramUserId,
-      namaPegawai,
-      status: 'SELESAI',
-      catatanTindakan: note,
+      telegramUserId: userId,
+      namaPegawai: officerName,
+      newStatus: 'SELESAI',
+      catatan: catatan || 'Tindakan pembaikan telah selesai dan diuji sepenuhnya.',
     });
-
-    const updated = await db.updateComplaint(
-      noRujukan,
-      {
-        status: 'SELESAI',
-        tarikhSelesai: now,
-        tindakanTerkini: note,
-      },
-      namaPegawai
-    );
-
-    if (updated) {
-      sendEmailNotification(updated, 'SELESAI', note);
-    }
-
-    const replyMessage =
-      `🟢 <b>ADUAN SELESAI</b>\n\n` +
-      `<b>No. Rujukan:</b> <code>${escapeHtml(noRujukan)}</code>\n` +
-      `<b>Status:</b> 🟢 SELESAI\n` +
-      `<b>Pegawai Bertugas:</b> ${escapeHtml(namaPegawai)}\n` +
-      `📝 <b>Tindakan Akhir:</b> ${escapeHtml(note)}\n` +
-      `🕐 <b>Tarikh Selesai:</b> ${escapeHtml(now)}\n\n` +
-      `<i>Pelanggan telah dimaklumkan melalui emel dan boleh memberikan rating kepuasan.</i>`;
-
-    return {
-      success: true,
-      message: `Aduan ${noRujukan} telah ditandakan sebagai selesai.`,
-      complaint: updated || undefined,
-      replyMessage,
-    };
   }
 
   return { success: false, message: 'Tindakan tidak sah.' };
