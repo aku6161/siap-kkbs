@@ -9,17 +9,17 @@ interface PublicStatsProps {
 
 export const PublicStats: React.FC<PublicStatsProps> = ({ onNavigateToCreate }) => {
   const [ratingData, setRatingData] = useState<RatingSummary>({
-    averageRating: 4.8,
-    totalRatings: 18,
-    ratingDistribution: { 1: 0, 2: 0, 3: 1, 4: 4, 5: 13 },
+    averageRating: 5.0,
+    totalRatings: 0,
+    ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
     emojiLabel: 'Sangat Memuaskan',
     ratingEmoji: '🤩',
   });
   const [stats, setStats] = useState<Partial<SystemStats>>({
-    totalAduan: 24,
-    selesai: 19,
-    purataKepuasan: 4.8,
-    purataMasaPenyelesaianJam: 3.5,
+    totalAduan: 0,
+    selesai: 0,
+    purataKepuasan: 5.0,
+    purataMasaPenyelesaianJam: 0,
   });
   const [feedbacks, setFeedbacks] = useState<Array<{
     noRujukan: string;
@@ -28,24 +28,7 @@ export const PublicStats: React.FC<PublicStatsProps> = ({ onNavigateToCreate }) 
     rating: number;
     ulasan: string;
     tarikh: string;
-  }>>([
-    {
-      noRujukan: 'SIAP-2026-00001',
-      nama: 'Ahmad***',
-      kategori: 'Kemudahan & Infrastruktur',
-      rating: 5,
-      ulasan: 'Tindakan sangat pantas dan bilik kuliah kembali selesa untuk kelas petang. Terima kasih!',
-      tarikh: '2026-08-20',
-    },
-    {
-      noRujukan: 'SIAP-2026-00003',
-      nama: 'Tan***',
-      kategori: 'Kebersihan',
-      rating: 4,
-      ulasan: 'Kawasan kafeteria telah dibersihkan dalam masa yang singkat. Servis mantap.',
-      tarikh: '2026-08-22',
-    },
-  ]);
+  }>>([]);
 
   useEffect(() => {
     fetch('/api/public/summary')
@@ -53,7 +36,7 @@ export const PublicStats: React.FC<PublicStatsProps> = ({ onNavigateToCreate }) 
       .then((data) => {
         if (data.ratingSummary) setRatingData(data.ratingSummary);
         if (data.stats) setStats(data.stats);
-        if (data.recentFeedbacks && data.recentFeedbacks.length > 0) {
+        if (data.recentFeedbacks) {
           setFeedbacks(data.recentFeedbacks);
         }
       })
@@ -85,7 +68,7 @@ export const PublicStats: React.FC<PublicStatsProps> = ({ onNavigateToCreate }) 
               📊
             </div>
           </div>
-          <div className="text-3xl font-black text-slate-900">{stats.totalAduan || 24}</div>
+          <div className="text-3xl font-black text-slate-900">{stats.totalAduan ?? 0}</div>
           <p className="text-[11px] text-slate-500 mt-1">Didaftarkan dalam sistem SiAP</p>
         </div>
 
@@ -96,8 +79,8 @@ export const PublicStats: React.FC<PublicStatsProps> = ({ onNavigateToCreate }) 
               🟢
             </div>
           </div>
-          <div className="text-3xl font-black text-emerald-600">{stats.selesai || 19}</div>
-          <p className="text-[11px] text-slate-500 mt-1">Kadar penyelesaian ~85%</p>
+          <div className="text-3xl font-black text-emerald-600">{stats.selesai ?? 0}</div>
+          <p className="text-[11px] text-slate-500 mt-1">Kadar penyelesaian {stats.totalAduan ? Math.round(((stats.selesai || 0) / stats.totalAduan) * 100) : 100}%</p>
         </div>
 
         <div className="glass-card glass-card-hover p-6 rounded-3xl">
@@ -107,7 +90,7 @@ export const PublicStats: React.FC<PublicStatsProps> = ({ onNavigateToCreate }) 
               ⏱️
             </div>
           </div>
-          <div className="text-3xl font-black text-slate-900">{stats.purataMasaPenyelesaianJam || 3.5} Jam</div>
+          <div className="text-3xl font-black text-slate-900">{stats.purataMasaPenyelesaianJam ?? 0} Jam</div>
           <p className="text-[11px] text-slate-500 mt-1">Daripada aduan diterima hingga selesai</p>
         </div>
 

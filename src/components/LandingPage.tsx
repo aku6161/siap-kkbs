@@ -32,17 +32,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 }) => {
   const [quickRef, setQuickRef] = useState('');
   const [ratingData, setRatingData] = useState<RatingSummary>({
-    averageRating: 4.8,
-    totalRatings: 18,
-    ratingDistribution: { 1: 0, 2: 0, 3: 1, 4: 4, 5: 13 },
+    averageRating: 5.0,
+    totalRatings: 0,
+    ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
     emojiLabel: 'Sangat Memuaskan',
     ratingEmoji: '🤩',
   });
   const [statsData, setStatsData] = useState<Partial<SystemStats>>({
-    totalAduan: 24,
-    selesai: 19,
-    purataKepuasan: 4.8,
-    purataMasaPenyelesaianJam: 3.5,
+    totalAduan: 0,
+    selesai: 0,
+    purataKepuasan: 5.0,
+    purataMasaPenyelesaianJam: 0,
   });
   const [feedbacks, setFeedbacks] = useState<Array<{
     noRujukan: string;
@@ -51,24 +51,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     rating: number;
     ulasan: string;
     tarikh: string;
-  }>>([
-    {
-      noRujukan: 'SIAP-2026-00001',
-      nama: 'Ahmad***',
-      kategori: 'Kemudahan & Infrastruktur',
-      rating: 5,
-      ulasan: 'Tindakan sangat pantas dan bilik kuliah kembali selesa untuk kelas petang. Terima kasih!',
-      tarikh: '2026-08-20',
-    },
-    {
-      noRujukan: 'SIAP-2026-00003',
-      nama: 'Tan***',
-      kategori: 'Kebersihan',
-      rating: 4,
-      ulasan: 'Kawasan kafeteria telah dibersihkan dalam masa yang singkat. Servis mantap.',
-      tarikh: '2026-08-22',
-    },
-  ]);
+  }>>([]);
 
   // User rating submission state
   const [selectedRating, setSelectedRating] = useState<number>(5);
@@ -84,7 +67,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       .then((data) => {
         if (data.ratingSummary) setRatingData(data.ratingSummary);
         if (data.stats) setStatsData(data.stats);
-        if (data.recentFeedbacks && data.recentFeedbacks.length > 0) {
+        if (data.recentFeedbacks) {
           setFeedbacks(data.recentFeedbacks);
         }
       })

@@ -123,11 +123,11 @@ class Database {
     }
 
     this.store = {
-      complaints: [...INITIAL_COMPLAINTS],
-      tindakan: [...INITIAL_TINDAKAN],
-      logs: [...INITIAL_LOGS],
-      emails: [...INITIAL_EMAILS],
-      lastSequenceNumber: 5,
+      complaints: [],
+      tindakan: [],
+      logs: [],
+      emails: [],
+      lastSequenceNumber: 0,
       config: this.getDefaultConfig(),
     };
     this.saveToFile();
@@ -162,7 +162,7 @@ class Database {
 
   // ─── Supabase Helpers ───
 
-  /** Load all data from Supabase into in-memory store */
+  /** Load all data exclusively from Supabase into in-memory store */
   public async initFromSupabase(): Promise<void> {
     if (!supabaseClient) return;
     try {
@@ -177,28 +177,31 @@ class Database {
       }
 
       if (compRes.error) {
-        // Table or auth error - do not crash or overwrite
         console.warn('Supabase query notice:', compRes.error.message);
         return;
       }
 
-      if (compRes.data && compRes.data.length > 0) {
+      if (compRes.data) {
+        // Exclusively synchronize whatever is in Supabase (even if empty)
         this.store.complaints = compRes.data as Complaint[];
 
         // Load tindakan
         const tindTable = compTable === 'siap_complaints' ? SUPABASE_TABLES.TINDAKAN : 'tindakan';
         const tindRes = await supabaseClient.from(tindTable).select('*').order('"tarikhMasa"', { ascending: false });
         if (tindRes.data) this.store.tindakan = tindRes.data as TindakanItem[];
+        else if (!tindRes.error) this.store.tindakan = [];
 
         // Load logs
         const logTable = compTable === 'siap_complaints' ? SUPABASE_TABLES.LOGS : 'logs';
         const logRes = await supabaseClient.from(logTable).select('*').order('"tarikhMasa"', { ascending: false });
         if (logRes.data) this.store.logs = logRes.data as LogItem[];
+        else if (!logRes.error) this.store.logs = [];
 
         // Load emails
         const emailTable = compTable === 'siap_complaints' ? SUPABASE_TABLES.EMAILS : 'emails';
         const emailRes = await supabaseClient.from(emailTable).select('*').order('"tarikhMasa"', { ascending: false });
         if (emailRes.data) this.store.emails = emailRes.data as EmailLog[];
+        else if (!emailRes.error) this.store.emails = [];
 
         // Load config
         const cfgTable = compTable === 'siap_complaints' ? SUPABASE_TABLES.CONFIG : 'config';
@@ -206,11 +209,13 @@ class Database {
         if (cfgRes.data) {
           const { id: _id, lastSequenceNumber, ...configData } = cfgRes.data as any;
           this.store.config = { ...this.store.config, ...configData };
-          this.store.lastSequenceNumber = lastSequenceNumber || this.store.lastSequenceNumber;
+          if (lastSequenceNumber !== undefined) {
+            this.store.lastSequenceNumber = lastSequenceNumber;
+          }
         }
 
-        // Recalculate lastSequenceNumber
-        let maxSeq = this.store.lastSequenceNumber;
+        // Calculate lastSequenceNumber dynamically based on highest reference number in complaints
+        let maxSeq = 0;
         for (const c of this.store.complaints) {
           const parts = (c.noRujukan || '').split('-');
           if (parts.length === 3) {
@@ -219,42 +224,9 @@ class Database {
           }
         }
         this.store.lastSequenceNumber = maxSeq;
-      } else if (compRes.data && compRes.data.length === 0 && this.store.complaints.length > 0) {
-        // Only migrate if Supabase table is explicitly empty and we have local records
-        await this.migrateLocalToSupabase();
       }
     } catch (e: any) {
       console.error('Error in initFromSupabase:', e.message);
-    }
-  }
-
-  /** Migrate all local data to Supabase (one-time on first deployment) */
-  private async migrateLocalToSupabase(): Promise<void> {
-    if (!supabaseClient) return;
-    try {
-      const tasks: Promise<any>[] = [];
-      if (this.store.complaints.length > 0) {
-        const cleanComplaints = this.store.complaints.map(({ lampiran, ...c }) => c);
-        tasks.push(supabaseClient.from(SUPABASE_TABLES.COMPLAINTS).upsert(cleanComplaints) as unknown as Promise<any>);
-      }
-      if (this.store.tindakan.length > 0) {
-        tasks.push(supabaseClient.from(SUPABASE_TABLES.TINDAKAN).upsert(this.store.tindakan) as unknown as Promise<any>);
-      }
-      if (this.store.logs.length > 0) {
-        tasks.push(supabaseClient.from(SUPABASE_TABLES.LOGS).upsert(this.store.logs) as unknown as Promise<any>);
-      }
-      if (this.store.emails.length > 0) {
-        tasks.push(supabaseClient.from(SUPABASE_TABLES.EMAILS).upsert(this.store.emails) as unknown as Promise<any>);
-      }
-      tasks.push(supabaseClient.from(SUPABASE_TABLES.CONFIG).upsert({
-        id: 'system_config',
-        ...this.store.config,
-        lastSequenceNumber: this.store.lastSequenceNumber,
-      }) as unknown as Promise<any>);
-
-      await Promise.allSettled(tasks);
-    } catch (e: any) {
-      console.error('Migration notice:', e.message);
     }
   }
 
