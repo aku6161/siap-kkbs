@@ -416,6 +416,25 @@ app.patch('/api/admin/complaints/:noRujukan', (req, res) => {
   });
 });
 
+// Admin delete complaint
+app.delete('/api/admin/complaints/:noRujukan', (req, res) => {
+  const { noRujukan } = req.params;
+  const result = db.deleteComplaint(noRujukan);
+  if (!result.success) {
+    return res.status(404).json({ error: result.message });
+  }
+
+  // Sync with Google Sheets after deletion
+  syncWithGoogleSheets().catch((e) => console.error('Delete sync error:', e));
+
+  res.json({
+    success: true,
+    message: result.message,
+    complaints: db.getComplaints(),
+    stats: db.getStats(),
+  });
+});
+
 // Admin stats & analytics
 app.get('/api/admin/stats', async (req, res) => {
   await ensureDbSynced();

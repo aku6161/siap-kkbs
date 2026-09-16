@@ -446,6 +446,37 @@ class Database {
     return [...this.store.tindakan];
   }
 
+  public deleteComplaint(noRujukan: string): { success: boolean; message: string } {
+    const trimmed = noRujukan.trim().toUpperCase();
+    const index = this.store.complaints.findIndex((c) => c.noRujukan.toUpperCase() === trimmed);
+    if (index === -1) {
+      return { success: false, message: 'Aduan tidak dijumpai.' };
+    }
+
+    const removed = this.store.complaints.splice(index, 1)[0];
+    this.store.tindakan = this.store.tindakan.filter((t) => t.noRujukan.toUpperCase() !== trimmed);
+
+    this.addLog({
+      jenisAktiviti: 'STATUS_DIKEMASKINI',
+      noRujukan: trimmed,
+      keterangan: `Aduan ${trimmed} (${removed.tajukAduan}) telah dipadam oleh Pentadbir.`,
+      dilakukanOleh: 'Admin SiAP',
+    });
+
+    this.saveToFile();
+
+    if (supabaseClient) {
+      supabaseClient.from('complaints').delete().eq('noRujukan', trimmed).then(({ error }) => {
+        if (error) console.error('Supabase complaint delete error:', error.message);
+      });
+      supabaseClient.from('tindakan').delete().eq('noRujukan', trimmed).then(({ error }) => {
+        if (error) console.error('Supabase tindakan delete error:', error.message);
+      });
+    }
+
+    return { success: true, message: `Aduan ${trimmed} berjaya dipadam.` };
+  }
+
   public addRating(noRujukan: string, rating: number, ulasan?: string): { success: boolean; message: string; complaint?: Complaint } {
     const comp = this.getComplaintByRef(noRujukan);
     if (!comp) return { success: false, message: 'Aduan tidak dijumpai.' };

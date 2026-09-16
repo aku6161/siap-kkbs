@@ -33,6 +33,9 @@ import {
   Users,
   Send,
   Calendar,
+  Printer,
+  Trash2,
+  FileText,
 } from 'lucide-react';
 import { CATEGORIES, STATUS_CONFIG } from '../data/categories';
 import { Complaint, ComplaintCategory, ComplaintStatus, EmailLog, LogItem, SystemStats } from '../types';
@@ -145,6 +148,153 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     fetchAdminData();
+  };
+
+  const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
+  const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
+
+  const handleDeleteComplaint = async (noRujukan: string) => {
+    if (!window.confirm(`Adakah anda pasti mahu memadam aduan ${noRujukan}? Rekod ini akan dipadam secara kekal dari pangkalan data.`)) {
+      return;
+    }
+
+    setIsDeletingId(noRujukan);
+    setActionSuccessMsg(null);
+    try {
+      const res = await fetch(`/api/admin/complaints/${encodeURIComponent(noRujukan)}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setActionSuccessMsg(`Aduan ${noRujukan} berjaya dipadam.`);
+        if (data.complaints) setComplaints(data.complaints);
+        if (data.stats) setStats(data.stats);
+        setTimeout(() => setActionSuccessMsg(null), 4000);
+      } else {
+        alert(data.error || 'Gagal memadam aduan.');
+      }
+    } catch (err: any) {
+      alert(`Ralat memadam aduan: ${err.message}`);
+    } finally {
+      setIsDeletingId(null);
+    }
+  };
+
+  const handlePrintSingleReport = (c: Complaint) => {
+    const printWin = window.open('', '_blank');
+    if (!printWin) {
+      window.print();
+      return;
+    }
+    printWin.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Laporan Aduan ${c.noRujukan}</title>
+        <style>
+          body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; color: #0f172a; margin: 0; }
+          .header { text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 16px; margin-bottom: 24px; }
+          .header h1 { margin: 0; font-size: 24px; color: #1e3a8a; }
+          .header p { margin: 4px 0 0 0; font-size: 13px; color: #64748b; }
+          .card { border: 1px solid #cbd5e1; border-radius: 12px; padding: 24px; background: #f8fafc; }
+          .row { display: flex; margin-bottom: 12px; font-size: 14px; line-height: 1.5; }
+          .label { font-weight: bold; width: 170px; color: #475569; shrink: 0; }
+          .val { flex: 1; color: #0f172a; }
+          .status { display: inline-block; padding: 4px 12px; border-radius: 9999px; font-weight: bold; font-size: 13px; background: #e2e8f0; }
+          .footer { margin-top: 36px; border-top: 1px solid #cbd5e1; padding-top: 12px; text-align: center; font-size: 11px; color: #94a3b8; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>SiAP – SISTEM ADUAN PELANGGAN</h1>
+          <p>Slip Rasmi Maklumat Laporan Aduan</p>
+        </div>
+        <div class="card">
+          <div class="row"><div class="label">No. Rujukan:</div><div class="val" style="font-family: monospace; font-size: 16px; font-weight: bold; color: #2563eb;">${c.noRujukan}</div></div>
+          <div class="row"><div class="label">Kategori:</div><div class="val">${c.kategoriNama}</div></div>
+          <div class="row"><div class="label">Tajuk Aduan:</div><div class="val"><strong>${c.tajukAduan}</strong></div></div>
+          <div class="row"><div class="label">Lokasi:</div><div class="val">${c.lokasi}</div></div>
+          <div class="row"><div class="label">Status Semasa:</div><div class="val"><span class="status">${c.status}</span></div></div>
+          <div class="row"><div class="label">Tarikh & Masa:</div><div class="val">${c.tarikhMasa}</div></div>
+          <div class="row"><div class="label">Nama Pengadu:</div><div class="val">${c.namaPengadu} (${c.telefon})</div></div>
+          <div class="row"><div class="label">Emel:</div><div class="val">${c.emel}</div></div>
+          <div class="row"><div class="label">Pegawai Bertugas:</div><div class="val">${c.namaPegawai || 'Belum Ditugaskan'}</div></div>
+          <div class="row"><div class="label">Butiran Aduan:</div><div class="val">${c.butiranAduan}</div></div>
+          ${c.tindakanTerkini ? `<div class="row"><div class="label">Tindakan Terkini:</div><div class="val">${c.tindakanTerkini}</div></div>` : ''}
+          ${c.rating ? `<div class="row"><div class="label">Rating Kepuasan:</div><div class="val">${c.rating}/5 (${c.ulasanPelanggan || 'Tiada ulasan'})</div></div>` : ''}
+        </div>
+        <div class="footer">
+          Dicetak pada: ${new Date().toLocaleString('ms-MY')} | Sistem SiAP
+        </div>
+        <script>window.onload = function() { window.print(); }</script>
+      </body>
+      </html>
+    `);
+    printWin.document.close();
+  };
+
+  const handlePrintAllReports = () => {
+    const printWin = window.open('', '_blank');
+    if (!printWin) {
+      window.print();
+      return;
+    }
+    const rowsHtml = complaints
+      .map(
+        (c, idx) => `
+        <tr>
+          <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${idx + 1}</td>
+          <td style="padding: 8px; border: 1px solid #cbd5e1; font-family: monospace; font-weight: bold;">${c.noRujukan}</td>
+          <td style="padding: 8px; border: 1px solid #cbd5e1;">${c.kategoriNama}</td>
+          <td style="padding: 8px; border: 1px solid #cbd5e1;"><strong>${c.tajukAduan}</strong><br><small style="color: #64748b;">📍 ${c.lokasi}</small></td>
+          <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${c.status}</td>
+          <td style="padding: 8px; border: 1px solid #cbd5e1;">${c.tarikhMasa.substring(0, 10)}</td>
+        </tr>
+      `
+      )
+      .join('');
+
+    printWin.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Senarai Laporan Aduan SiAP</title>
+        <style>
+          body { font-family: 'Segoe UI', Arial, sans-serif; padding: 30px; color: #0f172a; margin: 0; }
+          .header { text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 12px; margin-bottom: 20px; }
+          .header h1 { margin: 0; font-size: 20px; color: #1e3a8a; }
+          .header p { margin: 4px 0 0 0; font-size: 12px; color: #64748b; }
+          table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 15px; }
+          th { background: #f1f5f9; padding: 10px 8px; border: 1px solid #cbd5e1; text-align: left; font-weight: bold; }
+          .footer { margin-top: 25px; font-size: 11px; text-align: center; color: #94a3b8; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>SiAP – LAPORAN SENARAI ADUAN</h1>
+          <p>Jumlah Rekod: ${complaints.length} | Tarikh Cetakan: ${new Date().toLocaleString('ms-MY')}</p>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 30px; text-align: center;">Bil</th>
+              <th style="width: 130px;">No. Rujukan</th>
+              <th style="width: 140px;">Kategori</th>
+              <th>Tajuk & Lokasi</th>
+              <th style="width: 110px; text-align: center;">Status</th>
+              <th style="width: 90px;">Tarikh</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+        <div class="footer">Sistem SiAP – Sistem Aduan Pelanggan</div>
+        <script>window.onload = function() { window.print(); }</script>
+      </body>
+      </html>
+    `);
+    printWin.document.close();
   };
 
   // LOGIN SCREEN
@@ -524,34 +674,50 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </select>
             </div>
 
-            <div className="flex items-end">
+            <div className="flex items-end gap-2">
               <button
                 onClick={fetchAdminData}
-                className="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-md active:scale-98 cursor-pointer"
+                className="flex-1 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-md active:scale-98 cursor-pointer"
               >
                 Tapis Data
               </button>
+
+              <button
+                type="button"
+                onClick={handlePrintAllReports}
+                title="Cetak Senarai Laporan"
+                className="px-3.5 py-2 bg-white/80 hover:bg-white text-slate-700 border border-white/90 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-98 shrink-0"
+              >
+                <Printer className="w-3.5 h-3.5 text-slate-600" />
+                <span className="hidden sm:inline">Cetak Laporan</span>
+              </button>
             </div>
           </div>
+
+          {/* Success Banner */}
+          {actionSuccessMsg && (
+            <div className="p-3 rounded-xl bg-emerald-50/90 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2 shadow-xs">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{actionSuccessMsg}</span>
+            </div>
+          )}
 
           {/* Table */}
           <div className="overflow-x-auto rounded-2xl border border-white/80 bg-white/40 backdrop-blur-sm">
             <table className="w-full text-left text-xs">
               <thead className="bg-white/70 text-slate-700 uppercase font-bold border-b border-white/80 text-[11px]">
                 <tr>
-                  <th className="p-3.5">No. Rujukan</th>
-                  <th className="p-3.5">Pengadu</th>
-                  <th className="p-3.5">Kategori & Tajuk</th>
-                  <th className="p-3.5">Saluran Telegram</th>
-                  <th className="p-3.5">Pegawai Bertugas</th>
-                  <th className="p-3.5">Status</th>
-                  <th className="p-3.5 text-right">Tindakan</th>
+                  <th className="p-3.5 whitespace-nowrap">No. Rujukan</th>
+                  <th className="p-3.5 whitespace-nowrap">Kategori</th>
+                  <th className="p-3.5">Tajuk</th>
+                  <th className="p-3.5 whitespace-nowrap">Status</th>
+                  <th className="p-3.5 text-right whitespace-nowrap">Tindakan</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/60">
                 {complaints.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-slate-400 italic">
+                    <td colSpan={5} className="p-8 text-center text-slate-400 italic">
                       Tiada aduan sepadan dengan kriteria carian.
                     </td>
                   </tr>
@@ -564,54 +730,60 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </td>
 
                       <td className="p-3.5 whitespace-nowrap">
-                        <span className="font-bold text-slate-900 block">{c.namaPengadu}</span>
-                        <span className="text-[11px] text-slate-500">{c.telefon}</span>
-                      </td>
-
-                      <td className="p-3.5 max-w-xs">
-                        <span className="text-[10px] font-semibold text-slate-500 block uppercase">
+                        <span className="text-[11px] font-bold text-slate-800 bg-white/80 px-2.5 py-1 rounded-lg border border-white/90 shadow-xs inline-block">
                           {c.kategoriNama}
                         </span>
-                        <span className="font-semibold text-slate-800 line-clamp-1">
+                      </td>
+
+                      <td className="p-3.5 min-w-[200px] max-w-md">
+                        <span className="font-bold text-slate-900 block text-xs line-clamp-1">
                           {c.tajukAduan}
                         </span>
-                        <span className="text-[11px] text-slate-500 line-clamp-1">
+                        <span className="text-[11px] text-slate-500 block line-clamp-1 mt-0.5">
                           📍 {c.lokasi}
                         </span>
                       </td>
 
                       <td className="p-3.5 whitespace-nowrap">
-                        <span className="text-[11px] font-medium text-slate-700 bg-white/80 px-2 py-0.5 rounded-md border border-white/90">
-                          {c.telegramGroup}
-                        </span>
-                      </td>
-
-                      <td className="p-3.5 whitespace-nowrap">
-                        {c.namaPegawai ? (
-                          <span className="text-xs font-bold text-emerald-800 bg-emerald-50/90 px-2.5 py-1 rounded-xl border border-emerald-200 shadow-xs">
-                            👤 {c.namaPegawai}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-yellow-700 font-medium">
-                            🟡 Belum diambil
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="p-3.5 whitespace-nowrap">
-                        <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${STATUS_CONFIG[c.status]?.badgeBg} backdrop-blur-xs`}>
-                          {STATUS_CONFIG[c.status]?.emoji} {STATUS_CONFIG[c.status]?.label}
+                        <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${STATUS_CONFIG[c.status]?.badgeBg || 'bg-slate-100 border-slate-200 text-slate-700'} backdrop-blur-xs inline-flex items-center gap-1`}>
+                          <span>{STATUS_CONFIG[c.status]?.emoji}</span>
+                          <span>{STATUS_CONFIG[c.status]?.label}</span>
                         </span>
                       </td>
 
                       <td className="p-3.5 text-right whitespace-nowrap">
-                        <button
-                          onClick={() => setSelectedComplaint(c)}
-                          className="px-3 py-1.5 bg-blue-50/90 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl font-bold text-xs transition-all flex items-center gap-1 ml-auto cursor-pointer shadow-xs active:scale-95"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>Butiran</span>
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          {/* Butiran button */}
+                          <button
+                            onClick={() => setSelectedComplaint(c)}
+                            title="Lihat Butiran Aduan"
+                            className="px-2.5 py-1.5 bg-blue-50/90 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl font-bold text-xs transition-all flex items-center gap-1 cursor-pointer shadow-xs active:scale-95"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span className="hidden md:inline">Butiran</span>
+                          </button>
+
+                          {/* Cetak Laporan button */}
+                          <button
+                            onClick={() => handlePrintSingleReport(c)}
+                            title="Cetak Slip / Laporan Aduan"
+                            className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl font-bold text-xs transition-all flex items-center gap-1 cursor-pointer shadow-xs active:scale-95"
+                          >
+                            <Printer className="w-3.5 h-3.5 text-slate-600" />
+                            <span className="hidden md:inline">Cetak</span>
+                          </button>
+
+                          {/* Padam button */}
+                          <button
+                            onClick={() => handleDeleteComplaint(c.noRujukan)}
+                            disabled={isDeletingId === c.noRujukan}
+                            title="Padam Aduan"
+                            className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl font-bold text-xs transition-all flex items-center gap-1 cursor-pointer shadow-xs active:scale-95 disabled:opacity-50"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                            <span className="hidden md:inline">{isDeletingId === c.noRujukan ? '...' : 'Padam'}</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
