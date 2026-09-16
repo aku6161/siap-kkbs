@@ -6,7 +6,12 @@ import path from 'path';
 // ─── Supabase Client Setup ───
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
-const isSupabaseConfigured = !!(SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes('your-supabase-project'));
+const isSupabaseConfigured = !!(
+  SUPABASE_URL &&
+  SUPABASE_ANON_KEY &&
+  !SUPABASE_URL.includes('your-supabase-project') &&
+  SUPABASE_URL.startsWith('http')
+);
 
 // ─── Supabase Table Names ───
 export const SUPABASE_TABLES = {
@@ -19,10 +24,14 @@ export const SUPABASE_TABLES = {
 
 let supabaseClient: SupabaseClient | null = null;
 if (isSupabaseConfigured) {
-  supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  console.log('✅ Supabase client initialized.');
+  try {
+    supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('✅ Supabase client initialized.');
+  } catch (err: any) {
+    console.error('Failed to initialize Supabase client:', err.message);
+  }
 } else {
-  console.warn('⚠️  Supabase not configured – running on local file DB only.');
+  console.log('ℹ️ Supabase not configured – running in local/fallback database mode.');
 }
 
 // In-memory + persisted store
@@ -70,14 +79,13 @@ class Database {
       const originalPath = path.join(process.cwd(), 'server', 'db-store.json');
       if (!fs.existsSync(DB_FILE_PATH) && fs.existsSync(originalPath)) {
         try {
-          // Ensure parent directory of DB_FILE_PATH exists (just in case)
           const dir = path.dirname(DB_FILE_PATH);
           if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
           }
           fs.copyFileSync(originalPath, DB_FILE_PATH);
         } catch (e) {
-          console.error('Failed to copy initial db-store to /tmp:', e);
+          // Ignore copy error
         }
       }
     }
@@ -86,13 +94,12 @@ class Database {
       try {
         const fileContent = fs.readFileSync(DB_FILE_PATH, 'utf-8');
         this.store = JSON.parse(fileContent);
-        // Ensure config exists
         if (!this.store.config) {
           this.store.config = this.getDefaultConfig();
         }
         return;
       } catch (e) {
-        console.error('Error loading db-store.json, using defaults:', e);
+        // Fall back to memory
       }
     }
 
@@ -130,37 +137,53 @@ class Database {
     try {
       fs.writeFileSync(DB_FILE_PATH, JSON.stringify(this.store, null, 2), 'utf-8');
     } catch (e) {
-      console.error('Error saving database to file:', e);
+      // Ignore write errors in serverless read-only mode
     }
   }
 
   // ─── Supabase Helpers ───
 
-  /** Load all data from Supabase into in-memory store (called once at startup) */
+  /** Load all data from Supabase into in-memory store */
   public async initFromSupabase(): Promise<void> {
     if (!supabaseClient) return;
     try {
-      const [compRes, tindRes, logRes, emailRes, cfgRes] = await Promise.all([
-        supabaseClient.from(SUPABASE_TABLES.COMPLAINTS).select('*').order('"tarikhMasa"', { ascending: false }),
-        supabaseClient.from(SUPABASE_TABLES.TINDAKAN).select('*').order('"tarikhMasa"', { ascending: false }),
-        supabaseClient.from(SUPABASE_TABLES.LOGS).select('*').order('"tarikhMasa"', { ascending: false }),
-        supabaseClient.from(SUPABASE_TABLES.EMAILS).select('*').order('"tarikhMasa"', { ascending: false }),
-        supabaseClient.from(SUPABASE_TABLES.CONFIG).select('*').eq('id', 'system_config').maybeSingle(),
-      ]);
+      // Query primary siap_ tables
+      let compTable: string = SUPABASE_TABLES.COMPLAINTS;
+      let compRes = await supabaseClient.from(compTable).select('*').order('"tarikhMasa"', { ascending: false });
 
-      const isSupabaseEmpty = !compRes.data || compRes.data.length === 0;
+      // Fallback: check legacy complaints table if siap_complaints not created yet
+      if (compRes.error && compRes.error.message.includes('does not exist')) {
+        compTable = 'complaints';
+        compRes = await supabaseClient.from(compTable).select('*').order('"tarikhMasa"', { ascending: false });
+      }
 
-      if (isSupabaseEmpty) {
-        // Auto-migrate from local file to Supabase
-        console.log('🚀 Supabase empty – migrating local data to Supabase...');
-        await this.migrateLocalToSupabase();
-      } else {
-        // Load from Supabase
-        this.store.complaints = (compRes.data || []) as Complaint[];
-        this.store.tindakan = (tindRes.data || []) as TindakanItem[];
-        this.store.logs = (logRes.data || []) as LogItem[];
-        this.store.emails = (emailRes.data || []) as EmailLog[];
+      if (compRes.error) {
+        // Table or auth error - do not crash or overwrite
+        console.warn('Supabase query notice:', compRes.error.message);
+        return;
+      }
 
+      if (compRes.data && compRes.data.length > 0) {
+        this.store.complaints = compRes.data as Complaint[];
+
+        // Load tindakan
+        const tindTable = compTable === 'siap_complaints' ? SUPABASE_TABLES.TINDAKAN : 'tindakan';
+        const tindRes = await supabaseClient.from(tindTable).select('*').order('"tarikhMasa"', { ascending: false });
+        if (tindRes.data) this.store.tindakan = tindRes.data as TindakanItem[];
+
+        // Load logs
+        const logTable = compTable === 'siap_complaints' ? SUPABASE_TABLES.LOGS : 'logs';
+        const logRes = await supabaseClient.from(logTable).select('*').order('"tarikhMasa"', { ascending: false });
+        if (logRes.data) this.store.logs = logRes.data as LogItem[];
+
+        // Load emails
+        const emailTable = compTable === 'siap_complaints' ? SUPABASE_TABLES.EMAILS : 'emails';
+        const emailRes = await supabaseClient.from(emailTable).select('*').order('"tarikhMasa"', { ascending: false });
+        if (emailRes.data) this.store.emails = emailRes.data as EmailLog[];
+
+        // Load config
+        const cfgTable = compTable === 'siap_complaints' ? SUPABASE_TABLES.CONFIG : 'config';
+        const cfgRes = await supabaseClient.from(cfgTable).select('*').eq('id', 'system_config').maybeSingle();
         if (cfgRes.data) {
           const { id: _id, lastSequenceNumber, ...configData } = cfgRes.data as any;
           this.store.config = { ...this.store.config, ...configData };
@@ -170,17 +193,19 @@ class Database {
         // Recalculate lastSequenceNumber
         let maxSeq = this.store.lastSequenceNumber;
         for (const c of this.store.complaints) {
-          const parts = c.noRujukan.split('-');
+          const parts = (c.noRujukan || '').split('-');
           if (parts.length === 3) {
             const seq = parseInt(parts[2], 10);
             if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
           }
         }
         this.store.lastSequenceNumber = maxSeq;
-        console.log(`✅ Loaded ${this.store.complaints.length} complaints from Supabase.`);
+      } else if (compRes.data && compRes.data.length === 0 && this.store.complaints.length > 0) {
+        // Only migrate if Supabase table is explicitly empty and we have local records
+        await this.migrateLocalToSupabase();
       }
     } catch (e: any) {
-      console.error('❌ Error loading from Supabase:', e.message);
+      console.error('Error in initFromSupabase:', e.message);
     }
   }
 
@@ -190,7 +215,6 @@ class Database {
     try {
       const tasks: Promise<any>[] = [];
       if (this.store.complaints.length > 0) {
-        // Exclude complainant attachment base64 so Supabase stores light, clean records
         const cleanComplaints = this.store.complaints.map(({ lampiran, ...c }) => c);
         tasks.push(supabaseClient.from(SUPABASE_TABLES.COMPLAINTS).upsert(cleanComplaints) as unknown as Promise<any>);
       }
@@ -203,7 +227,6 @@ class Database {
       if (this.store.emails.length > 0) {
         tasks.push(supabaseClient.from(SUPABASE_TABLES.EMAILS).upsert(this.store.emails) as unknown as Promise<any>);
       }
-      // Migrate config
       tasks.push(supabaseClient.from(SUPABASE_TABLES.CONFIG).upsert({
         id: 'system_config',
         ...this.store.config,
@@ -211,24 +234,34 @@ class Database {
       }) as unknown as Promise<any>);
 
       await Promise.allSettled(tasks);
-      console.log('✅ Local data migration to Supabase complete.');
     } catch (e: any) {
-      console.error('❌ Migration failed:', e.message);
+      console.error('Migration notice:', e.message);
     }
   }
 
   /** Background write a single record to Supabase (non-blocking) */
   private sbUpsert(table: string, record: Record<string, any>): void {
     if (!supabaseClient) return;
-    // Exclude heavy base64 string before sending complaints to Supabase
-    let cleanRecord = record;
-    if (table === SUPABASE_TABLES.COMPLAINTS && record.lampiran) {
-      const { lampiran, ...rest } = record;
-      cleanRecord = rest;
+    try {
+      let cleanRecord = record;
+      if (table === SUPABASE_TABLES.COMPLAINTS && record.lampiran) {
+        const { lampiran, ...rest } = record;
+        cleanRecord = rest;
+      }
+      supabaseClient.from(table).upsert(cleanRecord).then(({ error }) => {
+        if (error) {
+          // If table not found, try fallback without siap_ prefix
+          if (error.message.includes('does not exist')) {
+            const fallbackTable = table.replace('siap_', '');
+            supabaseClient?.from(fallbackTable).upsert(cleanRecord).catch(() => {});
+          } else {
+            console.warn(`Supabase upsert notice (${table}):`, error.message);
+          }
+        }
+      }).catch(() => {});
+    } catch (err: any) {
+      console.error('sbUpsert error:', err.message);
     }
-    supabaseClient.from(table).upsert(cleanRecord).then(({ error }) => {
-      if (error) console.error(`Supabase upsert error (${table}):`, error.message);
-    });
   }
 
   /** Return full snapshot of current in-memory data (used by backup cron) */

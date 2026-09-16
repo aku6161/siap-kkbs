@@ -10,7 +10,6 @@ import { CATEGORIES } from '../src/data/categories';
 import { ComplaintCategory, ComplaintStatus } from '../src/types';
 import { handleBackupCron, runBackup } from './backup';
 
-
 const app = express();
 
 app.use(express.json({ limit: '10mb' }));
@@ -19,52 +18,58 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 let lastSyncTime = 0;
 const ensureDbSynced = async () => {
   const now = Date.now();
-  if (now - lastSyncTime < 2000) return; // Throttle to 2s for maximum real-time performance
+  if (now - lastSyncTime < 2000) return;
   lastSyncTime = now;
   await db.initFromSupabase();
 };
+
+const router = express.Router();
 
 // ==========================================
 // PUBLIC APIS
 // ==========================================
 
 // Health check
-app.get('/api/health', (req, res) => {
+router.get('/health', (req, res) => {
   res.json({ status: 'ok', app: 'SiAP – Sistem Aduan Pelanggan', timestamp: new Date().toISOString() });
 });
 
 // Public summary & dynamic satisfaction average
-app.get('/api/public/summary', async (req, res) => {
-  await ensureDbSynced();
-  const ratingSummary = db.getRatingSummary();
-  const stats = db.getStats();
-  const all = db.getComplaints();
-  const recentFeedbacks = all
-    .filter((c) => c.rating && c.ulasanPelanggan)
-    .slice(0, 4)
-    .map((c) => ({
-      noRujukan: c.noRujukan,
-      nama: c.namaPengadu.split(' ')[0] + '***',
-      kategori: c.kategoriNama,
-      rating: c.rating,
-      ulasan: c.ulasanPelanggan,
-      tarikh: c.ratingTarikh || c.tarikhSelesai || c.tarikhMasa,
-    }));
+router.get('/public/summary', async (req, res, next) => {
+  try {
+    await ensureDbSynced();
+    const ratingSummary = db.getRatingSummary();
+    const stats = db.getStats();
+    const all = db.getComplaints();
+    const recentFeedbacks = all
+      .filter((c) => c.rating && c.ulasanPelanggan)
+      .slice(0, 4)
+      .map((c) => ({
+        noRujukan: c.noRujukan,
+        nama: (c.namaPengadu || 'Pengadu').split(' ')[0] + '***',
+        kategori: c.kategoriNama,
+        rating: c.rating,
+        ulasan: c.ulasanPelanggan,
+        tarikh: c.ratingTarikh || c.tarikhSelesai || c.tarikhMasa,
+      }));
 
-  res.json({
-    ratingSummary,
-    stats: {
-      totalAduan: stats.totalAduan,
-      selesai: stats.selesai,
-      purataKepuasan: stats.purataKepuasan,
-      purataMasaPenyelesaianJam: stats.purataMasaPenyelesaianJam,
-    },
-    recentFeedbacks,
-  });
+    res.json({
+      ratingSummary,
+      stats: {
+        totalAduan: stats.totalAduan,
+        selesai: stats.selesai,
+        purataKepuasan: stats.purataKepuasan,
+        purataMasaPenyelesaianJam: stats.purataMasaPenyelesaianJam,
+      },
+      recentFeedbacks,
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Create new complaint
-app.post('/api/complaints', async (req, res) => {
+router.post('/complaints', async (req, res, next) => {
   try {
     const body = req.body || {};
     const {
@@ -84,7 +89,7 @@ app.post('/api/complaints', async (req, res) => {
       return res.status(400).json({ error: 'Semua medan bertanda wajib perlu diisi.' });
     }
 
-    const catKey = kategori as ComplaintCategory;
+    const catKey = (kategori || 'LAIN_LAIN') as ComplaintCategory;
     const catConfig = CATEGORIES[catKey] || CATEGORIES.LAIN_LAIN;
 
     const config = db.getConfig();
@@ -95,14 +100,14 @@ app.post('/api/complaints', async (req, res) => {
     else if (catKey === 'KEBERSIHAN') telegramGroupId = config.telegramChatIdKebersihan || telegramGroupId;
 
     const newComplaint = db.createComplaint({
-      namaPengadu,
-      telefon: telefon || '-',
-      emel,
+      namaPengadu: String(namaPengadu).trim(),
+      telefon: telefon ? String(telefon).trim() : '-',
+      emel: String(emel).trim(),
       kategori: catKey,
       kategoriNama: catConfig.name,
-      tajukAduan,
-      butiranAduan,
-      lokasi,
+      tajukAduan: String(tajukAduan).trim(),
+      butiranAduan: String(butiranAduan).trim(),
+      lokasi: String(lokasi).trim(),
       tarikhKejadian: tarikhKejadian || new Date().toISOString().substring(0, 10),
       lampiran,
       lampiranNama,
@@ -110,7 +115,7 @@ app.post('/api/complaints', async (req, res) => {
       telegramGroupId: telegramGroupId,
     });
 
-    // 1. Upload complainant attachment directly to Google Drive folder in the background (if present)
+    // 1. Upload attachment to Google Drive in background (if present)
     if (lampiran) {
       uploadAttachmentToGoogleDrive({
         noRujukan: newComplaint.noRujukan,
@@ -120,14 +125,14 @@ app.post('/api/complaints', async (req, res) => {
         if (fileUrl) {
           db.updateComplaint(newComplaint.noRujukan, { lampiranDriveUrl: fileUrl }, 'Google Drive Uploader');
         }
-      }).catch((e) => console.error('Attachment upload error:', e));
+      }).catch((e) => console.error('Attachment upload notice:', e.message));
     }
 
-    // 2. Dispatch Telegram notification to designated Telegram Group in the background (no await)
-    sendTelegramNotification(newComplaint).catch((e) => console.error('Telegram notification error:', e));
+    // 2. Dispatch Telegram notification to designated Telegram Group (non-blocking)
+    sendTelegramNotification(newComplaint).catch((e) => console.error('Telegram dispatch notice:', e.message));
 
-    // 3. Send email notification to customer in the background (no await)
-    sendEmailNotification(newComplaint, 'DITERIMA').catch((e) => console.error('Email notification error:', e));
+    // 3. Send email notification to customer (non-blocking)
+    sendEmailNotification(newComplaint, 'DITERIMA').catch((e) => console.error('Email dispatch notice:', e.message));
 
     return res.status(201).json({
       success: true,
@@ -135,100 +140,111 @@ app.post('/api/complaints', async (req, res) => {
       complaint: newComplaint,
     });
   } catch (err: any) {
-    console.error('Error creating complaint:', err);
-    return res.status(500).json({ error: err.message || 'Ralat semasa memproses aduan.' });
+    console.error('Error in /complaints handler:', err);
+    next(err);
   }
 });
 
 // Track single complaint by reference number
-app.get('/api/complaints/:noRujukan', async (req, res) => {
-  const { noRujukan } = req.params;
-  await ensureDbSynced();
-  const complaint = db.getComplaintByRef(noRujukan);
+router.get('/complaints/:noRujukan', async (req, res, next) => {
+  try {
+    const { noRujukan } = req.params;
+    await ensureDbSynced();
+    const complaint = db.getComplaintByRef(noRujukan);
 
-  if (!complaint) {
-    return res.status(404).json({ error: `Aduan dengan No. Rujukan "${noRujukan}" tidak dijumpai.` });
+    if (!complaint) {
+      return res.status(404).json({ error: `Aduan dengan No. Rujukan "${noRujukan}" tidak dijumpai.` });
+    }
+
+    const tindakanList = db.getTindakanForComplaint(noRujukan);
+    res.json({
+      complaint,
+      tindakanList,
+    });
+  } catch (err) {
+    next(err);
   }
-
-  const tindakanList = db.getTindakanForComplaint(noRujukan);
-  res.json({
-    complaint,
-    tindakanList,
-  });
 });
 
 // Submit satisfaction rating (1 to 5)
-app.post('/api/complaints/:noRujukan/rating', (req, res) => {
-  const { noRujukan } = req.params;
-  const { rating, ulasan } = req.body;
+router.post('/complaints/:noRujukan/rating', (req, res, next) => {
+  try {
+    const { noRujukan } = req.params;
+    const { rating, ulasan } = req.body || {};
 
-  if (!rating || rating < 1 || rating > 5) {
-    return res.status(400).json({ error: 'Sila pilih rating antara skala 1 hingga 5.' });
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: 'Sila pilih rating antara skala 1 hingga 5.' });
+    }
+
+    const result = db.addRating(noRujukan, Number(rating), ulasan);
+    if (!result.success) {
+      return res.status(400).json({ error: result.message });
+    }
+
+    res.json({
+      success: true,
+      message: result.message,
+      complaint: result.complaint,
+      ratingSummary: db.getRatingSummary(),
+    });
+  } catch (err) {
+    next(err);
   }
-
-  const result = db.addRating(noRujukan, Number(rating), ulasan);
-  if (!result.success) {
-    return res.status(400).json({ error: result.message });
-  }
-
-  res.json({
-    success: true,
-    message: result.message,
-    complaint: result.complaint,
-    ratingSummary: db.getRatingSummary(),
-  });
 });
 
 // Submit public visitor rating from Landing Page
-app.post('/api/public/rating', (req, res) => {
-  const { rating, ulasan, noRujukan, nama } = req.body;
+router.post('/public/rating', (req, res, next) => {
+  try {
+    const { rating, ulasan, noRujukan, nama } = req.body || {};
 
-  if (!rating || rating < 1 || rating > 5) {
-    return res.status(400).json({ error: 'Sila pilih rating antara skala 1 hingga 5.' });
-  }
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: 'Sila pilih rating antara skala 1 hingga 5.' });
+    }
 
-  let result;
-  if (noRujukan && noRujukan.trim()) {
-    const compResult = db.addRating(noRujukan.trim(), Number(rating), ulasan);
-    if (compResult.success) {
-      result = compResult;
+    let result;
+    if (noRujukan && noRujukan.trim()) {
+      const compResult = db.addRating(noRujukan.trim(), Number(rating), ulasan);
+      if (compResult.success) {
+        result = compResult;
+      } else {
+        result = db.addPublicRating(Number(rating), ulasan, nama);
+      }
     } else {
-      // Fallback to public rating if reference doesn't exist or isn't finished
       result = db.addPublicRating(Number(rating), ulasan, nama);
     }
-  } else {
-    result = db.addPublicRating(Number(rating), ulasan, nama);
+
+    const all = db.getComplaints();
+    const recentFeedbacks = all
+      .filter((c) => c.rating && c.ulasanPelanggan)
+      .slice(0, 4)
+      .map((c) => ({
+        noRujukan: c.noRujukan,
+        nama: (c.namaPengadu || 'Pengadu').split(' ')[0] + '***',
+        kategori: c.kategoriNama,
+        rating: c.rating,
+        ulasan: c.ulasanPelanggan,
+        tarikh: c.ratingTarikh || c.tarikhSelesai || c.tarikhMasa,
+      }));
+
+    res.json({
+      success: true,
+      message: result.message,
+      ratingSummary: db.getRatingSummary(),
+      recentFeedbacks,
+    });
+  } catch (err) {
+    next(err);
   }
-
-  const all = db.getComplaints();
-  const recentFeedbacks = all
-    .filter((c) => c.rating && c.ulasanPelanggan)
-    .slice(0, 4)
-    .map((c) => ({
-      noRujukan: c.noRujukan,
-      nama: c.namaPengadu.split(' ')[0] + '***',
-      kategori: c.kategoriNama,
-      rating: c.rating,
-      ulasan: c.ulasanPelanggan,
-      tarikh: c.ratingTarikh || c.tarikhSelesai || c.tarikhMasa,
-    }));
-
-  res.json({
-    success: true,
-    message: result.message,
-    ratingSummary: db.getRatingSummary(),
-    recentFeedbacks,
-  });
 });
 
 // ==========================================
 // TELEGRAM WEBHOOK & SIMULATOR APIS
 // ==========================================
 
-// Real Telegram Webhook Receiver (from Telegram API)
-app.post('/api/telegram/webhook', async (req, res) => {
+// Real Telegram Webhook Receiver
+router.post('/telegram/webhook', async (req, res, next) => {
   try {
-    const update = req.body;
+    const update = req.body || {};
     if (update.callback_query) {
       const cq = update.callback_query;
       const data = cq.data || '';
@@ -249,7 +265,6 @@ app.post('/api/telegram/webhook', async (req, res) => {
           namaPegawai: officerName,
         });
 
-        // Answer callback query if bot token exists
         const token = db.getConfig().telegramBotToken;
         if (token && cq.id) {
           fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
@@ -265,40 +280,43 @@ app.post('/api/telegram/webhook', async (req, res) => {
       }
     }
     res.json({ ok: true });
-  } catch (e: any) {
-    console.error('Webhook error:', e);
-    res.status(500).json({ error: e.message });
+  } catch (e) {
+    next(e);
   }
 });
 
-// Telegram Operations Simulator API (For interactive testing in Admin panel)
-app.post('/api/telegram/simulate-action', async (req, res) => {
-  const { action, noRujukan, telegramUserId, namaPegawai, newStatus, catatan } = req.body;
+// Telegram Operations Simulator API
+router.post('/telegram/simulate-action', async (req, res, next) => {
+  try {
+    const { action, noRujukan, telegramUserId, namaPegawai, newStatus, catatan } = req.body || {};
 
-  if (!action || !noRujukan || !namaPegawai) {
-    return res.status(400).json({ error: 'Maklumat tindakan, no rujukan dan nama pegawai diperlukan.' });
+    if (!action || !noRujukan || !namaPegawai) {
+      return res.status(400).json({ error: 'Maklumat tindakan, no rujukan dan nama pegawai diperlukan.' });
+    }
+
+    const result = await processTelegramOfficerAction({
+      action,
+      noRujukan,
+      telegramUserId: telegramUserId || `tg_${Math.floor(1000 + Math.random() * 9000)}`,
+      namaPegawai,
+      newStatus,
+      catatan,
+    });
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.message, complaint: result.complaint });
+    }
+
+    res.json({
+      success: true,
+      message: result.message,
+      complaint: result.complaint,
+      replyMessage: result.replyMessage,
+      tindakanList: db.getTindakanForComplaint(noRujukan),
+    });
+  } catch (err) {
+    next(err);
   }
-
-  const result = await processTelegramOfficerAction({
-    action,
-    noRujukan,
-    telegramUserId: telegramUserId || `tg_${Math.floor(1000 + Math.random() * 9000)}`,
-    namaPegawai,
-    newStatus,
-    catatan,
-  });
-
-  if (!result.success) {
-    return res.status(400).json({ error: result.message, complaint: result.complaint });
-  }
-
-  res.json({
-    success: true,
-    message: result.message,
-    complaint: result.complaint,
-    replyMessage: result.replyMessage,
-    tindakanList: db.getTindakanForComplaint(noRujukan),
-  });
 });
 
 // ==========================================
@@ -306,8 +324,8 @@ app.post('/api/telegram/simulate-action', async (req, res) => {
 // ==========================================
 
 // Admin login check
-app.post('/api/admin/login', (req, res) => {
-  const { password } = req.body;
+router.post('/admin/login', (req, res) => {
+  const { password } = req.body || {};
   const adminPassword = process.env.ADMIN_PASSWORD || 'siap89807';
 
   if (password === adminPassword || password === 'siap89807' || password === 'admin123' || password === 'admin') {
@@ -317,175 +335,203 @@ app.post('/api/admin/login', (req, res) => {
 });
 
 // List all complaints with filtering
-app.get('/api/admin/complaints', async (req, res) => {
-  const { search, kategori, status, startDate, endDate } = req.query;
-  await ensureDbSynced();
-  let list = db.getComplaints();
+router.get('/admin/complaints', async (req, res, next) => {
+  try {
+    const { search, kategori, status, startDate, endDate } = req.query;
+    await ensureDbSynced();
+    let list = db.getComplaints();
 
-  if (kategori && kategori !== 'ALL') {
-    list = list.filter((c) => c.kategori === kategori);
-  }
+    if (kategori && kategori !== 'ALL') {
+      list = list.filter((c) => c.kategori === kategori);
+    }
 
-  if (status && status !== 'ALL') {
-    list = list.filter((c) => c.status === status);
-  }
+    if (status && status !== 'ALL') {
+      list = list.filter((c) => c.status === status);
+    }
 
-  if (search) {
-    const q = String(search).toLowerCase();
-    list = list.filter(
-      (c) =>
-        c.noRujukan.toLowerCase().includes(q) ||
-        c.namaPengadu.toLowerCase().includes(q) ||
-        c.tajukAduan.toLowerCase().includes(q) ||
-        c.lokasi.toLowerCase().includes(q) ||
-        (c.namaPegawai && c.namaPegawai.toLowerCase().includes(q))
-    );
-  }
+    if (search) {
+      const q = String(search).toLowerCase();
+      list = list.filter(
+        (c) =>
+          (c.noRujukan || '').toLowerCase().includes(q) ||
+          (c.namaPengadu || '').toLowerCase().includes(q) ||
+          (c.tajukAduan || '').toLowerCase().includes(q) ||
+          (c.lokasi || '').toLowerCase().includes(q) ||
+          (c.namaPegawai && c.namaPegawai.toLowerCase().includes(q))
+      );
+    }
 
-  if (startDate) {
-    list = list.filter((c) => c.tarikhMasa.substring(0, 10) >= String(startDate));
-  }
-  if (endDate) {
-    list = list.filter((c) => c.tarikhMasa.substring(0, 10) <= String(endDate));
-  }
+    if (startDate) {
+      list = list.filter((c) => (c.tarikhMasa || '').substring(0, 10) >= String(startDate));
+    }
+    if (endDate) {
+      list = list.filter((c) => (c.tarikhMasa || '').substring(0, 10) <= String(endDate));
+    }
 
-  res.json({
-    total: list.length,
-    complaints: list,
-  });
+    res.json({
+      total: list.length,
+      complaints: list,
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Admin update complaint details / release officer / update status
-app.patch('/api/admin/complaints/:noRujukan', (req, res) => {
-  const { noRujukan } = req.params;
-  const { status, namaPegawai, telegramUserId, adminNote, resetOfficer } = req.body;
+router.patch('/admin/complaints/:noRujukan', (req, res, next) => {
+  try {
+    const { noRujukan } = req.params;
+    const { status, namaPegawai, telegramUserId, adminNote, resetOfficer } = req.body || {};
 
-  const comp = db.getComplaintByRef(noRujukan);
-  if (!comp) {
-    return res.status(404).json({ error: 'Aduan tidak dijumpai.' });
-  }
-
-  const updates: Partial<typeof comp> = {};
-  if (resetOfficer) {
-    updates.namaPegawai = undefined;
-    updates.telegramUserId = undefined;
-    updates.status = 'MENUNGGU';
-    updates.tarikhDiambilTindakan = undefined;
-    db.addLog({
-      jenisAktiviti: 'STATUS_DIKEMASKINI',
-      noRujukan,
-      keterangan: 'Admin melepaskan tugasan pegawai. Status dikembalikan kepada Menunggu Tindakan.',
-      dilakukanOleh: 'Admin SiAP',
-    });
-  } else {
-    if (status) updates.status = status as ComplaintStatus;
-    if (namaPegawai !== undefined) updates.namaPegawai = namaPegawai;
-    if (telegramUserId !== undefined) updates.telegramUserId = telegramUserId;
-    if (adminNote) {
-      updates.tindakanTerkini = `[Admin Note]: ${adminNote}`;
-      db.addTindakan({
-        noRujukan,
-        namaPegawai: 'Admin SiAP',
-        status: updates.status || comp.status,
-        catatanTindakan: `[Catatan Pentadbir]: ${adminNote}`,
-      });
+    const comp = db.getComplaintByRef(noRujukan);
+    if (!comp) {
+      return res.status(404).json({ error: 'Aduan tidak dijumpai.' });
     }
+
+    const updates: Partial<typeof comp> = {};
+    if (resetOfficer) {
+      updates.namaPegawai = undefined;
+      updates.telegramUserId = undefined;
+      updates.status = 'MENUNGGU';
+      updates.tarikhDiambilTindakan = undefined;
+      db.addLog({
+        jenisAktiviti: 'STATUS_DIKEMASKINI',
+        noRujukan,
+        keterangan: 'Admin melepaskan tugasan pegawai. Status dikembalikan kepada Menunggu Tindakan.',
+        dilakukanOleh: 'Admin SiAP',
+      });
+    } else {
+      if (status) updates.status = status as ComplaintStatus;
+      if (namaPegawai !== undefined) updates.namaPegawai = namaPegawai;
+      if (telegramUserId !== undefined) updates.telegramUserId = telegramUserId;
+      if (adminNote) {
+        updates.tindakanTerkini = `[Admin Note]: ${adminNote}`;
+        db.addTindakan({
+          noRujukan,
+          namaPegawai: 'Admin SiAP',
+          status: updates.status || comp.status,
+          catatanTindakan: `[Catatan Pentadbir]: ${adminNote}`,
+        });
+      }
+    }
+
+    const updated = db.updateComplaint(noRujukan, updates, 'Admin SiAP');
+
+    if (status && status !== comp.status && updated) {
+      sendEmailNotification(updated, status as ComplaintStatus, adminNote).catch(() => {});
+    }
+
+    res.json({
+      success: true,
+      message: 'Maklumat aduan berjaya dikemaskini oleh pentadbir.',
+      complaint: updated,
+    });
+  } catch (err) {
+    next(err);
   }
-
-  const updated = db.updateComplaint(noRujukan, updates, 'Admin SiAP');
-
-  if (status && status !== comp.status && updated) {
-    sendEmailNotification(updated, status as ComplaintStatus, adminNote);
-  }
-
-  res.json({
-    success: true,
-    message: 'Maklumat aduan berjaya dikemaskini oleh pentadbir.',
-    complaint: updated,
-  });
 });
 
 // Admin delete complaint
-app.delete('/api/admin/complaints/:noRujukan', (req, res) => {
-  const { noRujukan } = req.params;
-  const result = db.deleteComplaint(noRujukan);
-  if (!result.success) {
-    return res.status(404).json({ error: result.message });
-  }
+router.delete('/admin/complaints/:noRujukan', (req, res, next) => {
+  try {
+    const { noRujukan } = req.params;
+    const result = db.deleteComplaint(noRujukan);
+    if (!result.success) {
+      return res.status(404).json({ error: result.message });
+    }
 
-  res.json({
-    success: true,
-    message: result.message,
-    complaints: db.getComplaints(),
-    stats: db.getStats(),
-  });
+    res.json({
+      success: true,
+      message: result.message,
+      complaints: db.getComplaints(),
+      stats: db.getStats(),
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Admin stats & analytics
-app.get('/api/admin/stats', async (req, res) => {
-  await ensureDbSynced();
-  const stats = db.getStats();
-  const ratingSummary = db.getRatingSummary();
-  const complaints = db.getComplaints();
+router.get('/admin/stats', async (req, res, next) => {
+  try {
+    await ensureDbSynced();
+    const stats = db.getStats();
+    const ratingSummary = db.getRatingSummary();
+    const complaints = db.getComplaints();
 
-  // Category breakdown
-  const categoryStats: Record<string, { count: number; name: string; icon: string }> = {};
-  Object.keys(CATEGORIES).forEach((k) => {
-    const cat = CATEGORIES[k as ComplaintCategory];
-    categoryStats[k] = { count: 0, name: cat.name, icon: cat.icon };
-  });
+    const categoryStats: Record<string, { count: number; name: string; icon: string }> = {};
+    Object.keys(CATEGORIES).forEach((k) => {
+      const cat = CATEGORIES[k as ComplaintCategory];
+      categoryStats[k] = { count: 0, name: cat.name, icon: cat.icon };
+    });
 
-  // Monthly trends
-  const monthlyStats: Record<string, number> = {};
+    const monthlyStats: Record<string, number> = {};
 
-  complaints.forEach((c) => {
-    if (categoryStats[c.kategori]) {
-      categoryStats[c.kategori].count++;
-    }
-    const month = c.tarikhMasa.substring(0, 7); // e.g. 2026-08
-    monthlyStats[month] = (monthlyStats[month] || 0) + 1;
-  });
+    complaints.forEach((c) => {
+      if (categoryStats[c.kategori]) {
+        categoryStats[c.kategori].count++;
+      }
+      const month = (c.tarikhMasa || '').substring(0, 7);
+      if (month) {
+        monthlyStats[month] = (monthlyStats[month] || 0) + 1;
+      }
+    });
 
-  const monthlyTrends = Object.entries(monthlyStats).map(([bulan, jumlah]) => ({
-    bulan,
-    jumlah,
-  }));
+    const monthlyTrends = Object.entries(monthlyStats).map(([bulan, jumlah]) => ({
+      bulan,
+      jumlah,
+    }));
 
-  res.json({
-    stats,
-    ratingSummary,
-    categoryStats: Object.entries(categoryStats).map(([key, val]) => ({
-      category: key,
-      name: val.name,
-      count: val.count,
-    })),
-    monthlyTrends,
-  });
+    res.json({
+      stats,
+      ratingSummary,
+      categoryStats: Object.entries(categoryStats).map(([key, val]) => ({
+        category: key,
+        name: val.name,
+        count: val.count,
+      })),
+      monthlyTrends,
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Get action history for complaint
-app.get('/api/admin/tindakan/:noRujukan', async (req, res) => {
-  await ensureDbSynced();
-  const list = db.getTindakanForComplaint(req.params.noRujukan);
-  res.json(list);
+router.get('/admin/tindakan/:noRujukan', async (req, res, next) => {
+  try {
+    await ensureDbSynced();
+    const list = db.getTindakanForComplaint(req.params.noRujukan);
+    res.json(list);
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Get audit logs
-app.get('/api/admin/logs', async (req, res) => {
-  const limit = Number(req.query.limit) || 100;
-  await ensureDbSynced();
-  res.json(db.getLogs(limit));
+router.get('/admin/logs', async (req, res, next) => {
+  try {
+    const limit = Number(req.query.limit) || 100;
+    await ensureDbSynced();
+    res.json(db.getLogs(limit));
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Get emails log
-app.get('/api/admin/emails', async (req, res) => {
-  const limit = Number(req.query.limit) || 50;
-  await ensureDbSynced();
-  res.json(db.getEmails(limit));
+router.get('/admin/emails', async (req, res, next) => {
+  try {
+    const limit = Number(req.query.limit) || 50;
+    await ensureDbSynced();
+    res.json(db.getEmails(limit));
+  } catch (err) {
+    next(err);
+  }
 });
 
 // System configuration
-app.get('/api/admin/config', (req, res) => {
+router.get('/admin/config', (req, res) => {
   const config = db.getConfig();
   const appsScriptCode = getGoogleAppsScriptTemplate();
   res.json({
@@ -494,8 +540,8 @@ app.get('/api/admin/config', (req, res) => {
   });
 });
 
-app.post('/api/admin/config', (req, res) => {
-  const updated = db.updateConfig(req.body);
+router.post('/admin/config', (req, res) => {
+  const updated = db.updateConfig(req.body || {});
   db.addLog({
     jenisAktiviti: 'STATUS_DIKEMASKINI',
     noRujukan: 'SYSTEM_CONFIG',
@@ -506,7 +552,7 @@ app.post('/api/admin/config', (req, res) => {
 });
 
 // Live Feed for Google Sheets & Google Apps Script
-app.all('/api/sync-feed', (req, res) => {
+router.all('/sync-feed', (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -532,20 +578,19 @@ app.all('/api/sync-feed', (req, res) => {
 });
 
 // Test connection to Google Apps Script Web App URL
-app.post('/api/admin/sheets/test-url', async (req, res) => {
-  const { url } = req.body;
-  if (!url) {
-    return res.status(400).json({ success: false, message: 'URL Web App diperlukan.' });
-  }
-
+router.post('/admin/sheets/test-url', async (req, res, next) => {
   try {
+    const { url } = req.body || {};
+    if (!url) {
+      return res.status(400).json({ success: false, message: 'URL Web App diperlukan.' });
+    }
+
     const resp = await fetch(url, { method: 'GET', redirect: 'follow' });
     const text = await resp.text();
     let jsonResp: any;
     try {
       jsonResp = JSON.parse(text);
     } catch {
-      // If html or plain text
       jsonResp = { raw: text };
     }
 
@@ -572,7 +617,7 @@ app.post('/api/admin/sheets/test-url', async (req, res) => {
 });
 
 // Status endpoint for data sync
-app.post('/api/admin/sheets/sync', async (req, res) => {
+router.post('/admin/sheets/sync', async (req, res) => {
   res.json({
     success: true,
     message: 'Supabase adalah pangkalan data utama sistem SiAP. Semua data aduan dan tindakan diselaraskan terus ke Supabase, manakala lampiran dimuat naik ke Google Drive.',
@@ -580,9 +625,9 @@ app.post('/api/admin/sheets/sync', async (req, res) => {
 });
 
 // Gemini AI Analysis for complaint
-app.post('/api/admin/gemini/analyze', async (req, res) => {
+router.post('/admin/gemini/analyze', async (req, res, next) => {
   try {
-    const { noRujukan, tajukAduan, butiranAduan, kategori, lokasi } = req.body;
+    const { noRujukan, tajukAduan, butiranAduan, kategori, lokasi } = req.body || {};
     const complaint = noRujukan ? db.getComplaintByRef(noRujukan) : { tajukAduan, butiranAduan, kategori, lokasi };
     if (!complaint) {
       return res.status(404).json({ error: 'Aduan tidak dijumpai.' });
@@ -590,62 +635,27 @@ app.post('/api/admin/gemini/analyze', async (req, res) => {
 
     const analysis = await analyzeComplaintWithAI(complaint);
     res.json({ success: true, analysis });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err) {
+    next(err);
   }
 });
 
-// Force pull from Google Sheets to overwrite local database (optional fallback)
-app.post('/api/admin/sheets/pull', async (req, res) => {
-  const config = db.getConfig();
-  const scriptUrl = config.googleAppsScriptUrl;
-  if (!scriptUrl) {
-    return res.status(400).json({ success: false, message: 'Google Apps Script Web App URL tidak dikonfigurasikan.' });
-  }
+// Weekly Backup Cron Endpoint
+router.post('/cron/backup', handleBackupCron);
 
+// Admin manual backup trigger
+router.post('/admin/backup/trigger', async (_req, res, next) => {
   try {
-    const resp = await fetch(scriptUrl, { method: 'GET', redirect: 'follow' });
-    const text = await resp.text();
-    let result: any;
-    try {
-      result = JSON.parse(text);
-    } catch (parseErr) {
-      return res.status(500).json({ success: false, message: 'Gagal menukarkan jawapan Apps Script kepada format JSON.' });
-    }
-
-    if (result.status === 'success') {
-      db.overwriteDatabase({
-        complaints: result.complaints || [],
-        tindakan: result.tindakan || [],
-        logs: result.logs || [],
-      });
-
-      db.addLog({
-        jenisAktiviti: 'STATUS_DIKEMASKINI',
-        noRujukan: 'ALL',
-        keterangan: 'Pangkalan data tempatan dikemaskini sepenuhnya daripada Google Sheets.',
-        dilakukanOleh: 'Google Sheets Puller',
-      });
-
-      return res.json({
-        success: true,
-        message: 'Berjaya memuat turun dan menyelaraskan pangkalan data daripada Google Sheets!',
-        complaintsCount: (result.complaints || []).length,
-      });
-    } else {
-      return res.json({
-        success: false,
-        message: `Google Apps Script ralat: ${result.message || 'Ralat tidak diketahui'}`,
-      });
-    }
-  } catch (err: any) {
-    console.error('Google Sheets Pull error:', err);
-    return res.json({
-      success: false,
-      message: `Gagal menghubungi Google Sheets: ${err.message}`,
-    });
+    const result = await runBackup();
+    return res.json(result);
+  } catch (err) {
+    next(err);
   }
 });
+
+// Mount router to both /api and root / to support all rewrite modes on Vercel
+app.use('/api', router);
+app.use('/', router);
 
 // Serve uploaded images/files locally
 const uploadsPath = process.env.VERCEL ? path.join('/tmp', 'uploads') : path.join(process.cwd(), 'uploads');
@@ -654,21 +664,17 @@ try {
     fs.mkdirSync(uploadsPath, { recursive: true });
   }
 } catch (e) {
-  // Ignore read-only filesystem errors in serverless
+  // Ignore filesystem errors in serverless
 }
 app.use('/uploads', express.static(uploadsPath));
 
-// Weekly Backup Cron Endpoint (triggered by Vercel Cron)
-app.post('/api/cron/backup', handleBackupCron);
-
-// Admin manual backup trigger (from admin dashboard)
-app.post('/api/admin/backup/trigger', async (_req, res) => {
-  try {
-    const result = await runBackup();
-    return res.json(result);
-  } catch (err: any) {
-    return res.status(500).json({ success: false, message: `Ralat sandaran: ${err.message}` });
-  }
+// Global Express Error Handler (Prevents serverless crash)
+app.use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('SiAP Global API Error caught:', err);
+  if (res.headersSent) return;
+  res.status(500).json({
+    error: err.message || 'Ralat dalaman pelayan semasa memproses permintaan.',
+  });
 });
 
 export { app };
