@@ -1,3 +1,4 @@
+import nodemailer from 'nodemailer';
 import { Complaint, ComplaintStatus } from '../src/types';
 import { db } from './db';
 
@@ -116,105 +117,98 @@ ${senderName}
   return { subject, bodyHtml, bodyText };
 }
 
-import nodemailer from 'nodemailer';
-
 export async function sendEmailNotification(
   complaint: Complaint,
   type: 'DITERIMA' | ComplaintStatus,
   messageNote?: string
 ) {
-  if (!complaint.emel) return;
+  if (!complaint || !complaint.emel) return;
 
-  const { subject, bodyHtml, bodyText } = generateEmailHtml(complaint, type, messageNote);
+  try {
+    const { subject, bodyHtml, bodyText } = generateEmailHtml(complaint, type, messageNote);
 
-  // Log in system email records
-  db.addEmailLog({
-    noRujukan: complaint.noRujukan,
-    penerima: complaint.emel,
-    subjek: subject,
-    kandungan: `Status: ${complaint.status}. ${messageNote || 'Notifikasi automatik SiAP.'}`,
-    status: 'Dihantar',
-  });
+    // Log in system email records
+    db.addEmailLog({
+      noRujukan: complaint.noRujukan,
+      penerima: complaint.emel,
+      subjek: subject,
+      kandungan: `Status: ${complaint.status}. ${messageNote || 'Notifikasi automatik SiAP.'}`,
+      status: 'Dihantar',
+    });
 
-  db.addLog({
-    jenisAktiviti: 'EMEL_DIHANTAR',
-    noRujukan: complaint.noRujukan,
-    keterangan: `Emel notifikasi "${subject}" dihantar kepada ${complaint.emel}.`,
-    dilakukanOleh: 'SiAP Mailer Engine',
-  });
+    db.addLog({
+      jenisAktiviti: 'EMEL_DIHANTAR',
+      noRujukan: complaint.noRujukan,
+      keterangan: `Emel notifikasi "${subject}" dihantar kepada ${complaint.emel}.`,
+      dilakukanOleh: 'SiAP Mailer Engine',
+    });
 
-  // Check if SMTP is configured in database config or environment variables (.env)
-  const config = db.getConfig();
-  let smtpHost = config.smtpHost || process.env.SMTP_HOST;
-  const smtpPortStr = config.smtpPort || process.env.SMTP_PORT;
-  const smtpPort = smtpPortStr ? parseInt(smtpPortStr, 10) : 587;
-  const smtpUser = config.smtpUser || process.env.SMTP_USER;
-  const smtpPass = config.smtpPass || process.env.SMTP_PASS;
+    const config = db.getConfig();
+    let smtpHost = config.smtpHost || process.env.SMTP_HOST;
+    const smtpPortStr = config.smtpPort || process.env.SMTP_PORT;
+    const smtpPort = smtpPortStr ? parseInt(smtpPortStr, 10) : 587;
+    const smtpUser = config.smtpUser || process.env.SMTP_USER;
+    const smtpPass = config.smtpPass || process.env.SMTP_PASS;
 
-  // Auto-detect Gmail host if blank but Gmail address is provided
-  if (!smtpHost && smtpUser && smtpUser.trim().toLowerCase().endsWith('@gmail.com')) {
-    smtpHost = 'smtp.gmail.com';
-  }
-
-  console.log('SMTP Config Status Check:', {
-    smtpHost,
-    smtpPort,
-    smtpUser,
-    hasPass: !!smtpPass,
-  });
-
-  if (smtpHost && smtpUser && smtpPass) {
-    try {
-      const transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpPort === 465,
-        auth: {
-          user: smtpUser,
-          pass: smtpPass,
-        },
-      });
-
-      const senderName = db.getConfig().emailSenderName || 'SiAP – Sistem Aduan Pelanggan';
-      await transporter.sendMail({
-        from: `"${senderName}" <${smtpUser}>`,
-        to: complaint.emel,
-        subject: subject,
-        text: bodyText,
-        html: bodyHtml,
-      });
-
-      console.log(`Email successfully sent directly via SMTP to: ${complaint.emel}`);
-      return;
-    } catch (smtpErr: any) {
-      console.error(`SMTP email sending failed: ${smtpErr.message}. Falling back to Apps Script...`);
+    if (!smtpHost && smtpUser && smtpUser.trim().toLowerCase().endsWith('@gmail.com')) {
+      smtpHost = 'smtp.gmail.com';
     }
-  }
 
-  // Fallback: Call Google Apps Script Web App to send real email using GmailApp/MailApp
-  const scriptUrl = config.googleAppsScriptUrl;
-  if (scriptUrl) {
-    try {
-      const res = await fetch(scriptUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'SEND_EMAIL',
+    if (smtpHost && smtpUser && smtpPass) {
+      try {
+        const transporter = nodemailer.createTransport({
+          host: smtpHost,
+          port: smtpPort,
+          secure: smtpPort === 465,
+          auth: {
+            user: smtpUser,
+            pass: smtpPass,
+          },
+        });
+
+        const senderName = db.getConfig().emailSenderName || 'SiAP – Sistem Aduan Pelanggan';
+        await transporter.sendMail({
+          from: `"${senderName}" <${smtpUser}>`,
           to: complaint.emel,
-          subject,
-          htmlBody: bodyHtml,
-          body: bodyText,
-        }),
-        redirect: 'follow',
-      });
-      const result = await res.json();
-      if (result.status === 'success') {
-        console.log(`Email successfully dispatched via Google Apps Script to: ${complaint.emel}`);
-      } else {
-        console.error(`Apps Script returned email error: ${result.message}`);
+          subject: subject,
+          text: bodyText,
+          html: bodyHtml,
+        });
+
+        console.log(`Email successfully sent directly via SMTP to: ${complaint.emel}`);
+        return;
+      } catch (smtpErr: any) {
+        console.error(`SMTP email sending failed: ${smtpErr.message}. Falling back to Apps Script...`);
       }
-    } catch (err: any) {
-      console.error(`Failed to send email through Google Apps Script fallback: ${err.message}`);
     }
+
+    // Fallback: Call Google Apps Script Web App to send real email using GmailApp/MailApp
+    const scriptUrl = config.googleAppsScriptUrl;
+    if (scriptUrl) {
+      try {
+        const res = await fetch(scriptUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'SEND_EMAIL',
+            to: complaint.emel,
+            subject,
+            htmlBody: bodyHtml,
+            body: bodyText,
+          }),
+          redirect: 'follow',
+        });
+        const result = await res.json();
+        if (result.status === 'success') {
+          console.log(`Email successfully dispatched via Google Apps Script to: ${complaint.emel}`);
+        } else {
+          console.error(`Apps Script returned email error: ${result.message}`);
+        }
+      } catch (err: any) {
+        console.error(`Failed to send email through Google Apps Script fallback: ${err.message}`);
+      }
+    }
+  } catch (err: any) {
+    console.error('sendEmailNotification global error:', err.message);
   }
 }

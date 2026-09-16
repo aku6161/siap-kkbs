@@ -8,7 +8,7 @@ import { getGoogleAppsScriptTemplate, uploadAttachmentToGoogleDrive } from './sh
 import { CATEGORY_OFFICER_MAP, processTelegramOfficerAction, sendTelegramNotification } from './telegram';
 import { CATEGORIES } from '../src/data/categories';
 import { ComplaintCategory, ComplaintStatus } from '../src/types';
-import { handleBackupCron, runBackup } from '../api/cron/backup';
+import { handleBackupCron, runBackup } from './backup';
 
 
 const app = express();
@@ -66,6 +66,7 @@ app.get('/api/public/summary', async (req, res) => {
 // Create new complaint
 app.post('/api/complaints', async (req, res) => {
   try {
+    const body = req.body || {};
     const {
       namaPengadu,
       telefon,
@@ -77,7 +78,7 @@ app.post('/api/complaints', async (req, res) => {
       tarikhKejadian,
       lampiran,
       lampiranNama,
-    } = req.body;
+    } = body;
 
     if (!namaPengadu || !emel || !kategori || !tajukAduan || !butiranAduan || !lokasi) {
       return res.status(400).json({ error: 'Semua medan bertanda wajib perlu diisi.' });
