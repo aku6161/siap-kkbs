@@ -477,7 +477,7 @@ class Database {
 
     await this.addLog({
       jenisAktiviti: 'TINDAKAN_DITAMBAH',
-      noRujukan,
+      noRujukan: item.noRujukan,
       keterangan: `Catatan tindakan ditambah oleh ${item.namaPegawai}: "${item.catatanTindakan.substring(0, 60)}..."`,
       dilakukanOleh: item.namaPegawai,
     });
