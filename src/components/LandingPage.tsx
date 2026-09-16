@@ -196,7 +196,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             <p className="relative z-10 text-xl sm:text-2xl font-bold text-slate-800 italic mb-4">
-              "Kami SiAP menyelesaikan aduan anda."
+              "SiAP menerima, SiAP bertindak"
             </p>
 
             <p className="text-base sm:text-lg text-slate-600 leading-relaxed mb-10 max-w-2xl mx-auto">
