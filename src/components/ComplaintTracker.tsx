@@ -469,8 +469,8 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
             )}
           </div>
 
-          {/* 18. PENILAIAN KEPUASAN (HANYA APABILA STATUS SELESAI) */}
-          {complaint.status === 'SELESAI' && (
+          {/* 18. PENILAIAN KEPUASAN (APABILA STATUS SELESAI ATAU TIDAK DAPAT DISELESAIKAN) */}
+          {(complaint.status === 'SELESAI' || complaint.status === 'TIDAK_DAPAT_DISELESAIKAN') && (
             <div className="glass-card rounded-3xl border border-amber-300/80 shadow-2xl p-6 sm:p-8">
               <div className="text-center max-w-xl mx-auto mb-6">
                 <span className="text-xs font-bold text-amber-800 uppercase tracking-wider bg-white/80 px-3.5 py-1.5 rounded-full border border-white/90 shadow-xs backdrop-blur-md">
@@ -480,7 +480,9 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
                   Apa Penilaian Anda?
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 mt-1">
-                  Aduan anda telah berjaya diselesaikan. Sila kongsikan maklum balas anda untuk membantu meningkatkan mutu perkhidmatan kami.
+                  {complaint.status === 'SELESAI'
+                    ? 'Aduan anda telah berjaya diselesaikan. Sila kongsikan maklum balas anda untuk membantu meningkatkan mutu perkhidmatan kami.'
+                    : 'Aduan ini telah dikemas kini statusnya. Sila kongsikan maklum balas atau penilaian anda untuk membantu kami menambah baik perkhidmatan pada masa hadapan.'}
                 </p>
               </div>
 

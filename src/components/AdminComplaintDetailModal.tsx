@@ -406,40 +406,47 @@ export const AdminComplaintDetailModal: React.FC<AdminComplaintDetailModalProps>
             )}
           </div>
 
-          {/* Penilaian Kepuasan Pelanggan (jika ada) */}
-          {complaint.rating && (
-            <div className="glass-card rounded-3xl border border-white/80 shadow-lg p-6 sm:p-8">
+          {/* Penilaian Kepuasan Pelanggan (Apabila status Selesai / Tidak Dapat Diselesaikan) */}
+          {(complaint.status === 'SELESAI' || complaint.status === 'TIDAK_DAPAT_DISELESAIKAN' || complaint.rating) && (
+            <div className="glass-card rounded-3xl border border-amber-300/80 shadow-lg p-6 sm:p-8">
               <h3 className="text-base font-bold text-slate-900 mb-3 flex items-center gap-2">
                 <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
                 <span>Penilaian Maklum Balas Pelanggan</span>
               </h3>
-              <div className="bg-white/60 backdrop-blur-md p-4 rounded-2xl border border-white/80 flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-1 mb-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        className={`w-4 h-4 ${
-                          star <= (complaint.rating || 0)
-                            ? 'text-amber-500 fill-amber-500'
-                            : 'text-slate-300'
-                        }`}
-                      />
-                    ))}
-                    <span className="text-xs font-bold text-slate-800 ml-1.5">
-                      {complaint.rating} / 5 Bintang
-                    </span>
+              {complaint.rating ? (
+                <div className="bg-white/60 backdrop-blur-md p-4 rounded-2xl border border-white/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                  <div>
+                    <div className="flex items-center gap-1 mb-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`w-4 h-4 ${
+                            star <= (complaint.rating || 0)
+                              ? 'text-amber-500 fill-amber-500'
+                              : 'text-slate-300'
+                          }`}
+                        />
+                      ))}
+                      <span className="text-xs font-bold text-slate-800 ml-1.5">
+                        {complaint.rating} / 5 Bintang
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-700 font-medium">
+                      "{complaint.ulasanPelanggan || 'Tiada ulasan tambahan.'}"
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-700 font-medium">
-                    "{complaint.ulasanPelanggan || 'Tiada ulasan tambahan.'}"
-                  </p>
+                  {complaint.ratingTarikh && (
+                    <span className="text-[11px] font-mono text-slate-400 shrink-0">
+                      Dinilai pada: {complaint.ratingTarikh}
+                    </span>
+                  )}
                 </div>
-                {complaint.ratingTarikh && (
-                  <span className="text-[11px] font-mono text-slate-400">
-                    {complaint.ratingTarikh}
-                  </span>
-                )}
-              </div>
+              ) : (
+                <div className="bg-white/60 backdrop-blur-md p-4 rounded-2xl border border-white/80 text-xs text-slate-500 flex items-center gap-2 shadow-xs">
+                  <span>🟡</span>
+                  <span>Belum dinilai oleh pengadu (Borang penilaian telah diaktifkan pada paparan semakan pengadu).</span>
+                </div>
+              )}
             </div>
           )}
 
