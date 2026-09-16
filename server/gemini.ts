@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
-import { Complaint } from '../src/types';
+import { Complaint } from '../src/types.js';
 
 let genAIClient: GoogleGenAI | null = null;
 

@@ -1,6 +1,6 @@
-import { db } from './db';
-import { CATEGORIES } from '../src/data/categories';
-import { TELEGRAM_GROUPS } from '../src/data/telegram-groups';
+import { db } from './db.js';
+import { CATEGORIES } from '../src/data/categories.js';
+import { TELEGRAM_GROUPS } from '../src/data/telegram-groups.js';
 
 export function getGoogleAppsScriptTemplate(): string {
   const config = db.getConfig();

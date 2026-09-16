@@ -1,14 +1,14 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
-import { db } from './db';
-import { sendEmailNotification } from './email';
-import { analyzeComplaintWithAI } from './gemini';
-import { getGoogleAppsScriptTemplate, uploadAttachmentToGoogleDrive } from './sheets';
-import { CATEGORY_OFFICER_MAP, processTelegramOfficerAction, sendTelegramNotification } from './telegram';
-import { CATEGORIES } from '../src/data/categories';
-import { ComplaintCategory, ComplaintStatus } from '../src/types';
-import { handleBackupCron, runBackup } from './backup';
+import { db } from './db.js';
+import { sendEmailNotification } from './email.js';
+import { analyzeComplaintWithAI } from './gemini.js';
+import { getGoogleAppsScriptTemplate, uploadAttachmentToGoogleDrive } from './sheets.js';
+import { CATEGORY_OFFICER_MAP, processTelegramOfficerAction, sendTelegramNotification } from './telegram.js';
+import { CATEGORIES } from '../src/data/categories.js';
+import { ComplaintCategory, ComplaintStatus } from '../src/types.js';
+import { handleBackupCron, runBackup } from './backup.js';
 
 const app = express();
 

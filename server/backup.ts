@@ -1,5 +1,5 @@
-import { db } from './db';
-import { Complaint } from '../src/types';
+import { db } from './db.js';
+import { Complaint } from '../src/types.js';
 import type { Request, Response } from 'express';
 
 const BACKUP_FOLDER_ID = process.env.BACKUP_DRIVE_FOLDER_ID || '1f2VTd_dug6ANOkyRqHtC7LaNcBJWoU28';

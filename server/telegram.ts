@@ -1,6 +1,6 @@
-import { Complaint, ComplaintStatus } from '../src/types';
-import { db } from './db';
-import { sendEmailNotification } from './email';
+import { Complaint, ComplaintStatus } from '../src/types.js';
+import { db } from './db.js';
+import { sendEmailNotification } from './email.js';
 
 export interface TelegramDispatchResult {
   success: boolean;

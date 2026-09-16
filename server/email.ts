@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
-import { Complaint, ComplaintStatus } from '../src/types';
-import { db } from './db';
+import { Complaint, ComplaintStatus } from '../src/types.js';
+import { db } from './db.js';
 
 export function generateEmailHtml(complaint: Complaint, type: 'DITERIMA' | ComplaintStatus, messageNote?: string): {
   subject: string;
