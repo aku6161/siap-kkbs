@@ -109,8 +109,8 @@ app.post('/api/complaints', async (req, res) => {
       telegramGroupId: telegramGroupId,
     });
 
-    // 1. Save to Google Sheets immediately and await it
-    await syncWithGoogleSheets().catch((e) => console.error('Auto-sync error:', e));
+    // 1. Dispatch background sync to Google Sheets (non-blocking)
+    syncWithGoogleSheets().catch((e) => console.error('Auto-sync error:', e));
 
     // 2. Dispatch Telegram notification to designated Telegram Group in the background (no await)
     sendTelegramNotification(newComplaint).catch((e) => console.error('Telegram notification error:', e));
@@ -118,14 +118,14 @@ app.post('/api/complaints', async (req, res) => {
     // 3. Send email notification to customer in the background (no await)
     sendEmailNotification(newComplaint, 'DITERIMA').catch((e) => console.error('Email notification error:', e));
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'Aduan berjaya didaftarkan!',
       complaint: newComplaint,
     });
   } catch (err: any) {
     console.error('Error creating complaint:', err);
-    res.status(500).json({ error: err.message || 'Ralat semasa memproses aduan.' });
+    return res.status(500).json({ error: err.message || 'Ralat semasa memproses aduan.' });
   }
 });
 

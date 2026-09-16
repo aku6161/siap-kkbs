@@ -52,21 +52,31 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
 
     try {
       const res = await fetch(`/api/complaints/${encodeURIComponent(ref.trim())}`);
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Aduan tidak dijumpai.');
+      let data: any = null;
+      try {
+        const text = await res.text();
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        data = { error: 'Format respons tidak sah.' };
       }
 
-      setComplaint(data.complaint);
-      setTindakanList(data.tindakanList || []);
-      setSearchedRef(ref.trim());
-      if (data.complaint.rating) {
-        setSelectedRating(data.complaint.rating);
-        setUlasan(data.complaint.ulasanPelanggan || '');
+      if (!res.ok) {
+        throw new Error(data?.error || 'Aduan tidak dijumpai.');
+      }
+
+      if (data?.complaint) {
+        setComplaint(data.complaint);
+        setTindakanList(data.tindakanList || []);
+        setSearchedRef(ref.trim());
+        if (data.complaint.rating) {
+          setSelectedRating(data.complaint.rating);
+          setUlasan(data.complaint.ulasanPelanggan || '');
+        } else {
+          setSelectedRating(null);
+          setUlasan('');
+        }
       } else {
-        setSelectedRating(null);
-        setUlasan('');
+        throw new Error('Aduan tidak dijumpai.');
       }
     } catch (err: any) {
       setComplaint(null);
@@ -106,9 +116,16 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
         }),
       });
 
-      const data = await res.json();
+      let data: any = null;
+      try {
+        const text = await res.text();
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        data = { error: 'Format respons tidak sah.' };
+      }
+
       if (!res.ok) {
-        throw new Error(data.error || 'Gagal menghantar penilaian.');
+        throw new Error(data?.error || 'Gagal menghantar penilaian.');
       }
 
       setComplaint(data.complaint);

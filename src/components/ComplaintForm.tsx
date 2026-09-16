@@ -104,13 +104,23 @@ export const ComplaintForm: React.FC<ComplaintFormProps> = ({
         }),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Gagal menghantar aduan.');
+      let data: any = null;
+      try {
+        const text = await response.text();
+        data = text ? JSON.parse(text) : {};
+      } catch (parseErr) {
+        data = { error: 'Pelayan mengembalikan format yang tidak sah.' };
       }
 
-      setSubmittedComplaint(data.complaint);
+      if (!response.ok) {
+        throw new Error(data?.error || `Ralat pelayan (${response.status}). Sila cuba sebentar lagi.`);
+      }
+
+      if (data?.complaint) {
+        setSubmittedComplaint(data.complaint);
+      } else {
+        throw new Error('Respons tidak sah diterima daripada pelayan.');
+      }
       
       // Fire confetti
       try {
@@ -254,7 +264,7 @@ export const ComplaintForm: React.FC<ComplaintFormProps> = ({
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
               1. Maklumat Pengadu
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
                   Nama Pengadu <span className="text-red-500">*</span>
@@ -266,6 +276,20 @@ export const ComplaintForm: React.FC<ComplaintFormProps> = ({
                   value={namaPengadu}
                   onChange={(e) => setNamaPengadu(e.target.value)}
                   placeholder="cth: Ahmad Farhan"
+                  className="w-full px-3.5 py-2.5 text-sm text-slate-900 glass-input rounded-xl focus:outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  No. Telefon / WhatsApp
+                </label>
+                <input
+                  id="input-telefon-pengadu"
+                  type="tel"
+                  value={telefon}
+                  onChange={(e) => setTelefon(e.target.value)}
+                  placeholder="cth: 012-3456789"
                   className="w-full px-3.5 py-2.5 text-sm text-slate-900 glass-input rounded-xl focus:outline-none transition-all"
                 />
               </div>
