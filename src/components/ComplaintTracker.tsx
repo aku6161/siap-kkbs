@@ -445,7 +445,7 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
                     </p>
                   )}
                   <p className="text-[11px] text-slate-400 font-semibold">
-                    ✓ Penilaian telah direkodkan ke dalam Google Sheets & sistem SiAP.
+                    ✓ Penilaian telah direkodkan ke dalam pangkalan data SiAP.
                   </p>
                 </div>
               ) : (

@@ -4,7 +4,7 @@ import fs from 'fs';
 import { db } from './db';
 import { sendEmailNotification } from './email';
 import { analyzeComplaintWithAI } from './gemini';
-import { getGoogleAppsScriptTemplate, syncWithGoogleSheets } from './sheets';
+import { getGoogleAppsScriptTemplate, uploadAttachmentToGoogleDrive } from './sheets';
 import { CATEGORY_OFFICER_MAP, processTelegramOfficerAction, sendTelegramNotification } from './telegram';
 import { CATEGORIES } from '../src/data/categories';
 import { ComplaintCategory, ComplaintStatus } from '../src/types';
@@ -109,8 +109,18 @@ app.post('/api/complaints', async (req, res) => {
       telegramGroupId: telegramGroupId,
     });
 
-    // 1. Dispatch background sync to Google Sheets (non-blocking)
-    syncWithGoogleSheets().catch((e) => console.error('Auto-sync error:', e));
+    // 1. Upload complainant attachment directly to Google Drive folder in the background (if present)
+    if (lampiran) {
+      uploadAttachmentToGoogleDrive({
+        noRujukan: newComplaint.noRujukan,
+        fileName: lampiranNama || `${newComplaint.noRujukan}.jpg`,
+        fileData: lampiran,
+      }).then((fileUrl) => {
+        if (fileUrl) {
+          db.updateComplaint(newComplaint.noRujukan, { lampiranDriveUrl: fileUrl }, 'Google Drive Uploader');
+        }
+      }).catch((e) => console.error('Attachment upload error:', e));
+    }
 
     // 2. Dispatch Telegram notification to designated Telegram Group in the background (no await)
     sendTelegramNotification(newComplaint).catch((e) => console.error('Telegram notification error:', e));
@@ -159,9 +169,6 @@ app.post('/api/complaints/:noRujukan/rating', (req, res) => {
   if (!result.success) {
     return res.status(400).json({ error: result.message });
   }
-
-  // Sync rating to Google Sheets
-  syncWithGoogleSheets().catch((e) => console.error('Rating sync error:', e));
 
   res.json({
     success: true,
@@ -284,9 +291,6 @@ app.post('/api/telegram/simulate-action', async (req, res) => {
     return res.status(400).json({ error: result.message, complaint: result.complaint });
   }
 
-  // Background sync to Google Sheets
-  syncWithGoogleSheets().catch(() => {});
-
   res.json({
     success: true,
     message: result.message,
@@ -393,8 +397,6 @@ app.patch('/api/admin/complaints/:noRujukan', (req, res) => {
     sendEmailNotification(updated, status as ComplaintStatus, adminNote);
   }
 
-  syncWithGoogleSheets().catch(() => {});
-
   res.json({
     success: true,
     message: 'Maklumat aduan berjaya dikemaskini oleh pentadbir.',
@@ -409,9 +411,6 @@ app.delete('/api/admin/complaints/:noRujukan', (req, res) => {
   if (!result.success) {
     return res.status(404).json({ error: result.message });
   }
-
-  // Sync with Google Sheets after deletion
-  syncWithGoogleSheets().catch((e) => console.error('Delete sync error:', e));
 
   res.json({
     success: true,
@@ -571,10 +570,12 @@ app.post('/api/admin/sheets/test-url', async (req, res) => {
   }
 });
 
-// Force sync with Google Sheets
+// Status endpoint for data sync
 app.post('/api/admin/sheets/sync', async (req, res) => {
-  const result = await syncWithGoogleSheets();
-  res.json(result);
+  res.json({
+    success: true,
+    message: 'Supabase adalah pangkalan data utama sistem SiAP. Semua data aduan dan tindakan diselaraskan terus ke Supabase, manakala lampiran dimuat naik ke Google Drive.',
+  });
 });
 
 // Gemini AI Analysis for complaint
@@ -593,7 +594,7 @@ app.post('/api/admin/gemini/analyze', async (req, res) => {
   }
 });
 
-// Force pull from Google Sheets to overwrite local database
+// Force pull from Google Sheets to overwrite local database (optional fallback)
 app.post('/api/admin/sheets/pull', async (req, res) => {
   const config = db.getConfig();
   const scriptUrl = config.googleAppsScriptUrl;
@@ -664,35 +665,6 @@ app.post('/api/admin/backup/trigger', async (_req, res) => {
     return res.status(500).json({ success: false, message: `Ralat sandaran: ${err.message}` });
   }
 });
-
-
-// Background auto-pull from Google Sheets every 10 seconds (only if not in serverless/Vercel)
-if (!process.env.VERCEL) {
-  const startBackgroundSync = () => {
-    setInterval(async () => {
-      const config = db.getConfig();
-      const scriptUrl = config.googleAppsScriptUrl;
-      if (!scriptUrl) return;
-
-      try {
-        const resp = await fetch(scriptUrl, { method: 'GET', redirect: 'follow' });
-        const text = await resp.text();
-        const result = JSON.parse(text);
-
-        if (result.status === 'success') {
-          db.overwriteDatabase({
-            complaints: result.complaints || [],
-            tindakan: result.tindakan || [],
-            logs: result.logs || [],
-          });
-        }
-      } catch (err: any) {
-        // Silent catch for background polling
-      }
-    }, 10000);
-  };
-  startBackgroundSync();
-}
 
 export { app };
 export default app;

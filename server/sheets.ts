@@ -780,3 +780,44 @@ export async function syncWithGoogleSheets(): Promise<{
     return { success: false, message: `Ralat sambungan Google Apps Script: ${err.message}` };
   }
 }
+
+/**
+ * Upload single attachment base64 directly to Google Drive folder and return its public URL
+ */
+export async function uploadAttachmentToGoogleDrive(params: {
+  noRujukan: string;
+  fileName: string;
+  fileData: string;
+}): Promise<string | undefined> {
+  const config = db.getConfig();
+  const scriptUrl = config.googleAppsScriptUrl;
+  if (!scriptUrl || !params.fileData) return undefined;
+
+  try {
+    const res = await fetch(scriptUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'UPLOAD_ATTACHMENT',
+        noRujukan: params.noRujukan,
+        fileName: params.fileName,
+        fileData: params.fileData,
+      }),
+      redirect: 'follow',
+    });
+    const text = await res.text();
+    let data: any;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = {};
+    }
+    if (data.status === 'success' && data.fileUrl) {
+      console.log(`✅ Gambar ${params.fileName} berjaya dimuat naik ke Google Drive: ${data.fileUrl}`);
+      return data.fileUrl;
+    }
+  } catch (err: any) {
+    console.error('Ralat muat naik Google Drive:', err.message);
+  }
+  return undefined;
+}

@@ -190,7 +190,9 @@ class Database {
     try {
       const tasks: Promise<any>[] = [];
       if (this.store.complaints.length > 0) {
-        tasks.push(supabaseClient.from(SUPABASE_TABLES.COMPLAINTS).upsert(this.store.complaints) as unknown as Promise<any>);
+        // Exclude complainant attachment base64 so Supabase stores light, clean records
+        const cleanComplaints = this.store.complaints.map(({ lampiran, ...c }) => c);
+        tasks.push(supabaseClient.from(SUPABASE_TABLES.COMPLAINTS).upsert(cleanComplaints) as unknown as Promise<any>);
       }
       if (this.store.tindakan.length > 0) {
         tasks.push(supabaseClient.from(SUPABASE_TABLES.TINDAKAN).upsert(this.store.tindakan) as unknown as Promise<any>);
@@ -218,7 +220,13 @@ class Database {
   /** Background write a single record to Supabase (non-blocking) */
   private sbUpsert(table: string, record: Record<string, any>): void {
     if (!supabaseClient) return;
-    supabaseClient.from(table).upsert(record).then(({ error }) => {
+    // Exclude heavy base64 string before sending complaints to Supabase
+    let cleanRecord = record;
+    if (table === SUPABASE_TABLES.COMPLAINTS && record.lampiran) {
+      const { lampiran, ...rest } = record;
+      cleanRecord = rest;
+    }
+    supabaseClient.from(table).upsert(cleanRecord).then(({ error }) => {
       if (error) console.error(`Supabase upsert error (${table}):`, error.message);
     });
   }
