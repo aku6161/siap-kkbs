@@ -15,16 +15,28 @@ export function App() {
   
   // Admin auth state
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
-    return sessionStorage.getItem('siap_admin_token') ? true : false;
+    try {
+      return sessionStorage.getItem('siap_admin_token') ? true : false;
+    } catch {
+      return false;
+    }
   });
 
   const handleAdminLogin = (token: string) => {
-    sessionStorage.setItem('siap_admin_token', token);
+    try {
+      sessionStorage.setItem('siap_admin_token', token);
+    } catch {
+      // Ignore storage restrictions
+    }
     setIsAdminLoggedIn(true);
   };
 
   const handleAdminLogout = () => {
-    sessionStorage.removeItem('siap_admin_token');
+    try {
+      sessionStorage.removeItem('siap_admin_token');
+    } catch {
+      // Ignore storage restrictions
+    }
     setIsAdminLoggedIn(false);
   };
 
