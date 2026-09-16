@@ -115,7 +115,7 @@ export const ComplaintForm: React.FC<ComplaintFormProps> = ({
     e.preventDefault();
     setErrorMessage(null);
 
-    if (!namaPengadu.trim() || !emel.trim() || !tajukAduan.trim() || !butiranAduan.trim() || !lokasi.trim()) {
+    if (!namaPengadu.trim() || !telefon.trim() || !emel.trim() || !tajukAduan.trim() || !butiranAduan.trim() || !lokasi.trim()) {
       setErrorMessage('Sila lengkapkan semua medan wajib yang bertanda (*).');
       return;
     }
@@ -325,16 +325,21 @@ export const ComplaintForm: React.FC<ComplaintFormProps> = ({
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  No. Telefon / WhatsApp
+                  Kategori Pengadu <span className="text-red-500">*</span>
                 </label>
-                <input
-                  id="input-telefon-pengadu"
-                  type="tel"
+                <select
+                  id="input-kategori-pengadu"
+                  required
                   value={telefon}
                   onChange={(e) => setTelefon(e.target.value)}
-                  placeholder="cth: 012-3456789"
-                  className="w-full px-3.5 py-2.5 text-sm text-slate-900 glass-input rounded-xl focus:outline-none transition-all"
-                />
+                  className="w-full px-3.5 py-2.5 text-sm text-slate-900 glass-input rounded-xl focus:outline-none transition-all cursor-pointer font-medium bg-white/80"
+                >
+                  <option value="" disabled>-- Sila Pilih Kategori Pengadu --</option>
+                  <option value="Kakitangan">Kakitangan</option>
+                  <option value="Pelajar">Pelajar</option>
+                  <option value="Peserta Kursus Pendek">Peserta Kursus Pendek</option>
+                  <option value="Orang Awam/Lain-lain">Orang Awam/Lain-lain</option>
+                </select>
               </div>
 
               <div>

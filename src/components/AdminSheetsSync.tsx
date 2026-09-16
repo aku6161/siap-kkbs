@@ -210,7 +210,7 @@ export const AdminSheetsSync: React.FC<AdminSheetsSyncProps> = ({ complaints }) 
       'No Rujukan',
       'Tarikh Masa',
       'Nama Pengadu',
-      'Telefon',
+      'Kategori Pengadu',
       'Emel',
       'Kategori',
       'Tajuk Aduan',

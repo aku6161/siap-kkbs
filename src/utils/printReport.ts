@@ -165,7 +165,7 @@ export function printComplaintReport(complaint: Complaint, tindakanList: Tindaka
         <div class="grid-item"><div class="grid-lbl">Status Semasa:</div><div class="grid-val"><span class="badge status-${complaint.status}">${currentStatusConfig?.label || complaint.status}</span></div></div>
         <div class="grid-item"><div class="grid-lbl">Kategori Aduan:</div><div class="grid-val">${complaint.kategoriNama}</div></div>
         <div class="grid-item"><div class="grid-lbl">Lokasi Kejadian:</div><div class="grid-val">${complaint.lokasi}</div></div>
-        <div class="grid-item"><div class="grid-lbl">Nama Pengadu:</div><div class="grid-val">${complaint.namaPengadu} (${complaint.telefon})</div></div>
+        <div class="grid-item"><div class="grid-lbl">Nama Pengadu:</div><div class="grid-val">${complaint.namaPengadu}${complaint.telefon ? ` (${complaint.telefon})` : ''}</div></div>
         <div class="grid-item"><div class="grid-lbl">Emel Pengadu:</div><div class="grid-val">${complaint.emel}</div></div>
         <div class="grid-item"><div class="grid-lbl">Tarikh Aduan:</div><div class="grid-val">${complaint.tarikhMasa}</div></div>
         <div class="grid-item"><div class="grid-lbl">Tarikh Kejadian:</div><div class="grid-val">${complaint.tarikhKejadian || '-'}</div></div>

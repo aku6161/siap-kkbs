@@ -6,7 +6,6 @@ import {
   MapPin,
   Calendar,
   Send,
-  Sparkles,
   RotateCcw,
   CheckCircle2,
   AlertCircle,
@@ -43,10 +42,6 @@ export const AdminComplaintDetailModal: React.FC<AdminComplaintDetailModalProps>
   const [adminNote, setAdminNote] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateMsg, setUpdateMsg] = useState<string | null>(null);
-
-  // Gemini AI Analysis
-  const [aiAnalysis, setAiAnalysis] = useState<any>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
     fetch(`/api/admin/tindakan/${encodeURIComponent(complaint.noRujukan)}`)
@@ -136,25 +131,6 @@ export const AdminComplaintDetailModal: React.FC<AdminComplaintDetailModalProps>
       setUpdateMsg(e.message);
     } finally {
       setIsUpdating(false);
-    }
-  };
-
-  const handleRunAiAnalysis = async () => {
-    setIsAnalyzing(true);
-    try {
-      const res = await fetch('/api/admin/gemini/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ noRujukan: complaint.noRujukan }),
-      });
-      const data = await res.json();
-      if (data.analysis) {
-        setAiAnalysis(data.analysis);
-      }
-    } catch (e) {
-      console.error('AI error:', e);
-    } finally {
-      setIsAnalyzing(false);
     }
   };
 
@@ -302,7 +278,9 @@ export const AdminComplaintDetailModal: React.FC<AdminComplaintDetailModalProps>
               </div>
               <div>
                 <span className="text-slate-500 font-semibold block mb-1">Pengadu:</span>
-                <span className="font-bold text-slate-800">{complaint.namaPengadu} ({complaint.telefon})</span>
+                <span className="font-bold text-slate-800">
+                  {complaint.namaPengadu} {complaint.telefon ? `(${complaint.telefon})` : ''}
+                </span>
               </div>
               <div>
                 <span className="text-slate-500 font-semibold block mb-1">Pegawai Bertugas:</span>
@@ -449,51 +427,6 @@ export const AdminComplaintDetailModal: React.FC<AdminComplaintDetailModalProps>
               )}
             </div>
           )}
-
-          {/* AI Smart Diagnosis (Gemini) */}
-          <div className="bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-white/40 backdrop-blur-md p-6 rounded-3xl border border-indigo-200/80 text-xs shadow-xs">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-indigo-600" />
-                <span className="font-bold text-indigo-950 text-sm">Analisis Pintar AI (Gemini)</span>
-              </div>
-              <button
-                onClick={handleRunAiAnalysis}
-                disabled={isAnalyzing}
-                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-md shadow-indigo-500/20 active:scale-95 border border-white/20"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>{isAnalyzing ? 'Menganalisis...' : 'Jana Analisis Aduan'}</span>
-              </button>
-            </div>
-
-            {aiAnalysis ? (
-              <div className="space-y-2.5 text-slate-800 bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-indigo-100 shadow-xs">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold">Tahap Keutamaan:</span>
-                  <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-800 font-bold text-[11px] border border-orange-200">
-                    {aiAnalysis.tahapKeutamaan}
-                  </span>
-                  <span className="text-slate-400">|</span>
-                  <span className="font-bold">Anggaran Masa:</span>
-                  <span className="font-semibold text-blue-600">{aiAnalysis.anggaranMasaPenyelesaian}</span>
-                </div>
-                <p className="italic text-slate-600">"{aiAnalysis.analisisRingkas}"</p>
-                <div>
-                  <span className="font-bold block mb-1">Cadangan Tindakan Pegawai:</span>
-                  <ul className="list-disc list-inside space-y-1 text-slate-700">
-                    {aiAnalysis.cadanganTindakanPegawai?.map((step: string, sIdx: number) => (
-                      <li key={sIdx}>{step}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            ) : (
-              <p className="text-slate-500">
-                Gunakan AI untuk mengenal pasti punca masalah, anggaran masa selesai, dan cadangan langkah pembaikan bagi pegawai bertugas.
-              </p>
-            )}
-          </div>
 
           {/* Admin Manual Override Form */}
           <div className="bg-white/60 backdrop-blur-sm p-6 rounded-3xl border border-white/80 text-xs space-y-4 shadow-xs">

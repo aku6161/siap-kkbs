@@ -386,7 +386,9 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
               </div>
               <div>
                 <span className="text-slate-500 font-semibold block mb-1">Pengadu:</span>
-                <span className="font-bold text-slate-800">{complaint.namaPengadu}</span>
+                <span className="font-bold text-slate-800">
+                  {complaint.namaPengadu} {complaint.telefon ? `(${complaint.telefon})` : ''}
+                </span>
               </div>
               <div>
                 <span className="text-slate-500 font-semibold block mb-1">Pegawai Bertugas:</span>
