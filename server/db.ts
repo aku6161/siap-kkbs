@@ -66,9 +66,28 @@ const INITIAL_EMAILS: EmailLog[] = [];
 
 // fs and path are imported at top of file
 
-const DB_FILE_PATH = process.env.VERCEL 
-  ? path.join('/tmp', 'db-store.json')
-  : path.join(process.cwd(), 'server', 'db-store.json');
+const SERVER_DB_PATH = path.join(process.cwd(), 'server', 'db-store.json');
+// Use /tmp for writable storage in serverless environments (Vercel, etc.)
+// Detect by checking if process.cwd()/server is writable
+function getDbFilePath(): string {
+  try {
+    // Test write access to server directory
+    const testPath = path.join(process.cwd(), 'server', '.write_test');
+    fs.writeFileSync(testPath, '1');
+    try { fs.unlinkSync(testPath); } catch { /* ignore cleanup error */ }
+    return SERVER_DB_PATH;
+  } catch {
+    // Read-only filesystem — use /tmp
+    return '/tmp/db-store.json';
+  }
+}
+
+let DB_FILE_PATH: string;
+try {
+  DB_FILE_PATH = getDbFilePath();
+} catch {
+  DB_FILE_PATH = '/tmp/db-store.json';
+}
 
 class Database {
   private store: DBStore;
@@ -313,7 +332,17 @@ class Database {
     let fileUrl = undefined;
     if (data.lampiran) {
       try {
-        const uploadsDir = process.env.VERCEL ? path.join('/tmp', 'uploads') : path.join(process.cwd(), 'uploads');
+        // Use /tmp/uploads if the main uploads dir is not writable (same logic as DB path)
+        let uploadsDir = path.join(process.cwd(), 'uploads');
+        try {
+          if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+          // Quick write test
+          const testP = path.join(uploadsDir, '.wtest');
+          fs.writeFileSync(testP, '1');
+          try { fs.unlinkSync(testP); } catch { /* ignore */ }
+        } catch {
+          uploadsDir = '/tmp/uploads';
+        }
         if (!fs.existsSync(uploadsDir)) {
           fs.mkdirSync(uploadsDir, { recursive: true });
         }
