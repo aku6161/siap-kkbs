@@ -70,6 +70,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     },
   ]);
 
+  // User rating submission state
+  const [selectedRating, setSelectedRating] = useState<number>(5);
+  const [userUlasan, setUserUlasan] = useState<string>('');
+  const [userNoRujukan, setUserNoRujukan] = useState<string>('');
+  const [isSubmittingRating, setIsSubmittingRating] = useState<boolean>(false);
+  const [ratingSuccessMsg, setRatingSuccessMsg] = useState<string | null>(null);
+  const [ratingErrorMsg, setRatingErrorMsg] = useState<string | null>(null);
+
   useEffect(() => {
     fetch('/api/public/summary')
       .then((res) => res.json())
@@ -82,6 +90,47 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       })
       .catch((err) => console.log('Summary fetch note:', err));
   }, []);
+
+  const handleRatingSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRatingSuccessMsg(null);
+    setRatingErrorMsg(null);
+
+    if (!selectedRating || selectedRating < 1 || selectedRating > 5) {
+      setRatingErrorMsg('Sila pilih skala penilaian (1 hingga 5).');
+      return;
+    }
+
+    setIsSubmittingRating(true);
+    try {
+      const res = await fetch('/api/public/rating', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rating: selectedRating,
+          ulasan: userUlasan,
+          noRujukan: userNoRujukan.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setRatingErrorMsg(data.error || 'Gagal menghantar penilaian.');
+      } else {
+        setRatingSuccessMsg(data.message || 'Terima kasih! Penilaian anda telah berjaya dihantar.');
+        if (data.ratingSummary) setRatingData(data.ratingSummary);
+        if (data.recentFeedbacks && data.recentFeedbacks.length > 0) {
+          setFeedbacks(data.recentFeedbacks);
+        }
+        setUserUlasan('');
+        setUserNoRujukan('');
+      }
+    } catch (err) {
+      setRatingErrorMsg('Ralat rangkaian. Sila cuba semula.');
+    } finally {
+      setIsSubmittingRating(false);
+    }
+  };
 
   const handleQuickSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -215,17 +264,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               Maklum Balas Pelanggan
             </span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-3">
-              Anda Pula Bagaimana?
+              Purata Kepuasan Pelanggan
             </h2>
             <p className="text-sm sm:text-base text-slate-600 mt-1">
               Purata rating pelanggan dikira secara dinamik berdasarkan setiap aduan yang telah selesai.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div className="space-y-6 max-w-4xl mx-auto">
             
-            {/* Left Box: Big Score Card */}
-            <div className="lg:col-span-5 bg-white/65 backdrop-blur-xl p-6 sm:p-8 rounded-2xl border border-white/80 shadow-md text-center">
+            {/* Top Box: Purata Kepuasan Pelanggan Card */}
+            <div className="bg-white/70 backdrop-blur-xl p-6 sm:p-8 rounded-2xl border border-white/80 shadow-md text-center">
               <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
                 Purata Kepuasan Pelanggan
               </p>
@@ -237,7 +286,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <span className="text-2xl text-slate-400 font-bold">/ 5.0</span>
               </div>
 
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border border-blue-200/80 text-blue-950 font-bold text-base sm:text-lg mb-4 backdrop-blur-md">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border border-blue-200/80 text-blue-950 font-bold text-base sm:text-lg mb-3 backdrop-blur-md">
                 <span className="text-2xl">{ratingData.ratingEmoji}</span>
                 <span>{ratingData.emojiLabel}</span>
               </div>
@@ -247,44 +296,110 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </p>
             </div>
 
-            {/* Right Box: Scale Legend & Visual Breakdown */}
-            <div className="lg:col-span-7 bg-white/65 backdrop-blur-xl p-6 sm:p-8 rounded-2xl border border-white/80 shadow-md">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4">
-                Skala Penilaian Rasmi SiAP
-              </h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-5 gap-2.5 mb-6">
-                {RATING_SCALE.map((scale) => {
-                  const isCurrentAverage = Math.round(ratingData.averageRating) === scale.value;
-                  return (
-                    <div
-                      key={scale.value}
-                      className={`p-2.5 rounded-xl border text-center transition-all ${
-                        isCurrentAverage
-                          ? 'border-blue-500 bg-white/90 shadow-md ring-2 ring-blue-400/30'
-                          : 'border-white/60 bg-white/40 backdrop-blur-sm'
-                      }`}
-                    >
-                      <div className="text-2xl mb-1">{scale.emoji}</div>
-                      <div className="text-xs font-bold text-slate-800 leading-tight">
-                        {scale.label}
-                      </div>
-                      <div className="text-[11px] font-semibold text-slate-500 mt-1">
-                        Skala {scale.value}
-                      </div>
-                    </div>
-                  );
-                })}
+            {/* Bottom Box: Anda Pula Bagaimana? (Interactive Rating Scale & Submit Form) */}
+            <div className="bg-white/70 backdrop-blur-xl p-6 sm:p-8 rounded-2xl border border-white/80 shadow-md">
+              
+              <div className="text-center sm:text-left mb-5 border-b border-white/60 pb-3">
+                <h3 className="text-lg font-extrabold text-slate-900">
+                  Anda Pula Bagaimana?
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Pilih skala penilaian anda di bawah dan klik <strong>Hantar Penilaian</strong>.
+                </p>
               </div>
+
+              {/* Feedback Success / Error alert */}
+              {ratingSuccessMsg && (
+                <div className="mb-4 p-3 rounded-xl bg-emerald-50/90 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2 shadow-xs">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>{ratingSuccessMsg}</span>
+                </div>
+              )}
+              {ratingErrorMsg && (
+                <div className="mb-4 p-3 rounded-xl bg-rose-50/90 border border-rose-200 text-rose-800 text-xs font-bold flex items-center gap-2 shadow-xs">
+                  <span className="text-rose-600 shrink-0">⚠️</span>
+                  <span>{ratingErrorMsg}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleRatingSubmit} className="space-y-4">
+                {/* Emojis grid */}
+                <div className="grid grid-cols-5 gap-2 sm:gap-3">
+                  {RATING_SCALE.map((scale) => {
+                    const isSelected = selectedRating === scale.value;
+                    return (
+                      <button
+                        type="button"
+                        key={scale.value}
+                        id={`landing-rating-scale-${scale.value}`}
+                        onClick={() => setSelectedRating(scale.value)}
+                        className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center justify-center cursor-pointer ${
+                          isSelected
+                            ? 'border-blue-500 bg-white shadow-md ring-2 ring-blue-400/30 scale-105'
+                            : 'border-white/60 bg-white/40 backdrop-blur-sm hover:bg-white/70'
+                        }`}
+                      >
+                        <div className="text-2xl sm:text-3xl mb-1">{scale.emoji}</div>
+                        <div className="text-[11px] sm:text-xs font-bold text-slate-800 leading-tight">
+                          {scale.label}
+                        </div>
+                        <div className="text-[10px] font-semibold text-slate-500 mt-1">
+                          Skala {scale.value}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Ulasan & No Rujukan Inputs */}
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-1">
+                  <div className="sm:col-span-8">
+                    <input
+                      type="text"
+                      id="input-landing-ulasan"
+                      value={userUlasan}
+                      onChange={(e) => setUserUlasan(e.target.value)}
+                      placeholder="Tulis ulasan anda (pilihan)..."
+                      className="w-full px-3.5 py-2.5 text-xs text-slate-900 bg-white/70 backdrop-blur-md focus:bg-white border border-white/80 focus:border-blue-400 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all shadow-inner"
+                    />
+                  </div>
+                  <div className="sm:col-span-4">
+                    <input
+                      type="text"
+                      id="input-landing-no-ref"
+                      value={userNoRujukan}
+                      onChange={(e) => setUserNoRujukan(e.target.value)}
+                      placeholder="No. Ref (Pilihan)"
+                      className="w-full px-3.5 py-2.5 text-xs text-slate-900 bg-white/70 backdrop-blur-md focus:bg-white border border-white/80 focus:border-blue-400 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all font-mono shadow-inner"
+                    />
+                  </div>
+                </div>
+
+                {/* Submit button */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    * Skala dipilih: <strong className="text-slate-800">{selectedRating} / 5</strong> ({RATING_SCALE.find((s) => s.value === selectedRating)?.label})
+                  </span>
+                  <button
+                    id="btn-hantar-penilaian"
+                    type="submit"
+                    disabled={isSubmittingRating}
+                    className="w-full sm:w-auto px-7 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>{isSubmittingRating ? 'Penghantaran...' : 'HANTAR PENILAIAN'}</span>
+                  </button>
+                </div>
+              </form>
 
               {/* Live quote preview */}
               {feedbacks.length > 0 && (
-                <div className="border-t border-white/60 pt-4 mt-4">
-                  <p className="text-xs font-semibold text-slate-500 mb-2 flex items-center gap-1.5">
+                <div className="border-t border-white/60 pt-3.5 mt-5">
+                  <p className="text-xs font-semibold text-slate-500 mb-1.5 flex items-center gap-1.5">
                     <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
                     Ulasan Terkini Pengadu:
                   </p>
-                  <p className="text-xs sm:text-sm text-slate-700 italic bg-white/50 backdrop-blur-sm p-3.5 rounded-xl border border-white/80">
+                  <p className="text-xs text-slate-700 italic bg-white/50 backdrop-blur-sm p-3 rounded-xl border border-white/80">
                     "{feedbacks[0].ulasan}"
                     <span className="block not-italic font-semibold text-slate-500 text-[11px] mt-1">
                       — {feedbacks[0].nama} ({feedbacks[0].kategori})

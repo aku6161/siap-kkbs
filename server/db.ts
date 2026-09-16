@@ -476,6 +476,46 @@ class Database {
     return { success: true, message: 'Penilaian kepuasan berjaya direkodkan. Terima kasih!', complaint: comp };
   }
 
+  public addPublicRating(rating: number, ulasan?: string, nama?: string): { success: boolean; message: string } {
+    const validRating = Math.max(1, Math.min(5, Math.round(rating)));
+    const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    const ref = `RATING-${Date.now().toString().slice(-6)}`;
+
+    const comp: Complaint = {
+      id: `c_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      noRujukan: ref,
+      namaPengadu: nama || 'Pengunjung SiAP',
+      telefon: '-',
+      emel: '-',
+      kategori: 'PERKHIDMATAN',
+      kategoriNama: 'Maklum Balas Pelanggan',
+      tajukAduan: 'Maklum Balas Kepuasan Pelanggan',
+      butiranAduan: ulasan || 'Penilaian kepuasan daripada pengguna.',
+      lokasi: 'Portal SiAP',
+      tarikhKejadian: now.split(' ')[0],
+      status: 'SELESAI',
+      telegramGroup: 'Umum',
+      telegramGroupId: '0',
+      tarikhMasa: now,
+      tarikhSelesai: now,
+      rating: validRating,
+      ulasanPelanggan: ulasan || '',
+      ratingTarikh: now,
+    };
+
+    this.store.complaints.unshift(comp);
+    this.addLog({
+      jenisAktiviti: 'RATING_DITERIMA',
+      noRujukan: ref,
+      keterangan: `Maklum balas umum diterima: ${validRating}/5. Ulasan: "${ulasan || 'Tiada ulasan'}".`,
+      dilakukanOleh: comp.namaPengadu,
+    });
+
+    this.saveToFile();
+    this.sbUpsert('complaints', { ...comp });
+    return { success: true, message: 'Penilaian anda berjaya dihantar. Terima kasih atas maklum balas anda!' };
+  }
+
   public addLog(item: Omit<LogItem, 'id' | 'tarikhMasa'>): LogItem {
     const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
     const log: LogItem = {

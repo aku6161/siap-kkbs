@@ -189,6 +189,48 @@ app.post('/api/complaints/:noRujukan/rating', (req, res) => {
   });
 });
 
+// Submit public visitor rating from Landing Page
+app.post('/api/public/rating', (req, res) => {
+  const { rating, ulasan, noRujukan, nama } = req.body;
+
+  if (!rating || rating < 1 || rating > 5) {
+    return res.status(400).json({ error: 'Sila pilih rating antara skala 1 hingga 5.' });
+  }
+
+  let result;
+  if (noRujukan && noRujukan.trim()) {
+    const compResult = db.addRating(noRujukan.trim(), Number(rating), ulasan);
+    if (compResult.success) {
+      result = compResult;
+    } else {
+      // Fallback to public rating if reference doesn't exist or isn't finished
+      result = db.addPublicRating(Number(rating), ulasan, nama);
+    }
+  } else {
+    result = db.addPublicRating(Number(rating), ulasan, nama);
+  }
+
+  const all = db.getComplaints();
+  const recentFeedbacks = all
+    .filter((c) => c.rating && c.ulasanPelanggan)
+    .slice(0, 4)
+    .map((c) => ({
+      noRujukan: c.noRujukan,
+      nama: c.namaPengadu.split(' ')[0] + '***',
+      kategori: c.kategoriNama,
+      rating: c.rating,
+      ulasan: c.ulasanPelanggan,
+      tarikh: c.ratingTarikh || c.tarikhSelesai || c.tarikhMasa,
+    }));
+
+  res.json({
+    success: true,
+    message: result.message,
+    ratingSummary: db.getRatingSummary(),
+    recentFeedbacks,
+  });
+});
+
 // ==========================================
 // TELEGRAM WEBHOOK & SIMULATOR APIS
 // ==========================================
