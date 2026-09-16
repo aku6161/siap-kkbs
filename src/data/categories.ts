@@ -1,4 +1,4 @@
-import { CategoryInfo, ComplaintCategory, ComplaintStatus } from '../types';
+import { CategoryInfo, ComplaintCategory, ComplaintStatus } from '../types.js';
 
 export const CATEGORIES: Record<ComplaintCategory, CategoryInfo> = {
   KEMUDAHAN: {
