@@ -71,6 +71,7 @@ router.get('/public/summary', async (req, res, next) => {
 // Create new complaint
 router.post('/complaints', async (req, res, next) => {
   try {
+    await ensureDbSynced();
     const body = req.body || {};
     const {
       namaPengadu,
@@ -99,7 +100,7 @@ router.post('/complaints', async (req, res, next) => {
     else if (catKey === 'PERKHIDMATAN') telegramGroupId = config.telegramChatIdPerkhidmatan || telegramGroupId;
     else if (catKey === 'KEBERSIHAN') telegramGroupId = config.telegramChatIdKebersihan || telegramGroupId;
 
-    const newComplaint = db.createComplaint({
+    const newComplaint = await db.createComplaint({
       namaPengadu: String(namaPengadu).trim(),
       telefon: telefon ? String(telefon).trim() : '-',
       emel: String(emel).trim(),
@@ -121,9 +122,9 @@ router.post('/complaints', async (req, res, next) => {
         noRujukan: newComplaint.noRujukan,
         fileName: lampiranNama || `${newComplaint.noRujukan}.jpg`,
         fileData: lampiran,
-      }).then((fileUrl) => {
+      }).then(async (fileUrl) => {
         if (fileUrl) {
-          db.updateComplaint(newComplaint.noRujukan, { lampiranDriveUrl: fileUrl }, 'Google Drive Uploader');
+          await db.updateComplaint(newComplaint.noRujukan, { lampiranDriveUrl: fileUrl }, 'Google Drive Uploader');
         }
       }).catch((e) => console.error('Attachment upload notice:', e.message));
     }
@@ -167,7 +168,7 @@ router.get('/complaints/:noRujukan', async (req, res, next) => {
 });
 
 // Submit satisfaction rating (1 to 5)
-router.post('/complaints/:noRujukan/rating', (req, res, next) => {
+router.post('/complaints/:noRujukan/rating', async (req, res, next) => {
   try {
     const { noRujukan } = req.params;
     const { rating, ulasan } = req.body || {};
@@ -176,7 +177,8 @@ router.post('/complaints/:noRujukan/rating', (req, res, next) => {
       return res.status(400).json({ error: 'Sila pilih rating antara skala 1 hingga 5.' });
     }
 
-    const result = db.addRating(noRujukan, Number(rating), ulasan);
+    await ensureDbSynced();
+    const result = await db.addRating(noRujukan, Number(rating), ulasan);
     if (!result.success) {
       return res.status(400).json({ error: result.message });
     }
@@ -193,7 +195,7 @@ router.post('/complaints/:noRujukan/rating', (req, res, next) => {
 });
 
 // Submit public visitor rating from Landing Page
-router.post('/public/rating', (req, res, next) => {
+router.post('/public/rating', async (req, res, next) => {
   try {
     const { rating, ulasan, noRujukan, nama } = req.body || {};
 
@@ -201,16 +203,17 @@ router.post('/public/rating', (req, res, next) => {
       return res.status(400).json({ error: 'Sila pilih rating antara skala 1 hingga 5.' });
     }
 
+    await ensureDbSynced();
     let result;
     if (noRujukan && noRujukan.trim()) {
-      const compResult = db.addRating(noRujukan.trim(), Number(rating), ulasan);
+      const compResult = await db.addRating(noRujukan.trim(), Number(rating), ulasan);
       if (compResult.success) {
         result = compResult;
       } else {
-        result = db.addPublicRating(Number(rating), ulasan, nama);
+        result = await db.addPublicRating(Number(rating), ulasan, nama);
       }
     } else {
-      result = db.addPublicRating(Number(rating), ulasan, nama);
+      result = await db.addPublicRating(Number(rating), ulasan, nama);
     }
 
     const all = db.getComplaints();
@@ -378,11 +381,12 @@ router.get('/admin/complaints', async (req, res, next) => {
 });
 
 // Admin update complaint details / release officer / update status
-router.patch('/admin/complaints/:noRujukan', (req, res, next) => {
+router.patch('/admin/complaints/:noRujukan', async (req, res, next) => {
   try {
     const { noRujukan } = req.params;
     const { status, namaPegawai, telegramUserId, adminNote, resetOfficer } = req.body || {};
 
+    await ensureDbSynced();
     const comp = db.getComplaintByRef(noRujukan);
     if (!comp) {
       return res.status(404).json({ error: 'Aduan tidak dijumpai.' });
@@ -394,7 +398,7 @@ router.patch('/admin/complaints/:noRujukan', (req, res, next) => {
       updates.telegramUserId = undefined;
       updates.status = 'MENUNGGU';
       updates.tarikhDiambilTindakan = undefined;
-      db.addLog({
+      await db.addLog({
         jenisAktiviti: 'STATUS_DIKEMASKINI',
         noRujukan,
         keterangan: 'Admin melepaskan tugasan pegawai. Status dikembalikan kepada Menunggu Tindakan.',
@@ -406,7 +410,7 @@ router.patch('/admin/complaints/:noRujukan', (req, res, next) => {
       if (telegramUserId !== undefined) updates.telegramUserId = telegramUserId;
       if (adminNote) {
         updates.tindakanTerkini = `[Admin Note]: ${adminNote}`;
-        db.addTindakan({
+        await db.addTindakan({
           noRujukan,
           namaPegawai: 'Admin SiAP',
           status: updates.status || comp.status,
@@ -415,7 +419,7 @@ router.patch('/admin/complaints/:noRujukan', (req, res, next) => {
       }
     }
 
-    const updated = db.updateComplaint(noRujukan, updates, 'Admin SiAP');
+    const updated = await db.updateComplaint(noRujukan, updates, 'Admin SiAP');
 
     if (status && status !== comp.status && updated) {
       sendEmailNotification(updated, status as ComplaintStatus, adminNote).catch(() => {});
@@ -432,10 +436,11 @@ router.patch('/admin/complaints/:noRujukan', (req, res, next) => {
 });
 
 // Admin delete complaint
-router.delete('/admin/complaints/:noRujukan', (req, res, next) => {
+router.delete('/admin/complaints/:noRujukan', async (req, res, next) => {
   try {
     const { noRujukan } = req.params;
-    const result = db.deleteComplaint(noRujukan);
+    await ensureDbSynced();
+    const result = await db.deleteComplaint(noRujukan);
     if (!result.success) {
       return res.status(404).json({ error: result.message });
     }

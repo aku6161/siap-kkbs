@@ -258,8 +258,8 @@ class Database {
     }
   }
 
-  /** Background write a single record to Supabase (non-blocking) */
-  private sbUpsert(table: string, record: Record<string, any>): void {
+  /** Write a single record to Supabase with await */
+  private async sbUpsert(table: string, record: Record<string, any>): Promise<void> {
     if (!supabaseClient) return;
     try {
       let cleanRecord = record;
@@ -267,18 +267,16 @@ class Database {
         const { lampiran, ...rest } = record;
         cleanRecord = rest;
       }
-      // Wrap in Promise.resolve so .catch() works reliably on Supabase v2 builder
-      Promise.resolve(supabaseClient.from(table).upsert(cleanRecord)).then(({ error }: { error: any }) => {
-        if (error) {
-          // If table not found, try fallback without siap_ prefix
-          if (error.message && error.message.includes('does not exist')) {
-            const fallbackTable = table.replace('siap_', '');
-            Promise.resolve(supabaseClient!.from(fallbackTable).upsert(cleanRecord)).catch(() => {});
-          } else {
-            console.warn(`Supabase upsert notice (${table}):`, error.message);
-          }
+      const { error } = await supabaseClient.from(table).upsert(cleanRecord);
+      if (error) {
+        // If table not found, try fallback without siap_ prefix
+        if (error.message && error.message.includes('does not exist')) {
+          const fallbackTable = table.replace('siap_', '');
+          await supabaseClient.from(fallbackTable).upsert(cleanRecord);
+        } else {
+          console.warn(`Supabase upsert notice (${table}):`, error.message);
         }
-      }).catch(() => {});
+      }
     } catch (err: any) {
       console.error('sbUpsert error:', err.message);
     }
@@ -306,7 +304,7 @@ class Database {
     return this.store.complaints.find((c) => c.noRujukan.toUpperCase() === trimmed);
   }
 
-  public createComplaint(data: {
+  public async createComplaint(data: {
     namaPengadu: string;
     telefon: string;
     emel: string;
@@ -321,7 +319,7 @@ class Database {
     lampiranDriveUrl?: string;
     telegramGroup: string;
     telegramGroupId: string;
-  }): Complaint {
+  }): Promise<Complaint> {
     this.store.lastSequenceNumber += 1;
     const year = new Date().getFullYear();
     const seqStr = String(this.store.lastSequenceNumber).padStart(5, '0');
@@ -397,7 +395,7 @@ class Database {
     this.store.complaints.unshift(newComplaint);
 
     // Add log
-    this.addLog({
+    await this.addLog({
       jenisAktiviti: 'ADUAN_DITERIMA',
       noRujukan,
       keterangan: `Aduan baharu didaftarkan: "${data.tajukAduan}" oleh ${data.namaPengadu}.`,
@@ -405,16 +403,16 @@ class Database {
     });
 
     this.saveToFile();
-    // Background write to Supabase
-    this.sbUpsert(SUPABASE_TABLES.COMPLAINTS, { ...newComplaint });
+    // Await Supabase write so Serverless doesn't terminate prematurely
+    await this.sbUpsert(SUPABASE_TABLES.COMPLAINTS, { ...newComplaint });
     return newComplaint;
   }
 
-  public updateComplaint(
+  public async updateComplaint(
     noRujukan: string,
     updates: Partial<Complaint>,
     performedBy: string = 'Sistem'
-  ): Complaint | null {
+  ): Promise<Complaint | null> {
     const comp = this.getComplaintByRef(noRujukan);
     if (!comp) return null;
 
@@ -422,7 +420,7 @@ class Database {
     Object.assign(comp, updates);
 
     if (updates.status && updates.status !== prevStatus) {
-      this.addLog({
+      await this.addLog({
         jenisAktiviti: updates.status === 'SELESAI' ? 'ADUAN_SELESAI' : 'STATUS_DIKEMASKINI',
         noRujukan,
         keterangan: `Status aduan ditukar dari "${prevStatus}" kepada "${updates.status}".`,
@@ -431,18 +429,17 @@ class Database {
     }
 
     this.saveToFile();
-    // Background write to Supabase
-    this.sbUpsert(SUPABASE_TABLES.COMPLAINTS, { ...comp });
+    await this.sbUpsert(SUPABASE_TABLES.COMPLAINTS, { ...comp });
     return comp;
   }
 
-  public assignOfficer(
+  public async assignOfficer(
     noRujukan: string,
     officerInfo: {
       telegramUserId: string;
       namaPegawai: string;
     }
-  ): { success: boolean; message: string; complaint?: Complaint } {
+  ): Promise<{ success: boolean; message: string; complaint?: Complaint }> {
     const comp = this.getComplaintByRef(noRujukan);
     if (!comp) return { success: false, message: 'Aduan tidak dijumpai.' };
 
@@ -462,7 +459,7 @@ class Database {
     comp.tindakanTerkini = `Aduan diambil tindakan oleh ${officerInfo.namaPegawai}.`;
 
     // Record in tindakan table
-    this.addTindakan({
+    await this.addTindakan({
       noRujukan,
       telegramUserId: officerInfo.telegramUserId,
       namaPegawai: officerInfo.namaPegawai,
@@ -470,7 +467,7 @@ class Database {
       catatanTindakan: `Aduan diambil oleh ${officerInfo.namaPegawai} untuk siasatan dan tindakan lanjut.`,
     });
 
-    this.addLog({
+    await this.addLog({
       jenisAktiviti: 'ADUAN_DIAMBIL',
       noRujukan,
       keterangan: `Aduan diambil oleh pegawai ${officerInfo.namaPegawai} (${officerInfo.telegramUserId}).`,
@@ -478,10 +475,11 @@ class Database {
     });
 
     this.saveToFile();
+    await this.sbUpsert(SUPABASE_TABLES.COMPLAINTS, { ...comp });
     return { success: true, message: 'Tindakan berjaya diambil.', complaint: comp };
   }
 
-  public addTindakan(item: Omit<TindakanItem, 'id' | 'tarikhMasa'>): TindakanItem {
+  public async addTindakan(item: Omit<TindakanItem, 'id' | 'tarikhMasa'>): Promise<TindakanItem> {
     const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
     const tindakan: TindakanItem = {
       id: `t_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
@@ -505,17 +503,16 @@ class Database {
       }
     }
 
-    this.addLog({
+    await this.addLog({
       jenisAktiviti: 'TINDAKAN_DITAMBAH',
-      noRujukan: item.noRujukan,
+      noRujukan,
       keterangan: `Catatan tindakan ditambah oleh ${item.namaPegawai}: "${item.catatanTindakan.substring(0, 60)}..."`,
       dilakukanOleh: item.namaPegawai,
     });
 
     this.saveToFile();
-    // Background write to Supabase
-    this.sbUpsert(SUPABASE_TABLES.TINDAKAN, { ...tindakan });
-    if (comp) this.sbUpsert(SUPABASE_TABLES.COMPLAINTS, { ...comp });
+    await this.sbUpsert(SUPABASE_TABLES.TINDAKAN, { ...tindakan });
+    if (comp) await this.sbUpsert(SUPABASE_TABLES.COMPLAINTS, { ...comp });
     return tindakan;
   }
 
@@ -528,7 +525,7 @@ class Database {
     return [...this.store.tindakan];
   }
 
-  public deleteComplaint(noRujukan: string): { success: boolean; message: string } {
+  public async deleteComplaint(noRujukan: string): Promise<{ success: boolean; message: string }> {
     const trimmed = noRujukan.trim().toUpperCase();
     const index = this.store.complaints.findIndex((c) => c.noRujukan.toUpperCase() === trimmed);
     if (index === -1) {
@@ -538,7 +535,7 @@ class Database {
     const removed = this.store.complaints.splice(index, 1)[0];
     this.store.tindakan = this.store.tindakan.filter((t) => t.noRujukan.toUpperCase() !== trimmed);
 
-    this.addLog({
+    await this.addLog({
       jenisAktiviti: 'STATUS_DIKEMASKINI',
       noRujukan: trimmed,
       keterangan: `Aduan ${trimmed} (${removed.tajukAduan}) telah dipadam oleh Pentadbir.`,
@@ -548,18 +545,20 @@ class Database {
     this.saveToFile();
 
     if (supabaseClient) {
-      supabaseClient.from(SUPABASE_TABLES.COMPLAINTS).delete().eq('noRujukan', trimmed).then(({ error }) => {
-        if (error) console.error('Supabase complaint delete error:', error.message);
-      });
-      supabaseClient.from(SUPABASE_TABLES.TINDAKAN).delete().eq('noRujukan', trimmed).then(({ error }) => {
-        if (error) console.error('Supabase tindakan delete error:', error.message);
-      });
+      try {
+        await Promise.allSettled([
+          supabaseClient.from(SUPABASE_TABLES.COMPLAINTS).delete().eq('noRujukan', trimmed),
+          supabaseClient.from(SUPABASE_TABLES.TINDAKAN).delete().eq('noRujukan', trimmed),
+        ]);
+      } catch (err: any) {
+        console.error('Supabase delete error:', err.message);
+      }
     }
 
     return { success: true, message: `Aduan ${trimmed} berjaya dipadam.` };
   }
 
-  public addRating(noRujukan: string, rating: number, ulasan?: string): { success: boolean; message: string; complaint?: Complaint } {
+  public async addRating(noRujukan: string, rating: number, ulasan?: string): Promise<{ success: boolean; message: string; complaint?: Complaint }> {
     const comp = this.getComplaintByRef(noRujukan);
     if (!comp) return { success: false, message: 'Aduan tidak dijumpai.' };
 
@@ -576,7 +575,7 @@ class Database {
     comp.ulasanPelanggan = ulasan || '';
     comp.ratingTarikh = now;
 
-    this.addLog({
+    await this.addLog({
       jenisAktiviti: 'RATING_DITERIMA',
       noRujukan,
       keterangan: `Pelanggan memberikan rating ${comp.rating}/5. Ulasan: "${ulasan || 'Tiada ulasan'}".`,
@@ -584,12 +583,11 @@ class Database {
     });
 
     this.saveToFile();
-    // Background write to Supabase
-    this.sbUpsert(SUPABASE_TABLES.COMPLAINTS, { ...comp });
+    await this.sbUpsert(SUPABASE_TABLES.COMPLAINTS, { ...comp });
     return { success: true, message: 'Penilaian kepuasan berjaya direkodkan. Terima kasih!', complaint: comp };
   }
 
-  public addPublicRating(rating: number, ulasan?: string, nama?: string): { success: boolean; message: string } {
+  public async addPublicRating(rating: number, ulasan?: string, nama?: string): Promise<{ success: boolean; message: string }> {
     const validRating = Math.max(1, Math.min(5, Math.round(rating)));
     const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
     const ref = `RATING-${Date.now().toString().slice(-6)}`;
@@ -617,7 +615,7 @@ class Database {
     };
 
     this.store.complaints.unshift(comp);
-    this.addLog({
+    await this.addLog({
       jenisAktiviti: 'RATING_DITERIMA',
       noRujukan: ref,
       keterangan: `Maklum balas umum diterima: ${validRating}/5. Ulasan: "${ulasan || 'Tiada ulasan'}".`,
@@ -625,11 +623,11 @@ class Database {
     });
 
     this.saveToFile();
-    this.sbUpsert(SUPABASE_TABLES.COMPLAINTS, { ...comp });
+    await this.sbUpsert(SUPABASE_TABLES.COMPLAINTS, { ...comp });
     return { success: true, message: 'Penilaian anda berjaya dihantar. Terima kasih atas maklum balas anda!' };
   }
 
-  public addLog(item: Omit<LogItem, 'id' | 'tarikhMasa'>): LogItem {
+  public async addLog(item: Omit<LogItem, 'id' | 'tarikhMasa'>): Promise<LogItem> {
     const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
     const log: LogItem = {
       id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
@@ -638,8 +636,7 @@ class Database {
     };
     this.store.logs.unshift(log);
     this.saveToFile();
-    // Background write to Supabase
-    this.sbUpsert(SUPABASE_TABLES.LOGS, { ...log });
+    await this.sbUpsert(SUPABASE_TABLES.LOGS, { ...log });
     return log;
   }
 
@@ -647,7 +644,7 @@ class Database {
     return this.store.logs.slice(0, limit);
   }
 
-  public addEmailLog(email: Omit<EmailLog, 'id' | 'tarikhMasa'>): EmailLog {
+  public async addEmailLog(email: Omit<EmailLog, 'id' | 'tarikhMasa'>): Promise<EmailLog> {
     const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
     const item: EmailLog = {
       id: `em_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
@@ -656,8 +653,7 @@ class Database {
     };
     this.store.emails.unshift(item);
     this.saveToFile();
-    // Background write to Supabase
-    this.sbUpsert(SUPABASE_TABLES.EMAILS, { ...item });
+    await this.sbUpsert(SUPABASE_TABLES.EMAILS, { ...item });
     return item;
   }
 
@@ -681,13 +677,14 @@ class Database {
     };
   }
 
-  public updateConfig(newConfig: Partial<DBStore['config']>) {
+  public async updateConfig(newConfig: Partial<DBStore['config']>) {
     Object.assign(this.store.config, newConfig);
     this.saveToFile();
-    // Background write to Supabase
-    this.sbUpsert(SUPABASE_TABLES.CONFIG, { id: 'system_config', ...this.store.config, lastSequenceNumber: this.store.lastSequenceNumber });
+    await this.sbUpsert(SUPABASE_TABLES.CONFIG, { id: 'system_config', ...this.store.config, lastSequenceNumber: this.store.lastSequenceNumber });
     return { ...this.store.config };
   }
+
+
 
   public getStats(): SystemStats {
     const list = this.store.complaints;

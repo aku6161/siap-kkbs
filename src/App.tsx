@@ -13,6 +13,20 @@ export function App() {
   const [selectedCategory, setSelectedCategory] = useState<ComplaintCategory>('KEMUDAHAN');
   const [searchRef, setSearchRef] = useState<string>('');
   
+  // Auto-detect ?ref= parameter from URL (e.g. when officer/user clicks Telegram button)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const refParam = params.get('ref');
+      if (refParam) {
+        setSearchRef(refParam.trim().toUpperCase());
+        setActiveTab('semak');
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
   // Admin auth state
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
     try {
