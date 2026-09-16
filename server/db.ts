@@ -101,19 +101,19 @@ class Database {
   private getDefaultConfig() {
     return {
       googleSheetId: process.env.GOOGLE_SHEET_ID || '1PEsqqZJL6az5Np-BTojlOCgPX9gD6Iip4zemQQ11W9U',
-      googleAppsScriptUrl: process.env.GOOGLE_APPS_SCRIPT_URL || '',
+      googleAppsScriptUrl: process.env.GOOGLE_APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbwqLeg4K5ffhrxvcC8TuxY5mlM8ZHtsdbCfXWtZ3MOiB0C01Yd8nOlw90po-vhDljx2jw/exec',
       googleDriveFolderId: process.env.GOOGLE_DRIVE_FOLDER_ID || '1bQ1l9Q_Kz0JcUQsGVRxPkWQrj66yq8Qr',
       googleDriveFolderUrl: process.env.GOOGLE_DRIVE_FOLDER_URL || 'https://drive.google.com/drive/folders/1bQ1l9Q_Kz0JcUQsGVRxPkWQrj66yq8Qr?usp=sharing',
-      telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || '',
-      telegramChatIdKemudahan: process.env.TELEGRAM_CHAT_ID_KEMUDAHAN || '-3546212661',
-      telegramChatIdSistem: process.env.TELEGRAM_CHAT_ID_SISTEM || '-3763181014',
-      telegramChatIdPerkhidmatan: process.env.TELEGRAM_CHAT_ID_PERKHIDMATAN || '-4423616468',
-      telegramChatIdKebersihan: process.env.TELEGRAM_CHAT_ID_KEBERSIHAN || '-3921165191',
+      telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || '8238304961:AAG44pdgon1zFkqacccsk7da8iEPv83HPkQ',
+      telegramChatIdKemudahan: process.env.TELEGRAM_CHAT_ID_KEMUDAHAN || '-1003546212661',
+      telegramChatIdSistem: process.env.TELEGRAM_CHAT_ID_SISTEM || '-1003763181014',
+      telegramChatIdPerkhidmatan: process.env.TELEGRAM_CHAT_ID_PERKHIDMATAN || '-1004423616468',
+      telegramChatIdKebersihan: process.env.TELEGRAM_CHAT_ID_KEBERSIHAN || '-1003921165191',
       emailSenderName: process.env.EMAIL_SENDER_NAME || 'SiAP – Sistem Aduan Pelanggan',
       smtpHost: process.env.SMTP_HOST || '',
       smtpPort: process.env.SMTP_PORT || '587',
-      smtpUser: process.env.SMTP_USER || '',
-      smtpPass: process.env.SMTP_PASS || '',
+      smtpUser: process.env.SMTP_USER || 'aku6161@gmail.com',
+      smtpPass: process.env.SMTP_PASS || 'wjir zsas zjfw iwpi',
     };
   }
 
@@ -553,7 +553,19 @@ class Database {
   }
 
   public getConfig() {
-    return { ...this.store.config };
+    const defaults = this.getDefaultConfig();
+    return {
+      ...defaults,
+      ...this.store.config,
+      telegramBotToken: this.store.config?.telegramBotToken || defaults.telegramBotToken,
+      telegramChatIdKemudahan: this.store.config?.telegramChatIdKemudahan || defaults.telegramChatIdKemudahan,
+      telegramChatIdSistem: this.store.config?.telegramChatIdSistem || defaults.telegramChatIdSistem,
+      telegramChatIdPerkhidmatan: this.store.config?.telegramChatIdPerkhidmatan || defaults.telegramChatIdPerkhidmatan,
+      telegramChatIdKebersihan: this.store.config?.telegramChatIdKebersihan || defaults.telegramChatIdKebersihan,
+      googleAppsScriptUrl: this.store.config?.googleAppsScriptUrl || defaults.googleAppsScriptUrl,
+      smtpUser: this.store.config?.smtpUser || defaults.smtpUser,
+      smtpPass: this.store.config?.smtpPass || defaults.smtpPass,
+    };
   }
 
   public updateConfig(newConfig: Partial<DBStore['config']>) {
