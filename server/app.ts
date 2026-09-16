@@ -317,9 +317,9 @@ app.post('/api/telegram/simulate-action', async (req, res) => {
 // Admin login check
 app.post('/api/admin/login', (req, res) => {
   const { password } = req.body;
-  const adminPassword = process.env.ADMIN_PASSWORD || 'admin';
+  const adminPassword = process.env.ADMIN_PASSWORD || 'siap89807';
 
-  if (password === adminPassword || password === 'admin123' || password === 'admin') {
+  if (password === adminPassword || password === 'siap89807' || password === 'admin123' || password === 'admin') {
     return res.json({ success: true, token: 'siap_admin_valid_token_2026' });
   }
   return res.status(401).json({ error: 'Kata laluan pentadbir tidak tepat.' });
