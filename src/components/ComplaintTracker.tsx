@@ -170,78 +170,98 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
       
-      {/* Search Header Card - Frosted Glass */}
-      <div className="glass-card rounded-3xl border border-white/80 shadow-2xl p-6 sm:p-10">
-        <div className="text-center max-w-xl mx-auto mb-6">
-          <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider bg-white/80 px-3.5 py-1.5 rounded-full border border-white/90 shadow-xs backdrop-blur-md">
-            Semakan Terus 24/7
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-3">
-            Semak Status Aduan
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-600 mt-1">
-            Masukkan Nombor Rujukan unik yang anda terima semasa menghantar aduan.
-          </p>
-        </div>
-
-        <form onSubmit={handleSearchSubmit} className="max-w-xl mx-auto mb-4">
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                id="tracker-input-ref"
-                type="text"
-                required
-                value={refInput}
-                onChange={(e) => setRefInput(e.target.value)}
-                placeholder="cth: SIAP-2026-00001"
-                className="w-full pl-11 pr-4 py-3.5 text-sm text-slate-900 glass-input rounded-xl focus:outline-none transition-all font-mono font-bold uppercase shadow-inner"
-              />
-            </div>
-            <button
-              id="tracker-btn-submit"
-              type="submit"
-              disabled={isLoading}
-              className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:scale-98 text-white text-sm font-bold shadow-xl shadow-emerald-500/25 transition-all shrink-0 cursor-pointer disabled:opacity-50 border border-white/20"
-            >
-              {isLoading ? 'Menyemak...' : 'SEMAK STATUS'}
-            </button>
+      {/* Search Header Card - Frosted Glass (HANYA DIPAPARKAN JIKA TIADA ADUAN DIBUKA) */}
+      {!complaint && (
+        <div className="glass-card rounded-3xl border border-white/80 shadow-2xl p-6 sm:p-10">
+          <div className="text-center max-w-xl mx-auto mb-6">
+            <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider bg-white/80 px-3.5 py-1.5 rounded-full border border-white/90 shadow-xs backdrop-blur-md">
+              Semakan Terus 24/7
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-3">
+              Semak Status Aduan
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-600 mt-1">
+              Masukkan Nombor Rujukan unik yang anda terima semasa menghantar aduan.
+            </p>
           </div>
-        </form>
 
-        {/* Sample chips */}
-        <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-slate-500">
-          <span className="font-semibold text-slate-600">Contoh Nombor Rujukan:</span>
-          {['SIAP-2026-00001', 'SIAP-2026-00002', 'SIAP-2026-00003', 'SIAP-2026-00004', 'SIAP-2026-00005'].map((sRef) => (
-            <button
-              key={sRef}
-              type="button"
-              onClick={() => {
-                setRefInput(sRef);
-                fetchComplaint(sRef);
-              }}
-              className="px-2.5 py-1 rounded-lg bg-white/70 hover:bg-white hover:text-emerald-700 text-slate-700 font-mono text-[11px] font-bold border border-white/80 transition-all shadow-xs"
-            >
-              {sRef}
-            </button>
-          ))}
-        </div>
-
-        {errorMsg && (
-          <div className="mt-6 p-4 rounded-2xl bg-red-50/80 backdrop-blur-md border border-red-200 text-red-700 text-xs sm:text-sm flex items-start gap-2.5 max-w-xl mx-auto shadow-xs">
-            <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold">Aduan Tidak Dijumpai</p>
-              <p>{errorMsg}</p>
+          <form onSubmit={handleSearchSubmit} className="max-w-xl mx-auto mb-4">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  id="tracker-input-ref"
+                  type="text"
+                  required
+                  value={refInput}
+                  onChange={(e) => setRefInput(e.target.value)}
+                  placeholder="cth: SIAP-2026-00001"
+                  className="w-full pl-11 pr-4 py-3.5 text-sm text-slate-900 glass-input rounded-xl focus:outline-none transition-all font-mono font-bold uppercase shadow-inner"
+                />
+              </div>
+              <button
+                id="tracker-btn-submit"
+                type="submit"
+                disabled={isLoading}
+                className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:scale-98 text-white text-sm font-bold shadow-xl shadow-emerald-500/25 transition-all shrink-0 cursor-pointer disabled:opacity-50 border border-white/20"
+              >
+                {isLoading ? 'Menyemak...' : 'SEMAK STATUS'}
+              </button>
             </div>
+          </form>
+
+          {/* Sample chips */}
+          <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-slate-500">
+            <span className="font-semibold text-slate-600">Contoh Nombor Rujukan:</span>
+            {['SIAP-2026-00001', 'SIAP-2026-00002', 'SIAP-2026-00003', 'SIAP-2026-00004', 'SIAP-2026-00005'].map((sRef) => (
+              <button
+                key={sRef}
+                type="button"
+                onClick={() => {
+                  setRefInput(sRef);
+                  fetchComplaint(sRef);
+                }}
+                className="px-2.5 py-1 rounded-lg bg-white/70 hover:bg-white hover:text-emerald-700 text-slate-700 font-mono text-[11px] font-bold border border-white/80 transition-all shadow-xs"
+              >
+                {sRef}
+              </button>
+            ))}
           </div>
-        )}
-      </div>
+
+          {errorMsg && (
+            <div className="mt-6 p-4 rounded-2xl bg-red-50/80 backdrop-blur-md border border-red-200 text-red-700 text-xs sm:text-sm flex items-start gap-2.5 max-w-xl mx-auto shadow-xs">
+              <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold">Aduan Tidak Dijumpai</p>
+                <p>{errorMsg}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* COMPLAINT DETAILS DISPLAY */}
       {complaint && (
         <div className="space-y-6">
           
+          {/* Navigation Bar / Reset Search */}
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => {
+                setComplaint(null);
+                setRefInput('');
+                setSearchedRef('');
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/80 hover:bg-white text-slate-700 text-xs font-bold border border-white/90 shadow-xs transition-all cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+              <span>Semak Nombor Rujukan Lain</span>
+            </button>
+            <span className="text-xs font-mono font-bold text-slate-500">
+              {complaint.noRujukan}
+            </span>
+          </div>
+
           {/* Main Status Header Card - Frosted Glass */}
           <div className="glass-card rounded-3xl border border-white/80 shadow-2xl p-6 sm:p-8">
             
@@ -336,8 +356,8 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
                 <span className="font-medium text-slate-800">{complaint.tarikhMasa}</span>
               </div>
               <div>
-                <span className="text-slate-500 font-semibold block mb-1">Saluran Telegram:</span>
-                <span className="font-bold text-blue-600">{complaint.telegramGroup}</span>
+                <span className="text-slate-500 font-semibold block mb-1">Pengadu:</span>
+                <span className="font-bold text-slate-800">{complaint.namaPengadu}</span>
               </div>
               <div>
                 <span className="text-slate-500 font-semibold block mb-1">Pegawai Bertugas:</span>
@@ -347,29 +367,41 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
               </div>
             </div>
 
+            {/* Butiran Aduan Pengadu */}
+            <div className="mt-5 p-5 bg-white/60 backdrop-blur-md rounded-2xl border border-white/80 shadow-xs">
+              <span className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2 mb-2">
+                <FileText className="w-4 h-4 text-blue-600" />
+                Butiran Aduan Pengadu:
+              </span>
+              <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap font-medium">
+                {complaint.butiranAduan}
+              </p>
+            </div>
+
             {/* Lampiran Info */}
-            {(complaint.lampiran || complaint.lampiranNama) && (
+            {(complaint.lampiran || complaint.lampiranNama || complaint.lampiranDriveUrl) && (
               <div className="mt-4 p-3 bg-white/70 backdrop-blur-xs rounded-xl border border-white/80 flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2 text-slate-700">
                   <FileText className="w-4 h-4 text-blue-600" />
                   <span className="font-semibold">{complaint.lampiranNama || 'Fail Lampiran Disertakan'}</span>
                 </div>
-                <span className="text-[11px] text-emerald-600 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                  Tersimpan di Arkib SiAP
-                </span>
+                {complaint.lampiranDriveUrl ? (
+                  <a
+                    href={complaint.lampiranDriveUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] text-blue-600 hover:text-blue-800 font-bold bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200 transition-all flex items-center gap-1"
+                  >
+                    <span>Buka Lampiran</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </a>
+                ) : (
+                  <span className="text-[11px] text-emerald-600 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    Tersimpan di Arkib SiAP
+                  </span>
+                )}
               </div>
             )}
-
-            {/* Tindakan Terkini Box */}
-            <div className="mt-6 p-4 rounded-2xl bg-blue-50/80 backdrop-blur-sm border border-blue-200/80 shadow-xs">
-              <div className="flex items-center gap-2 text-xs font-bold text-blue-900 mb-1">
-                <Clock className="w-4 h-4 text-blue-600" />
-                <span>Tindakan Terkini Pegawai:</span>
-              </div>
-              <p className="text-xs sm:text-sm text-slate-800 font-medium">
-                {complaint.tindakanTerkini || 'Sedang menunggu tindakan pegawai bertugas di saluran Telegram.'}
-              </p>
-            </div>
 
           </div>
 

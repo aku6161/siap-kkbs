@@ -7,8 +7,11 @@ export function generateEmailHtml(complaint: Complaint, type: 'DITERIMA' | Compl
   bodyHtml: string;
   bodyText: string;
 } {
-  const appUrl = process.env.APP_URL || 'http://localhost:3000';
-  const checkUrl = `${appUrl}/?ref=${complaint.noRujukan}`;
+  let appUrl = process.env.APP_URL || '';
+  if (!appUrl || appUrl.includes('localhost') || appUrl.includes('127.0.0.1') || appUrl.includes('MY_APP_URL')) {
+    appUrl = 'https://siapkkbs.vercel.app';
+  }
+  const checkUrl = `${appUrl}/?ref=${encodeURIComponent(complaint.noRujukan)}`;
   const senderName = db.getConfig().emailSenderName || 'SiAP – Sistem Aduan Pelanggan';
 
   let subject = '';
