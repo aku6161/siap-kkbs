@@ -122,22 +122,13 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 id="header-admin-login-link"
                 onClick={() => setActiveTab('admin')}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 rounded-xl hover:bg-white/50 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 rounded-xl hover:bg-white/60 border border-white/60 bg-white/30 backdrop-blur-sm transition-all shadow-xs"
                 title="Akses Pentadbir"
               >
-                <Lock className="w-3.5 h-3.5" />
+                <Lock className="w-3.5 h-3.5 text-slate-500" />
                 <span>Admin</span>
               </button>
             )}
-
-            <button
-              id="btn-header-buat-aduan"
-              onClick={() => setActiveTab('aduan')}
-              className="px-4.5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 active:scale-98 text-white font-bold text-sm shadow-md shadow-blue-500/25 transition-all flex items-center gap-2 border border-white/20"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>Buat Aduan</span>
-            </button>
           </div>
         </div>
 
