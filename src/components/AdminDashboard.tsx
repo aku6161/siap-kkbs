@@ -338,7 +338,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 required
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
-                placeholder="Kata Laluan Pentadbir (cth: admin)"
+                placeholder="Masukkan Kata Laluan Pentadbir"
                 className="w-full px-4 py-3 text-sm text-slate-900 glass-input rounded-xl focus:outline-none transition-all"
               />
             </div>
@@ -352,10 +352,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               {isLoggingIn ? 'Mengesahkan...' : 'Log Masuk'}
             </button>
           </form>
-
-          <p className="text-[11px] text-slate-400 mt-6 font-medium">
-            Kata laluan lalai: <code className="bg-white/80 px-2 py-0.5 rounded-md border border-white font-mono text-slate-700 font-bold">admin</code>
-          </p>
         </div>
       </div>
     );
