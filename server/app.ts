@@ -266,7 +266,8 @@ router.post('/telegram/webhook', async (req, res, next) => {
       // Case 1: Open interactive status selection menu
       if (data.startsWith('claim:') || data.startsWith('menu:')) {
         const noRujukan = data.replace(/^(claim|menu):/, '').trim();
-        const complaint = db.getComplaintByRef(noRujukan);
+        let complaint = db.getComplaintByRef(noRujukan);
+        if (!complaint) complaint = await db.findComplaintByRef(noRujukan);
 
         if (token) {
           if (cq.id) {
@@ -286,20 +287,43 @@ router.post('/telegram/webhook', async (req, res, next) => {
             const menuText = getStatusMenuText(complaint);
             const menuMarkup = getStatusMenuMarkup(noRujukan);
 
-            try {
-              await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  chat_id: chatId,
-                  text: menuText,
-                  parse_mode: 'HTML',
-                  reply_markup: menuMarkup,
-                  reply_to_message_id: cq.message?.message_id,
-                }),
-              });
-            } catch (err: any) {
-              console.error('Failed to send status menu to Telegram:', err?.message);
+            // Try editing the current message in place first for smooth UX
+            let edited = false;
+            if (cq.message?.message_id) {
+              try {
+                const editRes = await fetch(`https://api.telegram.org/bot${token}/editMessageText`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    chat_id: chatId,
+                    message_id: cq.message.message_id,
+                    text: menuText,
+                    parse_mode: 'HTML',
+                    reply_markup: menuMarkup,
+                  }),
+                });
+                const editData = await editRes.json();
+                if (editData.ok) edited = true;
+              } catch (e) {}
+            }
+
+            // If not edited in place (e.g. from original card), send as reply
+            if (!edited) {
+              try {
+                await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    chat_id: chatId,
+                    text: menuText,
+                    parse_mode: 'HTML',
+                    reply_markup: menuMarkup,
+                    reply_to_message_id: cq.message?.message_id,
+                  }),
+                });
+              } catch (err: any) {
+                console.error('Failed to send status menu to Telegram:', err?.message);
+              }
             }
           }
         }
@@ -310,7 +334,9 @@ router.post('/telegram/webhook', async (req, res, next) => {
         const noRujukan = parts[1]?.trim();
         const newStatus = parts[2]?.trim() as ComplaintStatus;
 
-        const complaint = db.getComplaintByRef(noRujukan);
+        let complaint = db.getComplaintByRef(noRujukan);
+        if (!complaint) complaint = await db.findComplaintByRef(noRujukan);
+
         const designatedPic = (complaint && CATEGORY_OFFICER_MAP[complaint.kategori]) || 'Pegawai Bertugas';
 
         const result = await processTelegramOfficerAction({
@@ -335,9 +361,9 @@ router.post('/telegram/webhook', async (req, res, next) => {
             }).catch(() => {});
           }
 
-          // 2. Post confirmation message into the group chat with option to change status again
+          // 2. Update the menu message in place with confirmation & quick re-toggle button
           const chatId = cq.message?.chat?.id || complaint?.telegramGroupId;
-          if (chatId && result.replyMessage) {
+          if (chatId && result.replyMessage && cq.message?.message_id) {
             const checkUrl = `https://siapkkbs.vercel.app/?ref=${encodeURIComponent(noRujukan)}`;
             const actionKeyboard = {
               inline_keyboard: [
@@ -349,19 +375,20 @@ router.post('/telegram/webhook', async (req, res, next) => {
             };
 
             try {
-              const sendRes = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+              const editRes = await fetch(`https://api.telegram.org/bot${token}/editMessageText`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   chat_id: chatId,
+                  message_id: cq.message.message_id,
                   text: result.replyMessage,
                   parse_mode: 'HTML',
                   reply_markup: actionKeyboard,
-                  reply_to_message_id: cq.message?.message_id,
                 }),
               });
-              const sendData = await sendRes.json();
-              if (!sendData.ok) {
+              const editData = await editRes.json();
+              if (!editData.ok) {
+                // If in-place edit failed, fallback to sendMessage
                 await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -374,12 +401,12 @@ router.post('/telegram/webhook', async (req, res, next) => {
                 });
               }
             } catch (err: any) {
-              console.error('Telegram sendMessage webhook error:', err?.message);
+              console.error('Telegram editMessageText error:', err?.message);
             }
           }
 
           // 3. Update original message buttons to show updated status
-          if (chatId && cq.message?.message_id && result.success) {
+          if (chatId && result.success) {
             const checkUrl = `https://siapkkbs.vercel.app/?ref=${encodeURIComponent(noRujukan)}`;
             const statusLabels: Record<string, string> = {
               MENUNGGU: '🟡 MENUNGGU',
@@ -390,27 +417,32 @@ router.post('/telegram/webhook', async (req, res, next) => {
             };
             const shortLabel = statusLabels[newStatus] || newStatus;
 
-            await fetch(`https://api.telegram.org/bot${token}/editMessageReplyMarkup`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                chat_id: chatId,
-                message_id: cq.message.message_id,
-                reply_markup: {
-                  inline_keyboard: [
-                    [
-                      { text: '👁 LIHAT ADUAN', url: checkUrl },
-                      { text: `⚡ STATUS: ${shortLabel}`, callback_data: `menu:${noRujukan}` },
+            // Update reply_to message if it was the original card
+            const targetMsgId = cq.message?.reply_to_message?.message_id;
+            if (targetMsgId) {
+              await fetch(`https://api.telegram.org/bot${token}/editMessageReplyMarkup`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  chat_id: chatId,
+                  message_id: targetMsgId,
+                  reply_markup: {
+                    inline_keyboard: [
+                      [
+                        { text: '👁 LIHAT ADUAN', url: checkUrl },
+                        { text: `⚡ STATUS: ${shortLabel}`, callback_data: `menu:${noRujukan}` },
+                      ],
                     ],
-                  ],
-                },
-              }),
-            }).catch(() => {});
+                  },
+                }),
+              }).catch(() => {});
+            }
           }
         }
       } else if (data.startsWith('info:')) {
         const noRujukan = data.replace('info:', '').trim();
-        const complaint = db.getComplaintByRef(noRujukan);
+        let complaint = db.getComplaintByRef(noRujukan);
+        if (!complaint) complaint = await db.findComplaintByRef(noRujukan);
         const officer = complaint?.namaPegawai || (complaint && CATEGORY_OFFICER_MAP[complaint.kategori]) || 'Pegawai Bertugas';
         if (token && cq.id) {
           await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
