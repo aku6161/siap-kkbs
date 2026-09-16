@@ -38,7 +38,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { CATEGORIES, STATUS_CONFIG } from '../data/categories';
-import { Complaint, ComplaintCategory, ComplaintStatus, EmailLog, LogItem, SystemStats } from '../types';
+import { Complaint, ComplaintCategory, ComplaintStatus, EmailLog, LogItem, SystemStats, TindakanItem } from '../types';
 import { AdminComplaintDetailModal } from './AdminComplaintDetailModal';
 
 interface AdminDashboardProps {
@@ -178,51 +178,109 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
-  const handlePrintSingleReport = (c: Complaint) => {
+  const handlePrintSingleReport = async (c: Complaint) => {
+    let list: TindakanItem[] = [];
+    try {
+      const res = await fetch(`/api/admin/tindakan/${encodeURIComponent(c.noRujukan)}`);
+      if (res.ok) {
+        const data = await res.json();
+        list = data.tindakan || [];
+      }
+    } catch (e) {}
+
     const printWin = window.open('', '_blank');
     if (!printWin) {
       window.print();
       return;
     }
+
+    const tindakanRows = list.length > 0
+      ? list.map((t) => `
+          <tr>
+            <td style="padding: 10px 12px; border: 1px solid #e2e8f0; font-size: 12px; font-family: monospace; white-space: nowrap;">${t.tarikhMasa || '-'}</td>
+            <td style="padding: 10px 12px; border: 1px solid #e2e8f0; font-size: 13px; font-weight: 600; color: #1e293b;">${t.namaPegawai || 'Pegawai Bertugas'}</td>
+            <td style="padding: 10px 12px; border: 1px solid #e2e8f0; font-size: 12px;"><span style="display: inline-block; padding: 2px 8px; border-radius: 6px; font-weight: bold; background: #e0f2fe; color: #0369a1;">${t.status}</span></td>
+            <td style="padding: 10px 12px; border: 1px solid #e2e8f0; font-size: 13px; color: #334155; line-height: 1.4;">${t.catatanTindakan || '-'}</td>
+          </tr>
+        `).join('')
+      : `<tr><td colspan="4" style="padding: 16px; text-align: center; color: #94a3b8; font-style: italic; border: 1px solid #e2e8f0;">Tiada catatan tindakan tambahan direkodkan.</td></tr>`;
+
     printWin.document.write(`
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Laporan Aduan ${c.noRujukan}</title>
+        <title>Laporan Rasmi Aduan ${c.noRujukan}</title>
+        <meta charset="utf-8" />
         <style>
-          body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; color: #0f172a; margin: 0; }
-          .header { text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 16px; margin-bottom: 24px; }
-          .header h1 { margin: 0; font-size: 24px; color: #1e3a8a; }
-          .header p { margin: 4px 0 0 0; font-size: 13px; color: #64748b; }
-          .card { border: 1px solid #cbd5e1; border-radius: 12px; padding: 24px; background: #f8fafc; }
-          .row { display: flex; margin-bottom: 12px; font-size: 14px; line-height: 1.5; }
-          .label { font-weight: bold; width: 170px; color: #475569; shrink: 0; }
-          .val { flex: 1; color: #0f172a; }
-          .status { display: inline-block; padding: 4px 12px; border-radius: 9999px; font-weight: bold; font-size: 13px; background: #e2e8f0; }
-          .footer { margin-top: 36px; border-top: 1px solid #cbd5e1; padding-top: 12px; text-align: center; font-size: 11px; color: #94a3b8; }
+          @page { size: A4; margin: 15mm; }
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 20px; color: #0f172a; margin: 0; background: #fff; }
+          .header { text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 16px; margin-bottom: 20px; }
+          .header h1 { margin: 0; font-size: 22px; color: #1e3a8a; letter-spacing: -0.5px; }
+          .header p { margin: 4px 0 0 0; font-size: 13px; color: #64748b; font-weight: 500; }
+          .badge { display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+          .status-SELESAI { background: #dcfce7; color: #15803d; }
+          .status-TIDAK_DAPAT_DISELESAIKAN { background: #ffe4e6; color: #be123c; }
+          .status-DALAM_TINDAKAN { background: #ffedd5; color: #c2410c; }
+          .status-DALAM_SEMAKAN { background: #dbeafe; color: #1d4ed8; }
+          .status-MENUNGGU { background: #fef9c3; color: #a16207; }
+          .section-title { font-size: 13px; font-weight: bold; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.5px; margin: 18px 0 8px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; }
+          .grid { display: table; width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+          .row { display: table-row; }
+          .col-label { display: table-cell; width: 28%; padding: 7px 10px; font-size: 13px; font-weight: 600; color: #475569; background: #f8fafc; border: 1px solid #e2e8f0; }
+          .col-val { display: table-cell; width: 72%; padding: 7px 10px; font-size: 13px; color: #0f172a; border: 1px solid #e2e8f0; }
+          table.history-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+          table.history-table th { background: #f1f5f9; padding: 8px 12px; text-align: left; font-size: 12px; font-weight: bold; color: #475569; border: 1px solid #cbd5e1; }
+          .footer { margin-top: 36px; border-top: 1px solid #cbd5e1; padding-top: 10px; text-align: center; font-size: 11px; color: #94a3b8; }
         </style>
       </head>
       <body>
         <div class="header">
           <h1>SiAP – SISTEM ADUAN PELANGGAN</h1>
-          <p>Slip Rasmi Maklumat Laporan Aduan</p>
+          <p>LAPORAN PENUH & SEJARAH TINDAKAN ADUAN</p>
         </div>
-        <div class="card">
-          <div class="row"><div class="label">No. Rujukan:</div><div class="val" style="font-family: monospace; font-size: 16px; font-weight: bold; color: #2563eb;">${c.noRujukan}</div></div>
-          <div class="row"><div class="label">Kategori:</div><div class="val">${c.kategoriNama}</div></div>
-          <div class="row"><div class="label">Tajuk Aduan:</div><div class="val"><strong>${c.tajukAduan}</strong></div></div>
-          <div class="row"><div class="label">Lokasi:</div><div class="val">${c.lokasi}</div></div>
-          <div class="row"><div class="label">Status Semasa:</div><div class="val"><span class="status">${c.status}</span></div></div>
-          <div class="row"><div class="label">Tarikh & Masa:</div><div class="val">${c.tarikhMasa}</div></div>
-          <div class="row"><div class="label">Nama Pengadu:</div><div class="val">${c.namaPengadu} (${c.telefon})</div></div>
-          <div class="row"><div class="label">Emel:</div><div class="val">${c.emel}</div></div>
-          <div class="row"><div class="label">Pegawai Bertugas:</div><div class="val">${c.namaPegawai || 'Belum Ditugaskan'}</div></div>
-          <div class="row"><div class="label">Butiran Aduan:</div><div class="val">${c.butiranAduan}</div></div>
-          ${c.tindakanTerkini ? `<div class="row"><div class="label">Tindakan Terkini:</div><div class="val">${c.tindakanTerkini}</div></div>` : ''}
-          ${c.rating ? `<div class="row"><div class="label">Rating Kepuasan:</div><div class="val">${c.rating}/5 (${c.ulasanPelanggan || 'Tiada ulasan'})</div></div>` : ''}
+
+        <div class="section-title">1. MAKLUMAT UTAMA ADUAN</div>
+        <div class="grid">
+          <div class="row"><div class="col-label">No. Rujukan:</div><div class="col-val" style="font-family: monospace; font-size: 15px; font-weight: bold; color: #2563eb;">${c.noRujukan}</div></div>
+          <div class="row"><div class="col-label">Status Semasa:</div><div class="col-val"><span class="badge status-${c.status}">${c.status}</span></div></div>
+          <div class="row"><div class="col-label">Kategori Aduan:</div><div class="col-val">${c.kategoriNama}</div></div>
+          <div class="row"><div class="col-label">Tajuk Aduan:</div><div class="col-val"><strong>${c.tajukAduan}</strong></div></div>
+          <div class="row"><div class="col-label">Lokasi Kejadian:</div><div class="col-val">${c.lokasi}</div></div>
+          <div class="row"><div class="col-label">Tarikh & Masa Aduan:</div><div class="col-val">${c.tarikhMasa}</div></div>
+          <div class="row"><div class="col-label">Nama Pengadu:</div><div class="col-val">${c.namaPengadu} (${c.telefon})</div></div>
+          <div class="row"><div class="col-label">Emel Pengadu:</div><div class="col-val">${c.emel}</div></div>
+          <div class="row"><div class="col-label">Pegawai Bertugas (PIC):</div><div class="col-val">${c.namaPegawai || 'Belum Ditugaskan'}</div></div>
         </div>
+
+        <div class="section-title">2. BUTIRAN ADUAN PENGADU</div>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; color: #1e293b; margin-bottom: 14px;">${c.butiranAduan}</div>
+
+        <div class="section-title">3. SEJARAH TINDAKAN & CATATAN PEGAWAI</div>
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th style="width: 22%;">Tarikh & Masa</th>
+              <th style="width: 25%;">Pegawai Bertugas</th>
+              <th style="width: 18%;">Status</th>
+              <th style="width: 35%;">Catatan Tindakan</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tindakanRows}
+          </tbody>
+        </table>
+
+        ${c.rating ? `
+          <div class="section-title" style="margin-top: 20px;">4. PENILAIAN MAKLUM BALAS PELANGGAN</div>
+          <div class="grid">
+            <div class="row"><div class="col-label">Tahap Kepuasan:</div><div class="col-val"><strong>${c.rating} / 5 Bintang</strong></div></div>
+            <div class="row"><div class="col-label">Ulasan Pelanggan:</div><div class="col-val">${c.ulasanPelanggan || 'Tiada ulasan tambahan.'}</div></div>
+            <div class="row"><div class="col-label">Tarikh Penilaian:</div><div class="col-val">${c.ratingTarikh || '-'}</div></div>
+          </div>
+        ` : ''}
+
         <div class="footer">
-          Dicetak pada: ${new Date().toLocaleString('ms-MY')} | Sistem SiAP
+          Laporan dijana secara automatik oleh SiAP (Sistem Aduan Pelanggan) pada: ${new Date().toLocaleString('ms-MY')}
         </div>
         <script>window.onload = function() { window.print(); }</script>
       </body>

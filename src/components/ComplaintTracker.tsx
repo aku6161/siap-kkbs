@@ -18,6 +18,7 @@ import {
   FolderOpen,
   FileText,
   Image as ImageIcon,
+  Printer,
 } from 'lucide-react';
 import { RATING_SCALE, STATUS_CONFIG } from '../data/categories';
 import { Complaint, ComplaintStatus, TindakanItem } from '../types';
@@ -153,18 +154,129 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
     { key: 'MENUNGGU', label: 'Aduan Diterima', index: 0 },
     { key: 'DALAM_SEMAKAN', label: 'Dalam Semakan', index: 1 },
     { key: 'DALAM_TINDAKAN', label: 'Dalam Tindakan', index: 2 },
-    { key: 'SELESAI', label: 'Selesai', index: 3 },
+    {
+      key: 'SELESAI',
+      label: complaint?.status === 'TIDAK_DAPAT_DISELESAIKAN'
+        ? 'Tidak Dapat Diselesaikan'
+        : 'Selesai / Tidak Dapat Diselesaikan',
+      index: 3,
+    },
   ];
 
   const getStepStatus = (stepIndex: number) => {
     if (!complaint) return 'upcoming';
-    const currentStepIndex = currentStatusConfig ? currentStatusConfig.stepIndex : 0;
     if (complaint.status === 'TIDAK_DAPAT_DISELESAIKAN') {
-      return stepIndex === 0 ? 'completed' : 'failed';
+      if (stepIndex < 3) return 'completed';
+      return 'failed';
     }
+    const currentStepIndex = currentStatusConfig ? currentStatusConfig.stepIndex : 0;
     if (stepIndex < currentStepIndex) return 'completed';
     if (stepIndex === currentStepIndex) return 'current';
     return 'upcoming';
+  };
+
+  const handlePrintReport = () => {
+    if (!complaint) return;
+    const printWin = window.open('', '_blank');
+    if (!printWin) {
+      window.print();
+      return;
+    }
+
+    const tindakanRows = tindakanList.length > 0
+      ? tindakanList.map((t) => `
+          <tr>
+            <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; font-family: monospace; white-space: nowrap;">${t.tarikhMasa || '-'}</td>
+            <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 600; color: #1e293b;">${t.namaPegawai || 'Pegawai Bertugas'}</td>
+            <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px;"><span style="display: inline-block; padding: 2px 8px; border-radius: 6px; font-weight: bold; background: #e0f2fe; color: #0369a1;">${t.status}</span></td>
+            <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 13px; color: #334155; line-height: 1.4;">${t.catatanTindakan || '-'}</td>
+          </tr>
+        `).join('')
+      : `<tr><td colspan="4" style="padding: 16px; text-align: center; color: #94a3b8; font-style: italic;">Tiada catatan tindakan tambahan direkodkan.</td></tr>`;
+
+    printWin.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Laporan Rasmi Aduan ${complaint.noRujukan}</title>
+        <meta charset="utf-8" />
+        <style>
+          @page { size: A4; margin: 15mm; }
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 20px; color: #0f172a; margin: 0; background: #fff; }
+          .header { text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 16px; margin-bottom: 20px; }
+          .header h1 { margin: 0; font-size: 22px; color: #1e3a8a; letter-spacing: -0.5px; }
+          .header p { margin: 4px 0 0 0; font-size: 13px; color: #64748b; font-weight: 500; }
+          .badge { display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+          .status-SELESAI { background: #dcfce7; color: #15803d; }
+          .status-TIDAK_DAPAT_DISELESAIKAN { background: #ffe4e6; color: #be123c; }
+          .status-DALAM_TINDAKAN { background: #ffedd5; color: #c2410c; }
+          .status-DALAM_SEMAKAN { background: #dbeafe; color: #1d4ed8; }
+          .status-MENUNGGU { background: #fef9c3; color: #a16207; }
+          .section-title { font-size: 13px; font-weight: bold; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.5px; margin: 18px 0 8px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; }
+          .grid { display: table; width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+          .row { display: table-row; }
+          .col-label { display: table-cell; width: 28%; padding: 7px 10px; font-size: 13px; font-weight: 600; color: #475569; background: #f8fafc; border: 1px solid #e2e8f0; }
+          .col-val { display: table-cell; width: 72%; padding: 7px 10px; font-size: 13px; color: #0f172a; border: 1px solid #e2e8f0; }
+          table.history-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+          table.history-table th { background: #f1f5f9; padding: 8px 12px; text-align: left; font-size: 12px; font-weight: bold; color: #475569; border: 1px solid #cbd5e1; }
+          table.history-table td { border: 1px solid #e2e8f0; }
+          .footer { margin-top: 36px; border-top: 1px solid #cbd5e1; padding-top: 10px; text-align: center; font-size: 11px; color: #94a3b8; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>SiAP – SISTEM ADUAN PELANGGAN</h1>
+          <p>LAPORAN PENUH & SEJARAH TINDAKAN ADUAN</p>
+        </div>
+
+        <div class="section-title">1. MAKLUMAT UTAMA ADUAN</div>
+        <div class="grid">
+          <div class="row"><div class="col-label">No. Rujukan:</div><div class="col-val" style="font-family: monospace; font-size: 15px; font-weight: bold; color: #2563eb;">${complaint.noRujukan}</div></div>
+          <div class="row"><div class="col-label">Status Semasa:</div><div class="col-val"><span class="badge status-${complaint.status}">${currentStatusConfig?.label || complaint.status}</span></div></div>
+          <div class="row"><div class="col-label">Kategori Aduan:</div><div class="col-val">${complaint.kategoriNama}</div></div>
+          <div class="row"><div class="col-label">Tajuk Aduan:</div><div class="col-val"><strong>${complaint.tajukAduan}</strong></div></div>
+          <div class="row"><div class="col-label">Lokasi Kejadian:</div><div class="col-val">${complaint.lokasi}</div></div>
+          <div class="row"><div class="col-label">Tarikh & Masa Aduan:</div><div class="col-val">${complaint.tarikhMasa}</div></div>
+          <div class="row"><div class="col-label">Nama Pengadu:</div><div class="col-val">${complaint.namaPengadu} (${complaint.telefon})</div></div>
+          <div class="row"><div class="col-label">Emel Pengadu:</div><div class="col-val">${complaint.emel}</div></div>
+          <div class="row"><div class="col-label">Pegawai Bertugas (PIC):</div><div class="col-val">${complaint.namaPegawai || 'Pegawai Bertugas'}</div></div>
+        </div>
+
+        <div class="section-title">2. BUTIRAN ADUAN PENGADU</div>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; color: #1e293b; margin-bottom: 14px;">${complaint.butiranAduan}</div>
+
+        <div class="section-title">3. SEJARAH TINDAKAN & CATATAN PEGAWAI</div>
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th style="width: 22%;">Tarikh & Masa</th>
+              <th style="width: 25%;">Pegawai Bertugas</th>
+              <th style="width: 18%;">Status</th>
+              <th style="width: 35%;">Catatan Tindakan</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tindakanRows}
+          </tbody>
+        </table>
+
+        ${complaint.rating ? `
+          <div class="section-title" style="margin-top: 20px;">4. PENILAIAN MAKLUM BALAS PELANGGAN</div>
+          <div class="grid">
+            <div class="row"><div class="col-label">Tahap Kepuasan:</div><div class="col-val"><strong>${complaint.rating} / 5 Bintang</strong></div></div>
+            <div class="row"><div class="col-label">Ulasan Pelanggan:</div><div class="col-val">${complaint.ulasanPelanggan || 'Tiada ulasan tambahan.'}</div></div>
+            <div class="row"><div class="col-label">Tarikh Penilaian:</div><div class="col-val">${complaint.ratingTarikh || '-'}</div></div>
+          </div>
+        ` : ''}
+
+        <div class="footer">
+          Laporan dijana secara automatik oleh SiAP (Sistem Aduan Pelanggan) pada: ${new Date().toLocaleString('ms-MY')}
+        </div>
+        <script>window.onload = function() { window.print(); }</script>
+      </body>
+      </html>
+    `);
+    printWin.document.close();
   };
 
   return (
@@ -280,8 +392,17 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
                 </h2>
               </div>
 
-              {/* Status Badge */}
-              <div className="flex items-center gap-2">
+              {/* Actions & Status Badge */}
+              <div className="flex flex-wrap items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={handlePrintReport}
+                  title="Cetak Laporan Lengkap Aduan"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold text-slate-700 bg-white/80 hover:bg-white border border-white/90 shadow-xs backdrop-blur-md transition-all hover:scale-105 active:scale-95"
+                >
+                  <Printer className="w-4 h-4 text-blue-600" />
+                  <span>Cetak Laporan</span>
+                </button>
                 <span
                   className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-bold border ${currentStatusConfig?.badgeBg} backdrop-blur-md shadow-xs`}
                 >
@@ -308,6 +429,8 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
                         className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all mb-2 ${
                           status === 'completed'
                             ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/20'
+                            : status === 'failed'
+                            ? 'bg-rose-600 text-white ring-4 ring-rose-100 shadow-md shadow-rose-500/20'
                             : status === 'current'
                             ? 'bg-blue-600 text-white ring-4 ring-blue-100 shadow-md shadow-blue-500/20 animate-pulse'
                             : 'bg-white/60 text-slate-400 border border-white/80 backdrop-blur-xs'
@@ -315,6 +438,8 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
                       >
                         {status === 'completed' ? (
                           <Check className="w-5 h-5" />
+                        ) : status === 'failed' ? (
+                          <AlertCircle className="w-5 h-5" />
                         ) : (
                           <span>{idx + 1}</span>
                         )}
@@ -326,6 +451,8 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
                             ? 'text-blue-600'
                             : status === 'completed'
                             ? 'text-slate-800'
+                            : status === 'failed'
+                            ? 'text-rose-600'
                             : 'text-slate-400'
                         }`}
                       >
