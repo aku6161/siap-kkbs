@@ -8,6 +8,15 @@ const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 const isSupabaseConfigured = !!(SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes('your-supabase-project'));
 
+// ─── Supabase Table Names ───
+export const SUPABASE_TABLES = {
+  COMPLAINTS: 'siap_complaints',
+  TINDAKAN: 'siap_tindakan',
+  LOGS: 'siap_logs',
+  EMAILS: 'siap_emails',
+  CONFIG: 'siap_config',
+} as const;
+
 let supabaseClient: SupabaseClient | null = null;
 if (isSupabaseConfigured) {
   supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -132,11 +141,11 @@ class Database {
     if (!supabaseClient) return;
     try {
       const [compRes, tindRes, logRes, emailRes, cfgRes] = await Promise.all([
-        supabaseClient.from('complaints').select('*').order('"tarikhMasa"', { ascending: false }),
-        supabaseClient.from('tindakan').select('*').order('"tarikhMasa"', { ascending: false }),
-        supabaseClient.from('logs').select('*').order('"tarikhMasa"', { ascending: false }),
-        supabaseClient.from('emails').select('*').order('"tarikhMasa"', { ascending: false }),
-        supabaseClient.from('config').select('*').eq('id', 'system_config').maybeSingle(),
+        supabaseClient.from(SUPABASE_TABLES.COMPLAINTS).select('*').order('"tarikhMasa"', { ascending: false }),
+        supabaseClient.from(SUPABASE_TABLES.TINDAKAN).select('*').order('"tarikhMasa"', { ascending: false }),
+        supabaseClient.from(SUPABASE_TABLES.LOGS).select('*').order('"tarikhMasa"', { ascending: false }),
+        supabaseClient.from(SUPABASE_TABLES.EMAILS).select('*').order('"tarikhMasa"', { ascending: false }),
+        supabaseClient.from(SUPABASE_TABLES.CONFIG).select('*').eq('id', 'system_config').maybeSingle(),
       ]);
 
       const isSupabaseEmpty = !compRes.data || compRes.data.length === 0;
@@ -181,19 +190,19 @@ class Database {
     try {
       const tasks: Promise<any>[] = [];
       if (this.store.complaints.length > 0) {
-        tasks.push(supabaseClient.from('complaints').upsert(this.store.complaints) as unknown as Promise<any>);
+        tasks.push(supabaseClient.from(SUPABASE_TABLES.COMPLAINTS).upsert(this.store.complaints) as unknown as Promise<any>);
       }
       if (this.store.tindakan.length > 0) {
-        tasks.push(supabaseClient.from('tindakan').upsert(this.store.tindakan) as unknown as Promise<any>);
+        tasks.push(supabaseClient.from(SUPABASE_TABLES.TINDAKAN).upsert(this.store.tindakan) as unknown as Promise<any>);
       }
       if (this.store.logs.length > 0) {
-        tasks.push(supabaseClient.from('logs').upsert(this.store.logs) as unknown as Promise<any>);
+        tasks.push(supabaseClient.from(SUPABASE_TABLES.LOGS).upsert(this.store.logs) as unknown as Promise<any>);
       }
       if (this.store.emails.length > 0) {
-        tasks.push(supabaseClient.from('emails').upsert(this.store.emails) as unknown as Promise<any>);
+        tasks.push(supabaseClient.from(SUPABASE_TABLES.EMAILS).upsert(this.store.emails) as unknown as Promise<any>);
       }
       // Migrate config
-      tasks.push(supabaseClient.from('config').upsert({
+      tasks.push(supabaseClient.from(SUPABASE_TABLES.CONFIG).upsert({
         id: 'system_config',
         ...this.store.config,
         lastSequenceNumber: this.store.lastSequenceNumber,
@@ -324,7 +333,7 @@ class Database {
 
     this.saveToFile();
     // Background write to Supabase
-    this.sbUpsert('complaints', { ...newComplaint });
+    this.sbUpsert(SUPABASE_TABLES.COMPLAINTS, { ...newComplaint });
     return newComplaint;
   }
 
@@ -350,7 +359,7 @@ class Database {
 
     this.saveToFile();
     // Background write to Supabase
-    this.sbUpsert('complaints', { ...comp });
+    this.sbUpsert(SUPABASE_TABLES.COMPLAINTS, { ...comp });
     return comp;
   }
 
@@ -432,8 +441,8 @@ class Database {
 
     this.saveToFile();
     // Background write to Supabase
-    this.sbUpsert('tindakan', { ...tindakan });
-    if (comp) this.sbUpsert('complaints', { ...comp });
+    this.sbUpsert(SUPABASE_TABLES.TINDAKAN, { ...tindakan });
+    if (comp) this.sbUpsert(SUPABASE_TABLES.COMPLAINTS, { ...comp });
     return tindakan;
   }
 
@@ -466,10 +475,10 @@ class Database {
     this.saveToFile();
 
     if (supabaseClient) {
-      supabaseClient.from('complaints').delete().eq('noRujukan', trimmed).then(({ error }) => {
+      supabaseClient.from(SUPABASE_TABLES.COMPLAINTS).delete().eq('noRujukan', trimmed).then(({ error }) => {
         if (error) console.error('Supabase complaint delete error:', error.message);
       });
-      supabaseClient.from('tindakan').delete().eq('noRujukan', trimmed).then(({ error }) => {
+      supabaseClient.from(SUPABASE_TABLES.TINDAKAN).delete().eq('noRujukan', trimmed).then(({ error }) => {
         if (error) console.error('Supabase tindakan delete error:', error.message);
       });
     }
@@ -503,7 +512,7 @@ class Database {
 
     this.saveToFile();
     // Background write to Supabase
-    this.sbUpsert('complaints', { ...comp });
+    this.sbUpsert(SUPABASE_TABLES.COMPLAINTS, { ...comp });
     return { success: true, message: 'Penilaian kepuasan berjaya direkodkan. Terima kasih!', complaint: comp };
   }
 
@@ -543,7 +552,7 @@ class Database {
     });
 
     this.saveToFile();
-    this.sbUpsert('complaints', { ...comp });
+    this.sbUpsert(SUPABASE_TABLES.COMPLAINTS, { ...comp });
     return { success: true, message: 'Penilaian anda berjaya dihantar. Terima kasih atas maklum balas anda!' };
   }
 
@@ -557,7 +566,7 @@ class Database {
     this.store.logs.unshift(log);
     this.saveToFile();
     // Background write to Supabase
-    this.sbUpsert('logs', { ...log });
+    this.sbUpsert(SUPABASE_TABLES.LOGS, { ...log });
     return log;
   }
 
@@ -575,7 +584,7 @@ class Database {
     this.store.emails.unshift(item);
     this.saveToFile();
     // Background write to Supabase
-    this.sbUpsert('emails', { ...item });
+    this.sbUpsert(SUPABASE_TABLES.EMAILS, { ...item });
     return item;
   }
 
@@ -603,7 +612,7 @@ class Database {
     Object.assign(this.store.config, newConfig);
     this.saveToFile();
     // Background write to Supabase
-    this.sbUpsert('config', { id: 'system_config', ...this.store.config, lastSequenceNumber: this.store.lastSequenceNumber });
+    this.sbUpsert(SUPABASE_TABLES.CONFIG, { id: 'system_config', ...this.store.config, lastSequenceNumber: this.store.lastSequenceNumber });
     return { ...this.store.config };
   }
 

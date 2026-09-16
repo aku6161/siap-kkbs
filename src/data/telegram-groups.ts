@@ -3,6 +3,7 @@ export interface TelegramGroup {
   name: string;
   chatId: string;
   unit: string;
+  pic: string;
   officers: string[];
   status: 'Aktif' | 'Tidak Aktif';
 }
@@ -13,7 +14,8 @@ export const TELEGRAM_GROUPS: Record<string, TelegramGroup> = {
     name: 'SiAP – Kemudahan',
     chatId: '-1003546212661',
     unit: 'Kemudahan & Infrastruktur',
-    officers: ['Mohd Razak (Juruteknik Fasiliti)', 'Ahmad Sukri (Penyelia Fasiliti)'],
+    pic: 'Pegawai Pembangunan',
+    officers: ['Pegawai Pembangunan'],
     status: 'Aktif',
   },
   SISTEM: {
@@ -21,7 +23,8 @@ export const TELEGRAM_GROUPS: Record<string, TelegramGroup> = {
     name: 'SiAP - Sistem & Teknologi',
     chatId: '-1003763181014',
     unit: 'Sistem & Teknologi',
-    officers: ['Kamal Azizi (Pegawai IT)', 'Nurul Diana (Juruteknik Rangkaian)'],
+    pic: 'Pegawai ICT',
+    officers: ['Pegawai ICT'],
     status: 'Aktif',
   },
   PERKHIDMATAN: {
@@ -29,7 +32,8 @@ export const TELEGRAM_GROUPS: Record<string, TelegramGroup> = {
     name: 'SiAP - Perkhidmatan & Lain-lain',
     chatId: '-1004423616468',
     unit: 'Perkhidmatan & Pentadbiran',
-    officers: ['Hafizah (Pegawai Khidmat Pelanggan)', 'Siti Aminah (Unit Latihan)'],
+    pic: 'Pegawai Perhubungan Pelanggan',
+    officers: ['Pegawai Perhubungan Pelanggan'],
     status: 'Aktif',
   },
   KEBERSIHAN: {
@@ -37,7 +41,18 @@ export const TELEGRAM_GROUPS: Record<string, TelegramGroup> = {
     name: 'SiAP – Kebersihan',
     chatId: '-1003921165191',
     unit: 'Kebersihan & Kesihatan',
-    officers: ['Zainal Abidin (Penyelia Kebersihan)', 'Abu Bakar (Pegawai Kesihatan)'],
+    pic: 'Pegawai Kebersihan',
+    officers: ['Pegawai Kebersihan'],
+    status: 'Aktif',
+  },
+  LAIN_LAIN: {
+    id: 'LAIN_LAIN',
+    name: 'SiAP - Perkhidmatan & Lain-lain',
+    chatId: '-1004423616468',
+    unit: 'Lain-lain',
+    pic: 'Pegawai Perhubungan Pelanggan',
+    officers: ['Pegawai Perhubungan Pelanggan'],
     status: 'Aktif',
   },
 };
+

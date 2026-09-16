@@ -25,7 +25,7 @@ export const AdminTelegramSimulator: React.FC<AdminTelegramSimulatorProps> = ({
   onRefreshComplaints,
 }) => {
   const [selectedRef, setSelectedRef] = useState<string>(complaints[0]?.noRujukan || '');
-  const [officerName, setOfficerName] = useState('Mohd Razak (Juruteknik)');
+  const [officerName, setOfficerName] = useState('Pegawai Pembangunan');
   const [officerId, setOfficerId] = useState('tg_8892');
   const [catatanText, setCatatanText] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<ComplaintStatus>('DALAM_TINDAKAN');
@@ -160,11 +160,10 @@ export const AdminTelegramSimulator: React.FC<AdminTelegramSimulatorProps> = ({
                 }}
                 className="w-full p-2.5 glass-input rounded-xl focus:outline-none font-semibold text-slate-800"
               >
-                <option value="Mohd Razak (Juruteknik Fasiliti)">Mohd Razak (Kemudahan)</option>
-                <option value="Kamal Azizi (Pegawai IT)">Kamal Azizi (Sistem & IT)</option>
-                <option value="Zainal Abidin (Penyelia Kebersihan)">Zainal Abidin (Kebersihan)</option>
-                <option value="Hafizah (Khidmat Pelanggan)">Hafizah (Perkhidmatan)</option>
-                <option value="Ahmad (Petugas Am)">Ahmad (Petugas Am)</option>
+                <option value="Pegawai Pembangunan">Pegawai Pembangunan (Kemudahan)</option>
+                <option value="Pegawai ICT">Pegawai ICT (Sistem & IT)</option>
+                <option value="Pegawai Perhubungan Pelanggan">Pegawai Perhubungan Pelanggan (Perkhidmatan & Lain-lain)</option>
+                <option value="Pegawai Kebersihan">Pegawai Kebersihan (Kebersihan)</option>
               </select>
             </div>
 

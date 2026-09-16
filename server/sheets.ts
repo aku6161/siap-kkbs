@@ -631,13 +631,13 @@ function doPost(e) {
       }
     }
 
-    // 5. Aksi Sandaran JSON ke Google Drive (CREATE_BACKUP)
-    // Simpan snapshot data penuh ke Google Drive dan padam sandaran lama (kekal 2 terkini sahaja)
+    // 5. Aksi Sandaran CSV / JSON ke Google Drive (CREATE_BACKUP)
+    // Simpan snapshot data penuh ke Google Drive dan padam sandaran lama (kekal 2 minggu / 2 sandaran terkini sahaja)
     if (action === "CREATE_BACKUP") {
       try {
         var folderId = payload.folderId || "";
-        var fileName = payload.fileName || ("siap_backup_" + new Date().toISOString().substring(0, 10) + ".json");
-        var content = payload.content || "{}";
+        var fileName = payload.fileName || ("siap_backup_" + new Date().toISOString().substring(0, 10) + ".csv");
+        var content = payload.content || "";
         var maxBackups = payload.maxBackups || 2;
 
         var folder;
@@ -653,12 +653,13 @@ function doPost(e) {
           }
         }
 
-        // Cipta fail sandaran baharu
-        var blob = Utilities.newBlob(content, "application/json", fileName);
+        // Cipta fail sandaran baharu (.csv atau .json)
+        var mimeType = (fileName.indexOf(".csv") > -1) ? MimeType.CSV : "application/json";
+        var blob = Utilities.newBlob(content, mimeType, fileName);
         var newFile = folder.createFile(blob);
         newFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
-        // Padam fail sandaran lama – kekal maxBackups terkini sahaja
+        // Padam fail sandaran lama – kekal maxBackups terkini sahaja (2 minggu)
         var allFiles = [];
         var fileIter = folder.getFiles();
         while (fileIter.hasNext()) {
@@ -672,7 +673,7 @@ function doPost(e) {
         // Isih mengikut tarikh (terbaru dahulu)
         allFiles.sort(function(a, b) { return b.date - a.date; });
 
-        // Padam sandaran yang melebihi had maxBackups
+        // Padam sandaran yang melebihi had maxBackups (2 terkini)
         var deleted = [];
         for (var i = maxBackups; i < allFiles.length; i++) {
           try {
@@ -685,7 +686,7 @@ function doPost(e) {
 
         return ContentService.createTextOutput(JSON.stringify({
           status: "success",
-          message: "Sandaran \"" + fileName + "\" berjaya disimpan ke Google Drive! " + (deleted.length > 0 ? "Dipadam: " + deleted.join(", ") : ""),
+          message: "Sandaran \"" + fileName + "\" berjaya disimpan ke Google Drive! " + (deleted.length > 0 ? "Dipadam lama: " + deleted.join(", ") : ""),
           fileName: fileName,
           fileUrl: newFile.getUrl(),
           deleted: deleted

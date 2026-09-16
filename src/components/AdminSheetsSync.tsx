@@ -31,6 +31,28 @@ export const AdminSheetsSync: React.FC<AdminSheetsSyncProps> = ({ complaints }) 
   const [testResult, setTestResult] = useState<string | null>(null);
 
   const [copiedJson, setCopiedJson] = useState(false);
+  const [isBackingUp, setIsBackingUp] = useState(false);
+  const [backupStatus, setBackupStatus] = useState<string | null>(null);
+
+  const backupDriveFolderUrl = 'https://drive.google.com/drive/folders/1f2VTd_dug6ANOkyRqHtC7LaNcBJWoU28?usp=sharing';
+
+  const handleManualBackup = async () => {
+    setIsBackingUp(true);
+    setBackupStatus(null);
+    try {
+      const res = await fetch('/api/admin/backup/trigger', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        setBackupStatus(`✅ ${data.message}`);
+      } else {
+        setBackupStatus(`⚠️ ${data.message}`);
+      }
+    } catch (e: any) {
+      setBackupStatus(`Ralat: ${e.message}`);
+    } finally {
+      setIsBackingUp(false);
+    }
+  };
 
   const [telegramBotToken, setTelegramBotToken] = useState('');
   const [telegramChatIdKemudahan, setTelegramChatIdKemudahan] = useState('');
@@ -287,6 +309,65 @@ export const AdminSheetsSync: React.FC<AdminSheetsSyncProps> = ({ complaints }) 
           <span>{syncStatus}</span>
         </div>
       )}
+
+      {/* Automated CSV Backup Card */}
+      <div className="bg-gradient-to-r from-amber-500/10 via-amber-600/5 to-transparent border border-amber-300/40 rounded-3xl p-6 sm:p-7 backdrop-blur-md shadow-lg">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-800 text-xs font-bold uppercase tracking-wider">
+              <HardDrive className="w-3.5 h-3.5 text-amber-600" />
+              <span>Sandaran Automatik Mingguan (Google Drive CSV)</span>
+            </div>
+            <h3 className="text-lg font-bold text-slate-900">
+              Pusat Sandaran Data SiAP (.CSV)
+            </h3>
+            <p className="text-xs text-slate-600 max-w-2xl leading-relaxed">
+              Data sandaran dimuat turun secara automatik ke folder Google Drive dalam format <strong>.CSV</strong> pada <strong>setiap hari Ahad pukul 2:00 Pagi</strong>. Sistem secara automatik <strong>mengekalkan 2 minggu data terkini</strong> dan memadam sandaran lama.
+            </p>
+            <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-600 pt-1 font-mono">
+              <span className="bg-white/80 px-2.5 py-1 rounded-lg border border-amber-200 shadow-2xs">
+                📅 Jadual: <strong>Ahad 2:00 PG</strong>
+              </span>
+              <span className="bg-white/80 px-2.5 py-1 rounded-lg border border-amber-200 shadow-2xs">
+                📁 Format: <strong>.CSV (UTF-8)</strong>
+              </span>
+              <span className="bg-white/80 px-2.5 py-1 rounded-lg border border-amber-200 shadow-2xs">
+                ⏳ Pengekalan: <strong>2 Minggu Terkini</strong>
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0">
+            <a
+              href={backupDriveFolderUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-md active:scale-98 cursor-pointer"
+            >
+              <FolderOpen className="w-4 h-4 text-amber-300" />
+              <span>Buka Folder Sandaran</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+
+            <button
+              type="button"
+              onClick={handleManualBackup}
+              disabled={isBackingUp}
+              className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 disabled:opacity-50 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-98 cursor-pointer border border-white/20"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isBackingUp ? 'animate-spin' : ''}`} />
+              <span>{isBackingUp ? 'Menjana CSV...' : 'Uji & Jana Sandaran Sekarang'}</span>
+            </button>
+          </div>
+        </div>
+
+        {backupStatus && (
+          <div className={`mt-4 p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2 shadow-xs ${backupStatus.startsWith('✅') ? 'bg-emerald-50 text-emerald-900 border border-emerald-200' : 'bg-rose-50 text-rose-900 border border-rose-200'}`}>
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>{backupStatus}</span>
+          </div>
+        )}
+      </div>
 
       {/* Sync Control & Configuration */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

@@ -13,13 +13,13 @@
       "lokasi": "gg",
       "tarikhKejadian": "Tue Aug 25 2026 00:00:00 GMT+0800 (Singapore Standard Time)",
       "lampiranDriveUrl": "https://drive.google.com/drive/folders/1bQ1l9Q_Kz0JcUQsGVRxPkWQrj66yq8Qr?usp=sharing",
-      "status": "MENUNGGU",
+      "status": "DALAM_TINDAKAN",
       "telegramGroup": "SiAP - Perkhidmatan & Lain-lain",
       "telegramMessageId": "",
-      "telegramUserId": "",
-      "namaPegawai": "",
-      "tarikhDiambilTindakan": "",
-      "tindakanTerkini": "Aduan baharu diterima dan dihantar ke saluran Telegram petugas.",
+      "telegramUserId": "tg_8892",
+      "namaPegawai": "Mohd Razak (Juruteknik)",
+      "tarikhDiambilTindakan": "Wed Sep 16 2026 10:50:13 GMT+0800 (Singapore Standard Time)",
+      "tindakanTerkini": "Aduan diambil oleh Mohd Razak (Juruteknik) untuk siasatan dan tindakan lanjut.",
       "tarikhSelesai": "",
       "ulasanPelanggan": ""
     },
@@ -70,8 +70,42 @@
       "ulasanPelanggan": ""
     }
   ],
-  "tindakan": [],
+  "tindakan": [
+    {
+      "id": "t_1789555813248_dw8s",
+      "noRujukan": "SIAP-2026-00006",
+      "tarikhMasa": "Wed Sep 16 2026 10:50:13 GMT+0800 (Singapore Standard Time)",
+      "telegramUserId": "tg_8892",
+      "namaPegawai": "Mohd Razak (Juruteknik)",
+      "status": "DALAM_TINDAKAN",
+      "catatanTindakan": "Aduan diambil oleh Mohd Razak (Juruteknik) untuk siasatan dan tindakan lanjut."
+    }
+  ],
   "logs": [
+    {
+      "id": "log_1789555813250_985n",
+      "tarikhMasa": "Wed Sep 16 2026 10:50:13 GMT+0800 (Singapore Standard Time)",
+      "jenisAktiviti": "EMEL_DIHANTAR",
+      "noRujukan": "SIAP-2026-00006",
+      "keterangan": "Emel notifikasi \"[SiAP] Kemas Kini Aduan SIAP-2026-00006\" dihantar kepada aku6161@gmail.com.",
+      "dilakukanOleh": "SiAP Mailer Engine"
+    },
+    {
+      "id": "log_1789555813249_pksw",
+      "tarikhMasa": "Wed Sep 16 2026 10:50:13 GMT+0800 (Singapore Standard Time)",
+      "jenisAktiviti": "ADUAN_DIAMBIL",
+      "noRujukan": "SIAP-2026-00006",
+      "keterangan": "Aduan diambil oleh pegawai Mohd Razak (Juruteknik) (tg_8892).",
+      "dilakukanOleh": "Mohd Razak (Juruteknik)"
+    },
+    {
+      "id": "log_1789555813249_u5f6",
+      "tarikhMasa": "Wed Sep 16 2026 10:50:13 GMT+0800 (Singapore Standard Time)",
+      "jenisAktiviti": "TINDAKAN_DITAMBAH",
+      "noRujukan": "SIAP-2026-00006",
+      "keterangan": "Catatan tindakan ditambah oleh Mohd Razak (Juruteknik): \"Aduan diambil oleh Mohd Razak (Juruteknik) untuk siasatan da...\"",
+      "dilakukanOleh": "Mohd Razak (Juruteknik)"
+    },
     {
       "id": "log_1787669438610_kgb4",
       "tarikhMasa": "Tue Aug 25 2026 14:50:38 GMT+0800 (Singapore Standard Time)",
@@ -130,6 +164,15 @@
     }
   ],
   "emails": [
+    {
+      "id": "em_1789555813250_xhod",
+      "tarikhMasa": "2026-09-16 10:50:13",
+      "noRujukan": "SIAP-2026-00006",
+      "penerima": "aku6161@gmail.com",
+      "subjek": "[SiAP] Kemas Kini Aduan SIAP-2026-00006",
+      "kandungan": "Status: DALAM_TINDAKAN. Aduan anda telah diambil oleh pegawai Mohd Razak (Juruteknik). Tindakan siasatan sedang dijalankan.",
+      "status": "Dihantar"
+    },
     {
       "id": "em_1787669451324_dhcu",
       "tarikhMasa": "2026-08-25 14:50:51",

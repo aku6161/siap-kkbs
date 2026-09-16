@@ -5,10 +5,10 @@ import { db } from './db';
 import { sendEmailNotification } from './email';
 import { analyzeComplaintWithAI } from './gemini';
 import { getGoogleAppsScriptTemplate, syncWithGoogleSheets } from './sheets';
-import { processTelegramOfficerAction, sendTelegramNotification } from './telegram';
+import { CATEGORY_OFFICER_MAP, processTelegramOfficerAction, sendTelegramNotification } from './telegram';
 import { CATEGORIES } from '../src/data/categories';
 import { ComplaintCategory, ComplaintStatus } from '../src/types';
-import { handleBackupCron } from '../api/cron/backup';
+import { handleBackupCron, runBackup } from '../api/cron/backup';
 
 
 const app = express();
@@ -225,11 +225,15 @@ app.post('/api/telegram/webhook', async (req, res) => {
       const cq = update.callback_query;
       const data = cq.data || '';
       const user = cq.from || {};
-      const officerName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || 'Pegawai Telegram';
       const officerId = String(user.id || 'tg_unknown');
 
       if (data.startsWith('claim:')) {
         const noRujukan = data.replace('claim:', '').trim();
+        const complaint = db.getComplaintByRef(noRujukan);
+        const designatedPic = (complaint && CATEGORY_OFFICER_MAP[complaint.kategori]) || 'Pegawai Bertugas';
+        const userFullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username;
+        const officerName = userFullName ? `${userFullName} (${designatedPic})` : designatedPic;
+
         const result = await processTelegramOfficerAction({
           action: 'AMBIL_TINDAKAN',
           noRujukan,
@@ -648,8 +652,18 @@ if (!fs.existsSync(uploadsPath)) {
 }
 app.use('/uploads', express.static(uploadsPath));
 
-// Weekly Backup Cron Endpoint (triggered by Vercel Cron or admin manual trigger)
+// Weekly Backup Cron Endpoint (triggered by Vercel Cron)
 app.post('/api/cron/backup', handleBackupCron);
+
+// Admin manual backup trigger (from admin dashboard)
+app.post('/api/admin/backup/trigger', async (_req, res) => {
+  try {
+    const result = await runBackup();
+    return res.json(result);
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: `Ralat sandaran: ${err.message}` });
+  }
+});
 
 
 // Background auto-pull from Google Sheets every 10 seconds (only if not in serverless/Vercel)

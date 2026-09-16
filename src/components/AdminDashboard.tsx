@@ -40,8 +40,6 @@ import {
 import { CATEGORIES, STATUS_CONFIG } from '../data/categories';
 import { Complaint, ComplaintCategory, ComplaintStatus, EmailLog, LogItem, SystemStats } from '../types';
 import { AdminComplaintDetailModal } from './AdminComplaintDetailModal';
-import { AdminSheetsSync } from './AdminSheetsSync';
-import { AdminTelegramSimulator } from './AdminTelegramSimulator';
 
 interface AdminDashboardProps {
   isAdminLoggedIn: boolean;
@@ -54,7 +52,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onLogin,
   onLogout,
 }) => {
-  const [activeTab, setActiveTab] = useState<'ringkasan' | 'senarai' | 'telegram' | 'sheets' | 'audit'>('ringkasan');
+  const [activeTab, setActiveTab] = useState<'ringkasan' | 'senarai' | 'audit'>('ringkasan');
   const [passwordInput, setPasswordInput] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -380,15 +378,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
         <div className="flex items-center gap-2.5">
           <button
-            onClick={fetchAdminData}
-            disabled={isLoading}
-            className="px-4 py-2.5 rounded-xl bg-white/80 hover:bg-white text-slate-700 border border-white/80 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            <span>Muat Semula</span>
-          </button>
-
-          <button
             onClick={onLogout}
             className="px-4 py-2.5 rounded-xl bg-rose-50/90 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
           >
@@ -422,30 +411,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         >
           <ListOrdered className="w-4 h-4" />
           <span>Senarai Aduan ({complaints.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('telegram')}
-          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-2 cursor-pointer ${
-            activeTab === 'telegram'
-              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25 border border-white/20'
-              : 'bg-white/70 backdrop-blur-md text-slate-600 hover:bg-white border border-white/80'
-          }`}
-        >
-          <Bot className="w-4 h-4" />
-          <span>Operasi Telegram (Pegawai)</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('sheets')}
-          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-2 cursor-pointer ${
-            activeTab === 'sheets'
-              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25 border border-white/20'
-              : 'bg-white/70 backdrop-blur-md text-slate-600 hover:bg-white border border-white/80'
-          }`}
-        >
-          <FileSpreadsheet className="w-4 h-4" />
-          <span>Google Sheets & Database</span>
         </button>
 
         <button
@@ -792,24 +757,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       )}
 
       {/* ==========================================
-          TAB 3: TELEGRAM OPERASI SIMULATOR
-         ========================================== */}
-      {activeTab === 'telegram' && (
-        <AdminTelegramSimulator
-          complaints={complaints}
-          onRefreshComplaints={fetchAdminData}
-        />
-      )}
-
-      {/* ==========================================
-          TAB 4: GOOGLE SHEETS SYNC
-         ========================================== */}
-      {activeTab === 'sheets' && (
-        <AdminSheetsSync complaints={complaints} />
-      )}
-
-      {/* ==========================================
-          TAB 5: AUDIT TRAIL & EMEL
+          TAB 3: AUDIT TRAIL & EMEL
          ========================================== */}
       {activeTab === 'audit' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

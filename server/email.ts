@@ -54,7 +54,7 @@ ${checkUrl}
 
 Sekian, terima kasih.
 ${senderName}
-"SiAP menerima, SiAP bertindak"
+"SiAP Menerima, SiAP Bertindak"
   `.trim();
 
   const bodyHtml = `
@@ -106,7 +106,7 @@ ${senderName}
     </div>
     <div class="footer">
       <p style="margin: 0 0 4px 0;"><strong>${senderName}</strong></p>
-      <p style="margin: 0;">"SiAP menerima, SiAP bertindak"</p>
+      <p style="margin: 0;">"SiAP Menerima, SiAP Bertindak"</p>
     </div>
   </div>
 </body>

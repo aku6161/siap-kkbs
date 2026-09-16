@@ -11,6 +11,14 @@ export interface TelegramDispatchResult {
   error?: string;
 }
 
+export const CATEGORY_OFFICER_MAP: Record<string, string> = {
+  KEMUDAHAN: 'Pegawai Pembangunan',
+  SISTEM: 'Pegawai ICT',
+  PERKHIDMATAN: 'Pegawai Perhubungan Pelanggan',
+  KEBERSIHAN: 'Pegawai Kebersihan',
+  LAIN_LAIN: 'Pegawai Perhubungan Pelanggan',
+};
+
 export function formatTelegramNewComplaintMessage(complaint: Complaint, appUrl: string): {
   text: string;
   replyMarkup: any;
@@ -24,6 +32,8 @@ export function formatTelegramNewComplaintMessage(complaint: Complaint, appUrl: 
   };
 
   const icon = categoryIcons[complaint.kategori] || '📌';
+  const pic = CATEGORY_OFFICER_MAP[complaint.kategori] || 'Pegawai Perhubungan Pelanggan';
+
   let cleanUrl = appUrl || 'http://localhost:3000';
   if (cleanUrl.includes('localhost') || cleanUrl.includes('127.0.0.1')) {
     cleanUrl = 'https://siap-aduan.net';
@@ -34,6 +44,7 @@ export function formatTelegramNewComplaintMessage(complaint: Complaint, appUrl: 
     `🚨 *ADUAN BAHARU – SiAP*\n\n` +
     `*No. Rujukan:* \`${complaint.noRujukan}\`\n` +
     `${icon} *Kategori:* ${complaint.kategoriNama}\n` +
+    `👮 *Pegawai Bertanggungjawab (PIC):* ${pic}\n` +
     `📝 *Tajuk:* ${complaint.tajukAduan}\n` +
     `📍 *Lokasi:* ${complaint.lokasi}\n` +
     `👤 *Pengadu:* ${complaint.namaPengadu} (${complaint.telefon})\n` +
