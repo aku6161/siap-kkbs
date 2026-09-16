@@ -247,7 +247,10 @@ router.post('/public/rating', async (req, res, next) => {
 // Real Telegram Webhook Receiver
 router.post('/telegram/webhook', async (req, res, next) => {
   try {
+    await ensureDbSynced();
     const update = req.body || {};
+    const token = db.getConfig().telegramBotToken || process.env.TELEGRAM_BOT_TOKEN || '8238304961:AAG44pdgon1zFkqacccsk7da8iEPv83HPkQ';
+
     if (update.callback_query) {
       const cq = update.callback_query;
       const data = cq.data || '';
@@ -258,7 +261,7 @@ router.post('/telegram/webhook', async (req, res, next) => {
         const noRujukan = data.replace('claim:', '').trim();
         const complaint = db.getComplaintByRef(noRujukan);
         const designatedPic = (complaint && CATEGORY_OFFICER_MAP[complaint.kategori]) || 'Pegawai Bertugas';
-        const userFullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username;
+        const userFullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || 'Pegawai';
         const officerName = userFullName ? `${userFullName} (${designatedPic})` : designatedPic;
 
         const result = await processTelegramOfficerAction({
@@ -268,15 +271,68 @@ router.post('/telegram/webhook', async (req, res, next) => {
           namaPegawai: officerName,
         });
 
-        const token = db.getConfig().telegramBotToken;
+        if (token) {
+          // 1. Answer Telegram popup alert/notification
+          if (cq.id) {
+            await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                callback_query_id: cq.id,
+                text: result.message,
+                show_alert: !result.success,
+              }),
+            }).catch(() => {});
+          }
+
+          // 2. Post reply message into the group chat
+          const chatId = cq.message?.chat?.id || complaint?.telegramGroupId;
+          if (chatId && result.replyMessage) {
+            await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                chat_id: chatId,
+                text: result.replyMessage,
+                parse_mode: 'HTML',
+                reply_to_message_id: cq.message?.message_id,
+              }),
+            }).catch(() => {});
+          }
+
+          // 3. Update the button markup on the original card
+          if (chatId && cq.message?.message_id && result.success) {
+            const checkUrl = `https://siapkkbs.vercel.app/?ref=${encodeURIComponent(noRujukan)}`;
+            await fetch(`https://api.telegram.org/bot${token}/editMessageReplyMarkup`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                chat_id: chatId,
+                message_id: cq.message.message_id,
+                reply_markup: {
+                  inline_keyboard: [
+                    [
+                      { text: '👁 LIHAT ADUAN', url: checkUrl },
+                      { text: `🔒 DIAMBIL: ${userFullName.substring(0, 18)}`, callback_data: `info:${noRujukan}` },
+                    ],
+                  ],
+                },
+              }),
+            }).catch(() => {});
+          }
+        }
+      } else if (data.startsWith('info:')) {
+        const noRujukan = data.replace('info:', '').trim();
+        const complaint = db.getComplaintByRef(noRujukan);
+        const officer = complaint?.namaPegawai || 'Pegawai Bertugas';
         if (token && cq.id) {
-          fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+          await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               callback_query_id: cq.id,
-              text: result.message,
-              show_alert: !result.success,
+              text: `ℹ️ Aduan ${noRujukan} telah diambil oleh ${officer}.`,
+              show_alert: true,
             }),
           }).catch(() => {});
         }
@@ -285,6 +341,31 @@ router.post('/telegram/webhook', async (req, res, next) => {
     res.json({ ok: true });
   } catch (e) {
     next(e);
+  }
+});
+
+// Helper route to register Telegram Webhook to production URL
+router.get('/telegram/set-webhook', async (req, res) => {
+  try {
+    const token = db.getConfig().telegramBotToken || process.env.TELEGRAM_BOT_TOKEN || '8238304961:AAG44pdgon1zFkqacccsk7da8iEPv83HPkQ';
+    const webhookUrl = 'https://siapkkbs.vercel.app/api/telegram/webhook';
+    const tgRes = await fetch(`https://api.telegram.org/bot${token}/setWebhook?url=${encodeURIComponent(webhookUrl)}`);
+    const data = await tgRes.json();
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Helper route to inspect Telegram Webhook Info
+router.get('/telegram/webhook-info', async (req, res) => {
+  try {
+    const token = db.getConfig().telegramBotToken || process.env.TELEGRAM_BOT_TOKEN || '8238304961:AAG44pdgon1zFkqacccsk7da8iEPv83HPkQ';
+    const tgRes = await fetch(`https://api.telegram.org/bot${token}/getWebhookInfo`);
+    const data = await tgRes.json();
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 });
 

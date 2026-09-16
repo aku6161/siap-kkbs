@@ -233,13 +233,13 @@ export async function processTelegramOfficerAction(params: {
   }
 
   if (action === 'AMBIL_TINDAKAN') {
-    const assignResult = db.assignOfficer(noRujukan, { telegramUserId, namaPegawai });
+    const assignResult = await db.assignOfficer(noRujukan, { telegramUserId, namaPegawai });
     if (!assignResult.success) {
       return {
         success: false,
         message: assignResult.message,
         complaint,
-        replyMessage: `⚠️ ${assignResult.message}`,
+        replyMessage: `⚠️ ${escapeHtml(assignResult.message)}`,
       };
     }
 
@@ -247,12 +247,12 @@ export async function processTelegramOfficerAction(params: {
     sendEmailNotification(assignResult.complaint!, 'DALAM_TINDAKAN', `Aduan anda telah diambil oleh pegawai ${namaPegawai}. Tindakan siasatan sedang dijalankan.`);
 
     const replyMessage =
-      `🟠 *ADUAN TELAH DIAMBIL*\n\n` +
-      `*No. Rujukan:* \`${noRujukan}\`\n` +
-      `*Status:* 🟠 DALAM TINDAKAN\n` +
-      `*Pegawai Bertugas:* ${namaPegawai} (${telegramUserId})\n` +
-      `*Masa Diambil:* ${new Date().toLocaleTimeString('ms-MY')}\n\n` +
-      `_Aduan ini kini sedang dikendalikan oleh ${namaPegawai}._`;
+      `🟠 <b>ADUAN TELAH DIAMBIL</b>\n\n` +
+      `<b>No. Rujukan:</b> <code>${escapeHtml(noRujukan)}</code>\n` +
+      `<b>Status:</b> 🟠 DALAM TINDAKAN\n` +
+      `<b>Pegawai Bertugas:</b> ${escapeHtml(namaPegawai)}\n` +
+      `<b>Masa Diambil:</b> ${new Date().toLocaleTimeString('ms-MY')}\n\n` +
+      `<i>Aduan ini kini sedang dikendalikan oleh ${escapeHtml(namaPegawai)}.</i>`;
 
     return {
       success: true,
@@ -264,7 +264,7 @@ export async function processTelegramOfficerAction(params: {
 
   if (action === 'TAMBAH_TINDAKAN') {
     const note = catatan || 'Tindakan susulan sedang diambil.';
-    const tindakan = db.addTindakan({
+    await db.addTindakan({
       noRujukan,
       telegramUserId,
       namaPegawai,
@@ -273,11 +273,11 @@ export async function processTelegramOfficerAction(params: {
     });
 
     const replyMessage =
-      `📝 *CATATAN TINDAKAN DITAMBAH*\n\n` +
-      `*No. Rujukan:* \`${noRujukan}\`\n` +
-      `*Pegawai:* ${namaPegawai}\n` +
-      `*Catatan:* ${note}\n` +
-      `*Masa:* ${new Date().toLocaleTimeString('ms-MY')}`;
+      `📝 <b>CATATAN TINDAKAN DITAMBAH</b>\n\n` +
+      `<b>No. Rujukan:</b> <code>${escapeHtml(noRujukan)}</code>\n` +
+      `<b>Pegawai:</b> ${escapeHtml(namaPegawai)}\n` +
+      `<b>Catatan:</b> ${escapeHtml(note)}\n` +
+      `<b>Masa:</b> ${new Date().toLocaleTimeString('ms-MY')}`;
 
     return {
       success: true,
@@ -292,7 +292,7 @@ export async function processTelegramOfficerAction(params: {
       return { success: false, message: 'Status baharu diperlukan.' };
     }
     const note = catatan || `Status dikemaskini kepada ${newStatus} oleh ${namaPegawai}.`;
-    db.addTindakan({
+    await db.addTindakan({
       noRujukan,
       telegramUserId,
       namaPegawai,
@@ -300,7 +300,7 @@ export async function processTelegramOfficerAction(params: {
       catatanTindakan: note,
     });
 
-    const updated = db.updateComplaint(
+    const updated = await db.updateComplaint(
       noRujukan,
       {
         status: newStatus,
@@ -316,11 +316,11 @@ export async function processTelegramOfficerAction(params: {
     }
 
     const replyMessage =
-      `🔄 *STATUS ADUAN DIKEMASKINI*\n\n` +
-      `*No. Rujukan:* \`${noRujukan}\`\n` +
-      `*Status Baharu:* ${newStatus}\n` +
-      `*Pegawai:* ${namaPegawai}\n` +
-      `*Catatan:* ${note}`;
+      `🔄 <b>STATUS ADUAN DIKEMASKINI</b>\n\n` +
+      `<b>No. Rujukan:</b> <code>${escapeHtml(noRujukan)}</code>\n` +
+      `<b>Status Baharu:</b> ${escapeHtml(newStatus)}\n` +
+      `<b>Pegawai:</b> ${escapeHtml(namaPegawai)}\n` +
+      `<b>Catatan:</b> ${escapeHtml(note)}`;
 
     return {
       success: true,
@@ -334,7 +334,7 @@ export async function processTelegramOfficerAction(params: {
     const note = catatan || 'Tindakan pembaikan telah selesai dan diuji sepenuhnya.';
     const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
 
-    db.addTindakan({
+    await db.addTindakan({
       noRujukan,
       telegramUserId,
       namaPegawai,
@@ -342,7 +342,7 @@ export async function processTelegramOfficerAction(params: {
       catatanTindakan: note,
     });
 
-    const updated = db.updateComplaint(
+    const updated = await db.updateComplaint(
       noRujukan,
       {
         status: 'SELESAI',
@@ -357,13 +357,13 @@ export async function processTelegramOfficerAction(params: {
     }
 
     const replyMessage =
-      `🟢 *ADUAN SELESAI*\n\n` +
-      `*No. Rujukan:* \`${noRujukan}\`\n` +
-      `*Status:* 🟢 SELESAI\n` +
-      `*Pegawai Bertugas:* ${namaPegawai}\n` +
-      `📝 *Tindakan Akhir:* ${note}\n` +
-      `🕐 *Tarikh Selesai:* ${now}\n\n` +
-      `_Pelanggan telah dimaklumkan melalui emel dan boleh memberikan rating kepuasan._`;
+      `🟢 <b>ADUAN SELESAI</b>\n\n` +
+      `<b>No. Rujukan:</b> <code>${escapeHtml(noRujukan)}</code>\n` +
+      `<b>Status:</b> 🟢 SELESAI\n` +
+      `<b>Pegawai Bertugas:</b> ${escapeHtml(namaPegawai)}\n` +
+      `📝 <b>Tindakan Akhir:</b> ${escapeHtml(note)}\n` +
+      `🕐 <b>Tarikh Selesai:</b> ${escapeHtml(now)}\n\n` +
+      `<i>Pelanggan telah dimaklumkan melalui emel dan boleh memberikan rating kepuasan.</i>`;
 
     return {
       success: true,
