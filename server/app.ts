@@ -128,11 +128,11 @@ router.post('/complaints', async (req, res, next) => {
       }).catch((e) => console.error('Attachment upload notice:', e.message));
     }
 
-    // 2. Dispatch Telegram notification to designated Telegram Group (non-blocking)
-    sendTelegramNotification(newComplaint).catch((e) => console.error('Telegram dispatch notice:', e.message));
-
-    // 3. Send email notification to customer (non-blocking)
-    sendEmailNotification(newComplaint, 'DITERIMA').catch((e) => console.error('Email dispatch notice:', e.message));
+    // 2. Dispatch Telegram notification & Email notification (awaited with safe error boundaries so Serverless functions won't terminate early)
+    await Promise.allSettled([
+      sendTelegramNotification(newComplaint).catch((e) => console.error('Telegram dispatch notice:', e.message)),
+      sendEmailNotification(newComplaint, 'DITERIMA').catch((e) => console.error('Email dispatch notice:', e.message)),
+    ]);
 
     return res.status(201).json({
       success: true,

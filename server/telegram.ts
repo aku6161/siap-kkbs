@@ -19,8 +19,17 @@ export const CATEGORY_OFFICER_MAP: Record<string, string> = {
   LAIN_LAIN: 'Pegawai Perhubungan Pelanggan',
 };
 
+function escapeHtml(text: string): string {
+  if (!text) return '';
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 export function formatTelegramNewComplaintMessage(complaint: Complaint, appUrl: string): {
   text: string;
+  plainText: string;
   replyMarkup: any;
 } {
   const categoryIcons: Record<string, string> = {
@@ -36,21 +45,35 @@ export function formatTelegramNewComplaintMessage(complaint: Complaint, appUrl: 
 
   let cleanUrl = appUrl || 'http://localhost:3000';
   if (cleanUrl.includes('localhost') || cleanUrl.includes('127.0.0.1')) {
-    cleanUrl = 'https://siap-aduan.net';
+    cleanUrl = 'https://siapkkbs.vercel.app';
   }
-  const checkUrl = `${cleanUrl}/?ref=${complaint.noRujukan}`;
+  const checkUrl = `${cleanUrl}/?ref=${encodeURIComponent(complaint.noRujukan)}`;
 
+  // Safe HTML formatting
   const text =
-    `🚨 *ADUAN BAHARU – SiAP*\n\n` +
-    `*No. Rujukan:* \`${complaint.noRujukan}\`\n` +
-    `${icon} *Kategori:* ${complaint.kategoriNama}\n` +
-    `👮 *Pegawai Bertanggungjawab (PIC):* ${pic}\n` +
-    `📝 *Tajuk:* ${complaint.tajukAduan}\n` +
-    `📍 *Lokasi:* ${complaint.lokasi}\n` +
-    `👤 *Pengadu:* ${complaint.namaPengadu} (${complaint.telefon})\n` +
-    `🕐 *Tarikh:* ${complaint.tarikhMasa}\n` +
-    `*Status:* 🟡 MENUNGGU TINDAKAN\n\n` +
-    `📄 *Butiran:* ${complaint.butiranAduan.substring(0, 180)}${complaint.butiranAduan.length > 180 ? '...' : ''}`;
+    `🚨 <b>ADUAN BAHARU – SiAP</b>\n\n` +
+    `<b>No. Rujukan:</b> <code>${escapeHtml(complaint.noRujukan)}</code>\n` +
+    `${icon} <b>Kategori:</b> ${escapeHtml(complaint.kategoriNama)}\n` +
+    `👮 <b>Pegawai Bertanggungjawab (PIC):</b> ${escapeHtml(pic)}\n` +
+    `📝 <b>Tajuk:</b> ${escapeHtml(complaint.tajukAduan)}\n` +
+    `📍 <b>Lokasi:</b> ${escapeHtml(complaint.lokasi)}\n` +
+    `👤 <b>Pengadu:</b> ${escapeHtml(complaint.namaPengadu)} (${escapeHtml(complaint.telefon || '-')})\n` +
+    `🕐 <b>Tarikh:</b> ${escapeHtml(complaint.tarikhMasa)}\n` +
+    `<b>Status:</b> 🟡 MENUNGGU TINDAKAN\n\n` +
+    `📄 <b>Butiran:</b> ${escapeHtml(complaint.butiranAduan.substring(0, 250))}${complaint.butiranAduan.length > 250 ? '...' : ''}`;
+
+  // Plain text fallback (no markup formatting)
+  const plainText =
+    `🚨 ADUAN BAHARU – SiAP\n\n` +
+    `No. Rujukan: ${complaint.noRujukan}\n` +
+    `Kategori: ${complaint.kategoriNama}\n` +
+    `Pegawai Bertanggungjawab (PIC): ${pic}\n` +
+    `Tajuk: ${complaint.tajukAduan}\n` +
+    `Lokasi: ${complaint.lokasi}\n` +
+    `Pengadu: ${complaint.namaPengadu} (${complaint.telefon || '-'})\n` +
+    `Tarikh: ${complaint.tarikhMasa}\n` +
+    `Status: MENUNGGU TINDAKAN\n\n` +
+    `Butiran: ${complaint.butiranAduan.substring(0, 250)}${complaint.butiranAduan.length > 250 ? '...' : ''}`;
 
   const replyMarkup = {
     inline_keyboard: [
@@ -61,7 +84,7 @@ export function formatTelegramNewComplaintMessage(complaint: Complaint, appUrl: 
     ],
   };
 
-  return { text, replyMarkup };
+  return { text, plainText, replyMarkup };
 }
 
 export async function sendTelegramNotification(complaint: Complaint): Promise<TelegramDispatchResult> {
@@ -70,10 +93,10 @@ export async function sendTelegramNotification(complaint: Complaint): Promise<Te
   const chatId = complaint.telegramGroupId;
   let appUrl = process.env.APP_URL || '';
   if (!appUrl.startsWith('http://') && !appUrl.startsWith('https://')) {
-    appUrl = 'http://localhost:3001';
+    appUrl = 'https://siapkkbs.vercel.app';
   }
 
-  const { text, replyMarkup } = formatTelegramNewComplaintMessage(complaint, appUrl);
+  const { text, plainText, replyMarkup } = formatTelegramNewComplaintMessage(complaint, appUrl);
 
   // Log in system logs
   db.addLog({
@@ -96,20 +119,43 @@ export async function sendTelegramNotification(complaint: Complaint): Promise<Te
 
   let targetChatId = chatId;
   try {
+    // Try sending with HTML mode
     let response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: targetChatId,
         text,
-        parse_mode: 'Markdown',
+        parse_mode: 'HTML',
         reply_markup: replyMarkup,
       }),
     });
 
     let data = await response.json();
 
-    // Fallback self-healing: Try prepending -100 if chat not found for group IDs
+    // Fallback 1: If formatting failed, try sending plain text
+    if (!data.ok && data.description && (data.description.includes('parse') || data.description.includes('entity') || data.description.includes('HTML'))) {
+      console.warn(`Telegram HTML parse failed for chat ${targetChatId}. Retrying with plain text.`);
+      try {
+        const plainResponse = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: targetChatId,
+            text: plainText,
+            reply_markup: replyMarkup,
+          }),
+        });
+        const plainData = await plainResponse.json();
+        if (plainData.ok) {
+          data = plainData;
+        }
+      } catch (err: any) {
+        console.error('Telegram plain-text retry failed:', err.message);
+      }
+    }
+
+    // Fallback 2: Self-healing for missing -100 prefix in supergroups
     if (!data.ok && targetChatId.startsWith('-') && !targetChatId.startsWith('-100')) {
       const fallbackChatId = `-100${targetChatId.substring(1)}`;
       console.log(`Telegram chat not found for ${targetChatId}. Retrying with self-healing Chat ID: ${fallbackChatId}`);
@@ -121,7 +167,7 @@ export async function sendTelegramNotification(complaint: Complaint): Promise<Te
           body: JSON.stringify({
             chat_id: fallbackChatId,
             text,
-            parse_mode: 'Markdown',
+            parse_mode: 'HTML',
             reply_markup: replyMarkup,
           }),
         });
