@@ -248,12 +248,13 @@ class Database {
         const { lampiran, ...rest } = record;
         cleanRecord = rest;
       }
-      supabaseClient.from(table).upsert(cleanRecord).then(({ error }) => {
+      // Wrap in Promise.resolve so .catch() works reliably on Supabase v2 builder
+      Promise.resolve(supabaseClient.from(table).upsert(cleanRecord)).then(({ error }: { error: any }) => {
         if (error) {
           // If table not found, try fallback without siap_ prefix
-          if (error.message.includes('does not exist')) {
+          if (error.message && error.message.includes('does not exist')) {
             const fallbackTable = table.replace('siap_', '');
-            supabaseClient?.from(fallbackTable).upsert(cleanRecord).catch(() => {});
+            Promise.resolve(supabaseClient!.from(fallbackTable).upsert(cleanRecord)).catch(() => {});
           } else {
             console.warn(`Supabase upsert notice (${table}):`, error.message);
           }
