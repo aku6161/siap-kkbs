@@ -143,24 +143,26 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             {/* System Logo Image */}
             <div className="flex justify-center mb-6">
               <div className="relative group">
-                <div className="absolute -inset-6 bg-gradient-to-r from-blue-500/25 via-cyan-500/25 to-indigo-500/25 rounded-full blur-3xl opacity-60 group-hover:opacity-90 transition duration-500 pointer-events-none"></div>
-                <img
-                  src="https://lh3.googleusercontent.com/d/18It8YDlikS-i83oBAkhhqddJjJsO5fnR"
-                  alt="Logo Sistem SiAP - Sistem Aduan Pelanggan"
-                  referrerPolicy="no-referrer"
-                  loading="eager"
-                  className="relative w-44 sm:w-[240px] md:w-[280px] lg:w-[320px] max-h-56 object-contain mx-auto drop-shadow-[0_10px_25px_rgba(0,0,0,0.4)] transition-transform duration-300 group-hover:scale-102"
-                  onError={(e) => {
-                    const target = e.currentTarget;
-                    if (!target.dataset.triedFallback1) {
-                      target.dataset.triedFallback1 = 'true';
-                      target.src = 'https://drive.google.com/thumbnail?id=18It8YDlikS-i83oBAkhhqddJjJsO5fnR&sz=w1200';
-                    } else if (!target.dataset.triedFallback2) {
-                      target.dataset.triedFallback2 = 'true';
-                      target.src = 'https://drive.google.com/uc?export=view&id=18It8YDlikS-i83oBAkhhqddJjJsO5fnR';
-                    }
-                  }}
-                />
+                <div className="absolute -inset-4 bg-gradient-to-r from-cyan-400/30 via-blue-500/30 to-indigo-500/30 rounded-3xl blur-2xl opacity-70 group-hover:opacity-100 transition duration-500 pointer-events-none"></div>
+                <div className="relative px-6 py-4 sm:px-8 sm:py-5 rounded-3xl bg-white/92 backdrop-blur-2xl border border-white/90 shadow-[0_16px_40px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,1)] transition-transform duration-300 group-hover:scale-102 inline-flex items-center justify-center">
+                  <img
+                    src="https://lh3.googleusercontent.com/d/18It8YDlikS-i83oBAkhhqddJjJsO5fnR"
+                    alt="Logo Sistem SiAP - Sistem Aduan Pelanggan"
+                    referrerPolicy="no-referrer"
+                    loading="eager"
+                    className="w-48 sm:w-[240px] md:w-[280px] max-h-36 object-contain mx-auto drop-shadow-xs"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      if (!target.dataset.triedFallback1) {
+                        target.dataset.triedFallback1 = 'true';
+                        target.src = 'https://drive.google.com/thumbnail?id=18It8YDlikS-i83oBAkhhqddJjJsO5fnR&sz=w1200';
+                      } else if (!target.dataset.triedFallback2) {
+                        target.dataset.triedFallback2 = 'true';
+                        target.src = 'https://drive.google.com/uc?export=view&id=18It8YDlikS-i83oBAkhhqddJjJsO5fnR';
+                      }
+                    }}
+                  />
+                </div>
               </div>
             </div>
 
