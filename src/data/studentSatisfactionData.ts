@@ -807,9 +807,34 @@ export const STUDENT_SURVEY_RAW_DATA = [
   }
 ];
 
+// Storage key for client-side custom surveys
+const CUSTOM_SURVEYS_STORAGE_KEY = 'siap_custom_student_surveys';
+
+export function getCustomStudentSurveys(): StudentSurveyItem[] {
+  try {
+    if (typeof window === 'undefined') return [];
+    const raw = localStorage.getItem(CUSTOM_SURVEYS_STORAGE_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+export function saveCustomStudentSurvey(survey: StudentSurveyItem): void {
+  try {
+    if (typeof window === 'undefined') return;
+    const existing = getCustomStudentSurveys();
+    const updated = [survey, ...existing];
+    localStorage.setItem(CUSTOM_SURVEYS_STORAGE_KEY, JSON.stringify(updated));
+  } catch {
+    // Ignore storage issues
+  }
+}
+
 // Helper to compute structured processed items
 export function getProcessedStudentSurveys(): StudentSurveyItem[] {
-  return STUDENT_SURVEY_RAW_DATA.map((item, index) => {
+  const baseItems: StudentSurveyItem[] = STUDENT_SURVEY_RAW_DATA.map((item, index) => {
     // Extract year from timestamp (e.g. "2025/12/11 ..." or "2026/01/19 ...")
     const yearMatch = item.Timestamp.match(/(\d{4})/);
     const year = yearMatch ? parseInt(yearMatch[1], 10) : 2026;
@@ -854,4 +879,7 @@ export function getProcessedStudentSurveys(): StudentSurveyItem[] {
       cadangan: item.CADANGAN.trim(),
     };
   });
+
+  const customItems = getCustomStudentSurveys();
+  return [...customItems, ...baseItems];
 }

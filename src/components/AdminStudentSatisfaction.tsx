@@ -13,6 +13,13 @@ import {
   Sparkles,
   X,
   Filter,
+  Eye,
+  Copy,
+  Check,
+  Share2,
+  QrCode,
+  ExternalLink,
+  Link as LinkIcon,
 } from 'lucide-react';
 import {
   BarChart,
@@ -28,6 +35,7 @@ import {
 } from 'recharts';
 import * as XLSX from 'xlsx';
 import { getProcessedStudentSurveys, StudentSurveyItem } from '../data/studentSatisfactionData';
+import { StudentSurveyForm } from './StudentSurveyForm';
 
 interface AdminStudentSatisfactionProps {
   // Props if needed
@@ -41,6 +49,9 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [exportSuccess, setExportSuccess] = useState<boolean>(false);
+  const [isSurveyModalOpen, setIsSurveyModalOpen] = useState<boolean>(false);
+  const [isQrModalOpen, setIsQrModalOpen] = useState<boolean>(false);
+  const [linkCopied, setLinkCopied] = useState<boolean>(false);
 
   // All survey items
   const allSurveys: StudentSurveyItem[] = useMemo(() => {
@@ -255,9 +266,82 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
     }
   };
 
+  const getShareableUrl = () => {
+    if (typeof window !== 'undefined') {
+      return `${window.location.origin}${window.location.pathname}?tab=soalselidik`;
+    }
+    return 'https://siapkkbs.sudin.my/?tab=soalselidik';
+  };
+
+  const handleCopyShareLink = () => {
+    navigator.clipboard.writeText(getShareableUrl());
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 3000);
+  };
+
   return (
     <div className="space-y-8">
       
+      {/* 0. KAD PAUTAN KEPUASAN PELAJAR */}
+      <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden border border-blue-700/50">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-xs font-bold text-blue-200 border border-white/15">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              Pautan Kepuasan Pelajar
+            </div>
+            <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              Borang Soal Selidik Kepuasan Pelajar Digital
+            </h3>
+            <p className="text-xs sm:text-sm text-blue-100/90 leading-relaxed">
+              Kongsikan pautan atau kod QR kepada pelajar KKBS untuk mendapatkan penilaian fasiliti, kafeteria, Wi-Fi dan cadangan penambahbaikan secara terus.
+            </p>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">
+            <button
+              id="btn-buka-soal-selidik"
+              onClick={() => setIsSurveyModalOpen(true)}
+              className="px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-blue-500/30 transition-all flex items-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <Eye className="w-4 h-4 text-white" />
+              <span>Buka Borang Soal Selidik</span>
+            </button>
+
+            <button
+              id="btn-salin-pautan-survey"
+              onClick={handleCopyShareLink}
+              className="px-4 py-3 bg-white/15 hover:bg-white/25 text-white font-bold text-xs sm:text-sm rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 cursor-pointer"
+            >
+              {linkCopied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-blue-200" />}
+              <span>{linkCopied ? 'Pautan Disalin!' : 'Salin Pautan'}</span>
+            </button>
+
+            <button
+              id="btn-qr-survey"
+              onClick={() => setIsQrModalOpen(true)}
+              className="px-3.5 py-3 bg-white/15 hover:bg-white/25 text-white font-bold text-xs sm:text-sm rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-1.5 cursor-pointer"
+              title="Papar Kod QR"
+            >
+              <QrCode className="w-4 h-4 text-amber-300" />
+              <span className="hidden sm:inline">Kod QR</span>
+            </button>
+
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent('Sila lengkapkan Borang Soal Selidik Kepuasan Pelajar KKBS di pautan ini: ' + getShareableUrl())}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md transition-all flex items-center justify-center cursor-pointer hover:scale-105"
+              title="Kongsi ke WhatsApp"
+            >
+              <Share2 className="w-4 h-4" />
+            </a>
+          </div>
+        </div>
+      </div>
+
       {/* 1. FILTER BAR & HEADER */}
       <div className="glass-card p-6 sm:p-8 rounded-3xl border border-white/80 shadow-xl space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/60 pb-5">
@@ -756,6 +840,83 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
         </div>
 
       </div>
+
+      {/* MODAL PRATONTON / BUKA BORANG SOAL SELIDIK */}
+      {isSurveyModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md overflow-y-auto animate-fade-in">
+          <div className="relative w-full max-w-4xl max-h-[92vh] overflow-y-auto bg-slate-50 rounded-3xl shadow-2xl border border-white my-auto p-4 sm:p-6">
+            
+            {/* Modal Header bar */}
+            <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-200">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Pratonton Borang Soal Selidik Pelajar
+                </span>
+              </div>
+              <button
+                onClick={() => setIsSurveyModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-700 flex items-center justify-center transition-all"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <StudentSurveyForm
+              onSuccess={() => {
+                // Refresh surveys locally if needed
+              }}
+              onCancel={() => setIsSurveyModalOpen(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* MODAL KOD QR SOAL SELIDIK */}
+      {isQrModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-white p-6 sm:p-8 text-center space-y-5">
+            <button
+              onClick={() => setIsQrModalOpen(false)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-all"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="inline-flex p-3 bg-blue-50 text-blue-600 rounded-2xl">
+              <QrCode className="w-8 h-8" />
+            </div>
+
+            <div>
+              <h3 className="text-lg font-black text-slate-900">
+                Kod QR Soal Selidik Pelajar
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Imbas untuk membuka borang soal selidik di telefon bimbit pelajar
+              </p>
+            </div>
+
+            {/* QR Code Graphic */}
+            <div className="p-4 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(getShareableUrl())}`}
+                alt="QR Code Soal Selidik"
+                className="w-48 h-48 rounded-xl shadow-xs"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <button
+                onClick={handleCopyShareLink}
+                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
+              >
+                {linkCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                <span>{linkCopied ? 'Pautan Disalin!' : 'Salin Pautan URL'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

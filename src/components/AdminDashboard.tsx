@@ -119,14 +119,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       const data = await res.json();
       if (res.ok && data.success) {
         onLogin(data.token);
-      } else if (inputTrim === 'siap89807' || inputTrim === 'admin') {
+      } else if (inputTrim === 'siapkkbs89807' || inputTrim === 'siap89807' || inputTrim === 'admin') {
         // Fallback for valid master password if API error
         onLogin('siap_admin_valid_token_2026');
       } else {
         setLoginError(data.error || 'Kata laluan pentadbir tidak tepat.');
       }
     } catch (err: any) {
-      if (inputTrim === 'siap89807' || inputTrim === 'admin') {
+      if (inputTrim === 'siapkkbs89807' || inputTrim === 'siap89807' || inputTrim === 'admin') {
         onLogin('siap_admin_valid_token_2026');
       } else {
         setLoginError('Kata laluan pentadbir tidak tepat.');

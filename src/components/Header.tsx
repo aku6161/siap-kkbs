@@ -103,6 +103,18 @@ export const Header: React.FC<HeaderProps> = ({
               <BarChart3 className="w-4 h-4" />
               Statistik
             </button>
+            <button
+              id="nav-soalselidik"
+              onClick={() => setActiveTab('soalselidik')}
+              className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-200 flex items-center gap-1.5 ${
+                activeTab === 'soalselidik'
+                  ? 'bg-white/90 text-blue-600 shadow-sm border border-white/90 font-bold'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/40'
+              }`}
+            >
+              <GraduationCap className="w-4 h-4" />
+              Soal Selidik
+            </button>
           </nav>
 
           {/* Right Action Button */}
@@ -137,7 +149,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             id="mobile-nav-utama"
             onClick={() => setActiveTab('utama')}
-            className={`px-3 py-1.5 rounded-xl transition-all ${
+            className={`px-2.5 py-1.5 rounded-xl transition-all ${
               activeTab === 'utama'
                 ? 'font-bold text-blue-600 bg-white/80 shadow-xs border border-white/80'
                 : 'text-slate-600 hover:bg-white/40'
@@ -148,35 +160,46 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             id="mobile-nav-buat"
             onClick={() => setActiveTab('aduan')}
-            className={`px-3 py-1.5 rounded-xl transition-all ${
+            className={`px-2.5 py-1.5 rounded-xl transition-all ${
               activeTab === 'aduan'
                 ? 'font-bold text-blue-600 bg-white/80 shadow-xs border border-white/80'
                 : 'text-slate-600 hover:bg-white/40'
             }`}
           >
-            Buat Aduan
+            Aduan
           </button>
           <button
             id="mobile-nav-semak"
             onClick={() => setActiveTab('semak')}
-            className={`px-3 py-1.5 rounded-xl transition-all ${
+            className={`px-2.5 py-1.5 rounded-xl transition-all ${
               activeTab === 'semak'
                 ? 'font-bold text-blue-600 bg-white/80 shadow-xs border border-white/80'
                 : 'text-slate-600 hover:bg-white/40'
             }`}
           >
-            Semak Aduan
+            Semak
           </button>
           <button
             id="mobile-nav-stats"
             onClick={() => setActiveTab('statistik')}
-            className={`px-3 py-1.5 rounded-xl transition-all ${
+            className={`px-2.5 py-1.5 rounded-xl transition-all ${
               activeTab === 'statistik'
                 ? 'font-bold text-blue-600 bg-white/80 shadow-xs border border-white/80'
                 : 'text-slate-600 hover:bg-white/40'
             }`}
           >
             Statistik
+          </button>
+          <button
+            id="mobile-nav-survey"
+            onClick={() => setActiveTab('soalselidik')}
+            className={`px-2.5 py-1.5 rounded-xl transition-all ${
+              activeTab === 'soalselidik'
+                ? 'font-bold text-blue-600 bg-white/80 shadow-xs border border-white/80'
+                : 'text-slate-600 hover:bg-white/40'
+            }`}
+          >
+            Soal Selidik
           </button>
         </div>
       </div>

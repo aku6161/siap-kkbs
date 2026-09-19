@@ -42,6 +42,7 @@ export interface DBStore {
   tindakan: TindakanItem[];
   logs: LogItem[];
   emails: EmailLog[];
+  studentSurveys?: StudentSurveyItem[];
   lastSequenceNumber: number;
   config: {
     googleSheetId: string;
@@ -641,8 +642,20 @@ class Database {
     return this.store.emails.slice(0, limit);
   }
 
+  public async addStudentSurvey(survey: StudentSurveyItem): Promise<StudentSurveyItem> {
+    if (!this.store.studentSurveys) {
+      this.store.studentSurveys = [];
+    }
+    this.store.studentSurveys.unshift(survey);
+    this.saveToFile();
+    await this.sbUpsert(SUPABASE_TABLES.STUDENT_SURVEYS, { ...survey });
+    return survey;
+  }
+
   public getStudentSurveys(year?: string | number): StudentSurveyItem[] {
-    const all = getProcessedStudentSurveys();
+    const rawAll = getProcessedStudentSurveys();
+    const custom = this.store.studentSurveys || [];
+    const all = [...custom, ...rawAll];
     if (!year || year === 'ALL') return all;
     const yNum = typeof year === 'string' ? parseInt(year, 10) : year;
     return all.filter((item) => item.year === yNum);

@@ -6,6 +6,7 @@ import { ComplaintForm } from './components/ComplaintForm';
 import { ComplaintTracker } from './components/ComplaintTracker';
 import { PublicStats } from './components/PublicStats';
 import { AdminDashboard } from './components/AdminDashboard';
+import { StudentSurveyForm } from './components/StudentSurveyForm';
 import { DynamicHexagonBackground } from './components/DynamicHexagonBackground';
 import { Complaint, ComplaintCategory, TabType } from './types';
 
@@ -14,14 +15,21 @@ export function App() {
   const [selectedCategory, setSelectedCategory] = useState<ComplaintCategory>('KEMUDAHAN');
   const [searchRef, setSearchRef] = useState<string>('');
   
-  // Auto-detect ?ref= parameter from URL (e.g. when officer/user clicks Telegram button)
+  // Auto-detect ?ref= or ?tab= / ?survey= parameters from URL
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      const surveyParam = params.get('survey');
       const refParam = params.get('ref');
-      if (refParam) {
+
+      if (tabParam === 'soalselidik' || tabParam === 'kepuasan' || surveyParam === 'student' || surveyParam === 'true') {
+        setActiveTab('soalselidik');
+      } else if (refParam) {
         setSearchRef(refParam.trim().toUpperCase());
         setActiveTab('semak');
+      } else if (tabParam && ['utama', 'aduan', 'semak', 'statistik', 'admin'].includes(tabParam)) {
+        setActiveTab(tabParam as TabType);
       }
     } catch (e) {
       // ignore
@@ -122,6 +130,12 @@ export function App() {
           {activeTab === 'statistik' && (
             <PublicStats
               onNavigateToCreate={() => setActiveTab('aduan')}
+            />
+          )}
+
+          {activeTab === 'soalselidik' && (
+            <StudentSurveyForm
+              onCancel={() => setActiveTab('utama')}
             />
           )}
 

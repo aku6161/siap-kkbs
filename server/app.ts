@@ -526,9 +526,9 @@ router.post('/telegram/simulate-action', async (req, res, next) => {
 // Admin login check
 router.post('/admin/login', (req, res) => {
   const { password } = req.body || {};
-  const adminPassword = process.env.ADMIN_PASSWORD || 'siap89807';
+  const adminPassword = process.env.ADMIN_PASSWORD || 'siapkkbs89807';
 
-  if (password === adminPassword || password === 'siap89807' || password === 'admin123' || password === 'admin') {
+  if (password === adminPassword || password === 'siapkkbs89807' || password === 'siap89807' || password === 'admin') {
     return res.json({ success: true, token: 'siap_admin_valid_token_2026' });
   }
   return res.status(401).json({ error: 'Kata laluan pentadbir tidak tepat.' });
@@ -646,6 +646,102 @@ router.get('/admin/student-satisfaction', async (req, res, next) => {
       programBreakdown,
       surveys: list,
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Submit new student survey response (Public)
+router.post('/student-survey', async (req, res, next) => {
+  try {
+    const {
+      jantina,
+      programPengajian,
+      semester,
+      scores,
+      kemudahanPenambahbaikan,
+      cadangan,
+    } = req.body || {};
+
+    if (!programPengajian || !semester || !scores) {
+      return res.status(400).json({ error: 'Sila lengkapkan maklumat soal selidik yang diperlukan.' });
+    }
+
+    const currentYear = new Date().getFullYear();
+    const now = new Date();
+    const timestamp = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${now.toLocaleTimeString('en-US')} GMT+8`;
+    
+    // Generate sequential ID
+    const allSurveys = db.getStudentSurveys();
+    const nextSeq = allSurveys.length + 1;
+    const surveyId = `SURVEY-${currentYear}-${String(nextSeq).padStart(3, '0')}`;
+
+    // Compute overall score average if not provided
+    const s = scores;
+    const scoreValues = [
+      s.bilikKuliah,
+      s.immersiveCentre,
+      s.dewanKuliah,
+      s.makmalKomputer,
+      s.perpustakaan,
+      s.kafe,
+      s.kemudahanSokongan,
+      s.bengkelDapur,
+      s.wifi,
+    ].filter((v) => typeof v === 'number' && !isNaN(v));
+
+    const purataKeseluruhan = scoreValues.length
+      ? Number((scoreValues.reduce((a, b) => a + b, 0) / scoreValues.length).toFixed(2))
+      : 4.0;
+
+    const newSurveyItem = {
+      id: surveyId,
+      timestamp,
+      year: currentYear,
+      jantina: (jantina === 'PEREMPUAN' ? 'PEREMPUAN' : 'LELAKI') as 'LELAKI' | 'PEREMPUAN',
+      programPengajian: String(programPengajian).trim(),
+      semester: String(semester).trim(),
+      scores: {
+        bilikKuliah: Number(scores.bilikKuliah || 4),
+        immersiveCentre: Number(scores.immersiveCentre || 4),
+        dewanKuliah: Number(scores.dewanKuliah || 4),
+        makmalKomputer: Number(scores.makmalKomputer || 4),
+        perpustakaan: Number(scores.perpustakaan || 4),
+        kafe: Number(scores.kafe || 4),
+        kemudahanSokongan: Number(scores.kemudahanSokongan || 4),
+        bengkelDapur: Number(scores.bengkelDapur || 4),
+        wifi: Number(scores.wifi || 4),
+        purataKeseluruhan: Number(scores.purataKeseluruhan || purataKeseluruhan),
+      },
+      kemudahanPenambahbaikan: (kemudahanPenambahbaikan || 'WIFI').trim().toUpperCase(),
+      cadangan: (cadangan || '').trim() || '-',
+    };
+
+    const saved = await db.addStudentSurvey(newSurveyItem);
+
+    // Also log activity
+    await db.addLog({
+      jenisAktiviti: 'STATUS_DIKEMASKINI',
+      noRujukan: surveyId,
+      keterangan: `Maklum balas soal selidik baharu diterima daripada pelajar [${newSurveyItem.programPengajian} - Sem ${newSurveyItem.semester}].`,
+      dilakukanOleh: 'Pelajar KKBS',
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Terima kasih! Maklum balas soal selidik anda telah berjaya dihantar.',
+      survey: saved,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Get student surveys list (Public summary)
+router.get('/student-survey', async (req, res, next) => {
+  try {
+    const list = db.getStudentSurveys();
+    res.json({ total: list.length, count: list.length });
   } catch (err) {
     next(err);
   }

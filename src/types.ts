@@ -1,4 +1,4 @@
-export type TabType = 'utama' | 'aduan' | 'semak' | 'statistik' | 'admin';
+export type TabType = 'utama' | 'aduan' | 'semak' | 'statistik' | 'soalselidik' | 'admin';
 
 export type ComplaintCategory =
   | 'KEMUDAHAN'

@@ -15,6 +15,7 @@ import {
   Users,
   ShieldCheck,
   Zap,
+  GraduationCap,
 } from 'lucide-react';
 import { CATEGORIES, RATING_SCALE } from '../data/categories';
 import { ComplaintCategory, RatingSummary, SystemStats, TabType } from '../types';
@@ -195,6 +196,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <span className="text-xl">🟢</span>
                 <span>SEMAK ADUAN</span>
                 <Search className="w-5 h-5 ml-1" />
+              </button>
+
+              <button
+                id="hero-btn-soal-selidik"
+                onClick={() => onNavigate('soalselidik')}
+                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white/80 hover:bg-white text-slate-800 active:scale-98 font-extrabold text-base shadow-xl shadow-slate-900/10 transition-all flex items-center justify-center gap-3 cursor-pointer border border-white/90 backdrop-blur-md"
+              >
+                <GraduationCap className="w-5 h-5 text-indigo-600" />
+                <span>SOAL SELIDIK PELAJAR</span>
               </button>
             </div>
 
