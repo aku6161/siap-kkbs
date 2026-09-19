@@ -146,43 +146,32 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="text-center max-w-3xl mx-auto">
             
             {/* Top pill badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/70 backdrop-blur-md border border-white/80 text-blue-900 text-xs font-bold uppercase tracking-wider mb-6 shadow-xs">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse shadow-xs shadow-blue-500/50" />
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/70 backdrop-blur-md border border-cyan-400/40 text-cyan-300 text-xs font-bold uppercase tracking-wider mb-6 shadow-lg shadow-cyan-950/40">
+              <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shadow-sm shadow-cyan-400/80" />
               Sistem Aduan Bersepadu 24/7
             </div>
 
             {/* Accessible H1 */}
             <h1 className="sr-only">SiAP - Sistem Aduan Pelanggan</h1>
 
-            {/* System Logo Image from Google Drive */}
+            {/* System Logo Image */}
             <div className="flex justify-center mb-6">
               <div className="relative group">
-                <div className="absolute -inset-4 bg-gradient-to-r from-blue-500/15 via-indigo-500/15 to-teal-500/15 rounded-full blur-3xl opacity-40 group-hover:opacity-70 transition duration-500 pointer-events-none"></div>
+                <div className="absolute -inset-6 bg-gradient-to-r from-blue-500/25 via-cyan-500/25 to-indigo-500/25 rounded-full blur-3xl opacity-60 group-hover:opacity-90 transition duration-500 pointer-events-none"></div>
                 <img
-                  src="https://lh3.googleusercontent.com/d/18It8YDlikS-i83oBAkhhqddJjJsO5fnR"
+                  src="/logo.png"
                   alt="Logo Sistem SiAP - Sistem Aduan Pelanggan"
-                  referrerPolicy="no-referrer"
                   loading="eager"
-                  className="relative w-44 sm:w-[240px] md:w-[280px] lg:w-[320px] max-h-56 object-contain mx-auto drop-shadow-xl transition-transform duration-300 group-hover:scale-102"
-                  onError={(e) => {
-                    const target = e.currentTarget;
-                    if (!target.dataset.triedFallback1) {
-                      target.dataset.triedFallback1 = 'true';
-                      target.src = 'https://drive.google.com/thumbnail?id=18It8YDlikS-i83oBAkhhqddJjJsO5fnR&sz=w1200';
-                    } else if (!target.dataset.triedFallback2) {
-                      target.dataset.triedFallback2 = 'true';
-                      target.src = 'https://drive.google.com/uc?export=view&id=18It8YDlikS-i83oBAkhhqddJjJsO5fnR';
-                    }
-                  }}
+                  className="relative w-44 sm:w-[240px] md:w-[280px] lg:w-[320px] max-h-56 object-contain mx-auto drop-shadow-[0_10px_25px_rgba(0,0,0,0.4)] transition-transform duration-300 group-hover:scale-102"
                 />
               </div>
             </div>
 
-            <p className="relative z-10 text-xl sm:text-2xl font-bold text-slate-800 italic mb-4">
+            <p className="relative z-10 text-xl sm:text-2xl font-black text-white italic mb-4 drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]">
               "SiAP Menerima, SiAP Bertindak"
             </p>
 
-            <p className="text-base sm:text-lg text-slate-600 leading-relaxed mb-10 max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg text-slate-200 leading-relaxed mb-10 max-w-2xl mx-auto font-medium drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]">
               Platform digital untuk menyalurkan aduan, memantau tindakan dan memberikan maklum balas
               dengan lebih mudah, pantas dan tersusun.
             </p>

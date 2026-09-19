@@ -6,6 +6,7 @@ import { ComplaintForm } from './components/ComplaintForm';
 import { ComplaintTracker } from './components/ComplaintTracker';
 import { PublicStats } from './components/PublicStats';
 import { AdminDashboard } from './components/AdminDashboard';
+import { DynamicHexagonBackground } from './components/DynamicHexagonBackground';
 import { Complaint, ComplaintCategory, TabType } from './types';
 
 export function App() {
@@ -77,21 +78,10 @@ export function App() {
   };
 
   return (
-    <div className="relative min-h-screen bg-slate-100/90 text-slate-900 flex flex-col font-sans antialiased selection:bg-blue-600 selection:text-white overflow-x-hidden">
+    <div className="relative min-h-screen text-slate-900 flex flex-col font-sans antialiased selection:bg-blue-600 selection:text-white overflow-x-hidden">
       
-      {/* Frosted Ambient Glowing Orbs Background */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        {/* Soft Blue Orb top-left */}
-        <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-400/25 rounded-full blur-3xl" />
-        {/* Indigo/Purple Orb top-right */}
-        <div className="absolute top-1/4 -right-20 w-[30rem] h-[30rem] bg-indigo-400/20 rounded-full blur-3xl" />
-        {/* Emerald Orb center-left */}
-        <div className="absolute top-1/2 -left-20 w-80 h-80 bg-emerald-400/15 rounded-full blur-3xl" />
-        {/* Amber Orb bottom-right */}
-        <div className="absolute bottom-10 right-10 w-96 h-96 bg-amber-300/15 rounded-full blur-3xl" />
-        {/* Violet Orb bottom-left */}
-        <div className="absolute -bottom-20 left-1/3 w-[28rem] h-[28rem] bg-violet-400/20 rounded-full blur-3xl" />
-      </div>
+      {/* Dynamic Hexagon Motion Graphics Background */}
+      <DynamicHexagonBackground />
 
       {/* Content wrapper above backdrop */}
       <div className="relative z-10 flex flex-col min-h-screen">

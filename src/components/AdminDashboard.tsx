@@ -263,16 +263,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="glass-card rounded-3xl border border-white/80 shadow-2xl p-8 text-center">
           <div className="w-20 h-20 flex items-center justify-center mx-auto mb-4">
             <img
-              src="https://lh3.googleusercontent.com/d/1wuY-0qy28C7QQrX6FAY9zTDyLhGP2drh"
+              src="/logo.png"
               alt="Logo SiAP"
-              referrerPolicy="no-referrer"
               className="w-full h-full object-contain drop-shadow-xl"
-              onError={(e) => {
-                const target = e.currentTarget;
-                if (!target.src.includes('uc?export=view')) {
-                  target.src = 'https://drive.google.com/uc?export=view&id=1wuY-0qy28C7QQrX6FAY9zTDyLhGP2drh';
-                }
-              }}
             />
           </div>
 
