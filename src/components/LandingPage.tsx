@@ -137,12 +137,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center max-w-3xl mx-auto">
             
-            {/* Top pill badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/70 backdrop-blur-md border border-cyan-400/40 text-cyan-300 text-xs font-bold uppercase tracking-wider mb-6 shadow-lg shadow-cyan-950/40">
-              <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shadow-sm shadow-cyan-400/80" />
-              Sistem Aduan Bersepadu 24/7
-            </div>
-
             {/* Accessible H1 */}
             <h1 className="sr-only">SiAP - Sistem Aduan Pelanggan</h1>
 
@@ -151,10 +145,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <div className="relative group">
                 <div className="absolute -inset-6 bg-gradient-to-r from-blue-500/25 via-cyan-500/25 to-indigo-500/25 rounded-full blur-3xl opacity-60 group-hover:opacity-90 transition duration-500 pointer-events-none"></div>
                 <img
-                  src="/logo.png"
+                  src="https://lh3.googleusercontent.com/d/18It8YDlikS-i83oBAkhhqddJjJsO5fnR"
                   alt="Logo Sistem SiAP - Sistem Aduan Pelanggan"
+                  referrerPolicy="no-referrer"
                   loading="eager"
                   className="relative w-44 sm:w-[240px] md:w-[280px] lg:w-[320px] max-h-56 object-contain mx-auto drop-shadow-[0_10px_25px_rgba(0,0,0,0.4)] transition-transform duration-300 group-hover:scale-102"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    if (!target.dataset.triedFallback1) {
+                      target.dataset.triedFallback1 = 'true';
+                      target.src = 'https://drive.google.com/thumbnail?id=18It8YDlikS-i83oBAkhhqddJjJsO5fnR&sz=w1200';
+                    } else if (!target.dataset.triedFallback2) {
+                      target.dataset.triedFallback2 = 'true';
+                      target.src = 'https://drive.google.com/uc?export=view&id=18It8YDlikS-i83oBAkhhqddJjJsO5fnR';
+                    }
+                  }}
                 />
               </div>
             </div>

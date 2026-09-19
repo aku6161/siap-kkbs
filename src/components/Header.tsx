@@ -28,9 +28,16 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <div className="w-11 h-11 flex items-center justify-center group-hover:scale-105 transition-all duration-200">
               <img
-                src="/logo.png"
+                src="https://lh3.googleusercontent.com/d/1wuY-0qy28C7QQrX6FAY9zTDyLhGP2drh"
                 alt="Logo SiAP"
+                referrerPolicy="no-referrer"
                 className="w-full h-full object-contain drop-shadow-md"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  if (!target.src.includes('uc?export=view')) {
+                    target.src = 'https://drive.google.com/uc?export=view&id=1wuY-0qy28C7QQrX6FAY9zTDyLhGP2drh';
+                  }
+                }}
               />
             </div>
             <div>
