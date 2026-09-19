@@ -275,7 +275,7 @@ export const ComplaintForm: React.FC<ComplaintFormProps> = ({
               Portal Awam
             </span>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-3">
-              Borang Buat Aduan
+              Borang Aduan
             </h1>
             <p className="text-sm text-slate-600 mt-1">
               Sila isikan maklumat aduan dengan tepat. Tiada pendaftaran akaun diperlukan.
@@ -334,7 +334,7 @@ export const ComplaintForm: React.FC<ComplaintFormProps> = ({
                   onChange={(e) => setTelefon(e.target.value)}
                   className="w-full px-3.5 py-2.5 text-sm text-slate-900 glass-input rounded-xl focus:outline-none transition-all cursor-pointer font-medium bg-white/80"
                 >
-                  <option value="" disabled>-- Sila Pilih Kategori Pengadu --</option>
+                  <option value="" disabled>-- Sila Pilih --</option>
                   <option value="Kakitangan">Kakitangan</option>
                   <option value="Pelajar">Pelajar</option>
                   <option value="Peserta Kursus Pendek">Peserta Kursus Pendek</option>
@@ -365,9 +365,6 @@ export const ComplaintForm: React.FC<ComplaintFormProps> = ({
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
                 2. Kategori Aduan <span className="text-red-500">*</span>
               </h3>
-              <span className="text-[11px] font-bold text-blue-700 bg-white/80 px-3 py-1 rounded-full border border-white/90 shadow-xs backdrop-blur-sm">
-                Saluran Telegram: {selectedCategoryConfig.telegramGroup}
-              </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">

@@ -215,7 +215,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               Purata Kepuasan Pelanggan
             </h2>
             <p className="text-sm sm:text-base text-slate-600 mt-1">
-              Purata rating pelanggan dikira secara dinamik berdasarkan setiap aduan yang telah selesai.
+              Purata rating pelanggan dikira secara dinamik berdasarkan rating umum atau aduan yang telah selesai.
             </p>
           </div>
 

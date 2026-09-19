@@ -444,13 +444,6 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
               </p>
             </div>
           </div>
-
-          {/* Quick Active Record Tag */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-blue-800 bg-blue-50 px-3.5 py-1.5 rounded-full border border-blue-200 shadow-xs">
-              📊 {baseFilteredSurveys.length} Responden Dipaparkan
-            </span>
-          </div>
         </div>
 
         {/* Filters Row: Tahun Dropdown, Program Dropdown, Semester Dropdown, Search */}
@@ -843,12 +836,6 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
                 Memaparkan keperluan segera dan cadangan penambahbaikan terbuka daripada pelajar
               </p>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-xl">
-              {tableSurveys.length} Rekod Maklum Balas
-            </span>
           </div>
         </div>
 
