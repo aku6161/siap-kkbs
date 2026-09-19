@@ -18,8 +18,6 @@ import {
   ListOrdered,
   Bot,
   FileSpreadsheet,
-  Mail,
-  History,
   Lock,
   LogOut,
   Search,
@@ -38,7 +36,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { CATEGORIES, STATUS_CONFIG } from '../data/categories';
-import { Complaint, ComplaintCategory, ComplaintStatus, EmailLog, LogItem, SystemStats, TindakanItem } from '../types';
+import { Complaint, ComplaintCategory, ComplaintStatus, SystemStats, TindakanItem } from '../types';
 import { printComplaintReport } from '../utils/printReport';
 import { AdminComplaintDetailModal } from './AdminComplaintDetailModal';
 
@@ -53,7 +51,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onLogin,
   onLogout,
 }) => {
-  const [activeTab, setActiveTab] = useState<'ringkasan' | 'senarai' | 'audit'>('ringkasan');
+  const [activeTab, setActiveTab] = useState<'ringkasan' | 'senarai'>('ringkasan');
   const [passwordInput, setPasswordInput] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -63,8 +61,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [stats, setStats] = useState<SystemStats | null>(null);
   const [categoryStats, setCategoryStats] = useState<any[]>([]);
   const [monthlyTrends, setMonthlyTrends] = useState<any[]>([]);
-  const [auditLogs, setAuditLogs] = useState<LogItem[]>([]);
-  const [emailLogs, setEmailLogs] = useState<EmailLog[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   // Filters for complaints list
@@ -80,24 +76,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const fetchAdminData = async () => {
     setIsLoading(true);
     try {
-      const [compRes, statsRes, logsRes, emailRes] = await Promise.all([
+      const [compRes, statsRes] = await Promise.all([
         fetch(`/api/admin/complaints?search=${encodeURIComponent(searchQuery)}&kategori=${selectedCategoryFilter}&status=${selectedStatusFilter}&startDate=${startDateFilter}&endDate=${endDateFilter}`),
         fetch('/api/admin/stats'),
-        fetch('/api/admin/logs'),
-        fetch('/api/admin/emails'),
       ]);
 
       const compData = await compRes.json();
       const statsData = await statsRes.json();
-      const logsData = await logsRes.json();
-      const emailData = await emailRes.json();
 
       if (compData.complaints) setComplaints(compData.complaints);
       if (statsData.stats) setStats(statsData.stats);
       if (statsData.categoryStats) setCategoryStats(statsData.categoryStats);
       if (statsData.monthlyTrends) setMonthlyTrends(statsData.monthlyTrends);
-      if (Array.isArray(logsData)) setAuditLogs(logsData);
-      if (Array.isArray(emailData)) setEmailLogs(emailData);
     } catch (err) {
       console.error('Error fetching admin data:', err);
     } finally {
@@ -365,18 +355,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         >
           <ListOrdered className="w-4 h-4" />
           <span>Senarai Aduan ({complaints.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('audit')}
-          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-2 cursor-pointer ${
-            activeTab === 'audit'
-              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25 border border-white/20'
-              : 'bg-white/70 backdrop-blur-md text-slate-600 hover:bg-white border border-white/80'
-          }`}
-        >
-          <History className="w-4 h-4" />
-          <span>Audit Trail & Emel</span>
         </button>
       </div>
 
@@ -705,66 +683,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 )}
               </tbody>
             </table>
-          </div>
-
-        </div>
-      )}
-
-      {/* ==========================================
-          TAB 3: AUDIT TRAIL & EMEL
-         ========================================== */}
-      {activeTab === 'audit' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          
-          {/* Audit Logs */}
-          <div className="lg:col-span-7 glass-card p-6 sm:p-8 rounded-3xl space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <History className="w-4 h-4 text-blue-600" />
-              <span>Log Jejak Audit Aktiviti Sistem (Sheet LOG)</span>
-            </h3>
-
-            <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1 text-xs">
-              {auditLogs.map((log) => (
-                <div key={log.id} className="p-3.5 bg-white/60 border border-white/80 rounded-2xl backdrop-blur-xs shadow-xs">
-                  <div className="flex items-center justify-between text-[11px] mb-1">
-                    <span className="font-bold text-blue-600 font-mono">{log.noRujukan}</span>
-                    <span className="text-slate-400 font-mono">{log.tarikhMasa}</span>
-                  </div>
-                  <p className="text-slate-800 font-medium">{log.keterangan}</p>
-                  <span className="block text-[10px] text-slate-500 mt-1">
-                    Dilakukan Oleh: <strong>{log.dilakukanOleh}</strong> ({log.jenisAktiviti})
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Email Logs */}
-          <div className="lg:col-span-5 glass-card p-6 sm:p-8 rounded-3xl space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Mail className="w-4 h-4 text-emerald-600" />
-              <span>Notifikasi Emel Pelanggan</span>
-            </h3>
-
-            <p className="text-xs text-slate-500">
-              Setiap emel dihantar dengan nama pengirim <strong>"SiAP – Sistem Aduan Pelanggan"</strong>.
-            </p>
-
-            <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1 text-xs">
-              {emailLogs.map((em) => (
-                <div key={em.id} className="p-3.5 bg-white/60 border border-white/80 rounded-2xl backdrop-blur-xs shadow-xs space-y-1">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-bold text-slate-900">{em.penerima}</span>
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-200">
-                      {em.status}
-                    </span>
-                  </div>
-                  <p className="font-semibold text-blue-700 text-[11px]">{em.subjek}</p>
-                  <p className="text-slate-600 text-[11px] line-clamp-2">{em.kandungan}</p>
-                  <span className="block text-[10px] text-slate-400 font-mono">{em.tarikhMasa}</span>
-                </div>
-              ))}
-            </div>
           </div>
 
         </div>
