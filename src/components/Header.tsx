@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, PlusCircle, Search, BarChart3, Lock, Sparkles } from 'lucide-react';
+import { ShieldCheck, PlusCircle, Search, BarChart3, Lock, Sparkles, GraduationCap } from 'lucide-react';
 import { TabType } from '../types';
 
 interface HeaderProps {

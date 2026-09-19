@@ -815,7 +815,8 @@ export function getCustomStudentSurveys(): StudentSurveyItem[] {
     if (typeof window === 'undefined') return [];
     const raw = localStorage.getItem(CUSTOM_SURVEYS_STORAGE_KEY);
     if (!raw) return [];
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
