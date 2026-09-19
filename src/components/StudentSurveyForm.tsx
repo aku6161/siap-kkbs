@@ -33,7 +33,7 @@ interface StudentSurveyFormProps {
 export const SURVEY_SECTIONS = [
   {
     id: 'bilikKuliah1',
-    title: 'Bilik Kuliah (Sesi 1 / Teori)',
+    title: 'Bilik Kuliah 1',
     icon: Building2,
     badgeColor: 'bg-blue-100 text-blue-800 border-blue-200',
     questions: [
@@ -47,7 +47,7 @@ export const SURVEY_SECTIONS = [
   },
   {
     id: 'bilikKuliah2',
-    title: 'Bilik Kuliah (Sesi 2 / Amali)',
+    title: 'Bilik Kuliah 2',
     icon: Building2,
     badgeColor: 'bg-blue-100 text-blue-800 border-blue-200',
     questions: [
@@ -75,7 +75,7 @@ export const SURVEY_SECTIONS = [
   },
   {
     id: 'dewanKuliah',
-    title: 'Dewan Kuliah Utama',
+    title: 'Dewan Kuliah',
     icon: GraduationCap,
     badgeColor: 'bg-purple-100 text-purple-800 border-purple-200',
     questions: [
@@ -103,7 +103,7 @@ export const SURVEY_SECTIONS = [
   },
   {
     id: 'perpustakaan',
-    title: 'Perpustakaan & Pusat Sumber',
+    title: 'Perpustakaan',
     icon: BookOpen,
     badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-200',
     questions: [
@@ -118,7 +118,7 @@ export const SURVEY_SECTIONS = [
   },
   {
     id: 'kafe',
-    title: 'Kafeteria / Kafe Kolej',
+    title: 'E-Tech Centre',
     icon: Coffee,
     badgeColor: 'bg-amber-100 text-amber-800 border-amber-200',
     questions: [
@@ -132,7 +132,7 @@ export const SURVEY_SECTIONS = [
   },
   {
     id: 'kemudahanSokongan',
-    title: 'Kemudahan Sokongan (Tempat Rehat, Tandas, Surau, Tempat Letak Kenderaan)',
+    title: 'Kemudahan Sokongan',
     icon: HelpCircle,
     badgeColor: 'bg-teal-100 text-teal-800 border-teal-200',
     questions: [
@@ -163,12 +163,8 @@ export const SURVEY_SECTIONS = [
 
 const PROGRAM_OPTIONS = [
   'SIJIL KULINARI',
-  'SIJIL TEKNOLOGI ELEKTRIK',
   'SIJIL OPERASI PERHOTELAN',
-  'SIJIL TEKNOLOGI PENYEJUKAN & PENYAMANAN UDARA',
-  'SIJIL TERAPI KECANTIKAN & SPA',
-  'SIJIL PEMPROSESAN MAKANAN',
-  'PROGRAM LAIN-LAIN',
+  'SIJIL TEKNOLOGI ELEKTRIK',
 ];
 
 const SEMESTER_OPTIONS = [
@@ -181,6 +177,7 @@ const SEMESTER_OPTIONS = [
 const PRIORITY_FACILITY_OPTIONS = [
   'WIFI',
   'KAFE',
+  'E-TECH CENTRE',
   'TANDAS',
   'SURAU',
   'KOMPUTER',
@@ -189,7 +186,6 @@ const PRIORITY_FACILITY_OPTIONS = [
   'PERALATAN PDP SKU',
   'PERALATAN PDP SOP',
   'PERPUSTAKAAN',
-  'ASRAMA',
   'BILIK KULIAH',
   'LAIN-LAIN',
 ];
@@ -412,34 +408,12 @@ export const StudentSurveyForm: React.FC<StudentSurveyFormProps> = ({
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-2xl relative overflow-hidden mb-8 border border-blue-800">
         <div className="relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-xs font-semibold text-blue-200 border border-white/15 mb-3">
-            <GraduationCap className="w-4 h-4 text-amber-400" />
-            Borang Soal Selidik Rasmi Kolej Komuniti Bandar Penawar
-          </div>
           <h1 className="text-xl sm:text-3xl font-black tracking-tight leading-tight mb-2">
             Kajian Soal Selidik Kepuasan Pelajar Terhadap Fasiliti & Kemudahan KKBS
           </h1>
           <p className="text-blue-100/90 text-xs sm:text-sm max-w-2xl leading-relaxed">
             Sila berikan maklum balas dan penilaian ikhlas anda bagi setiap aspek di bawah mengikut skala 1 (Sangat Tidak Memuaskan) hingga 5 (Sangat Memuaskan).
           </p>
-
-          <div className="mt-4 flex items-center justify-between flex-wrap gap-3 pt-3 border-t border-white/10">
-            <div className="text-xs text-blue-200 font-semibold flex items-center gap-2">
-              <span>📊 Purata Keseluruhan:</span>
-              <span className="font-extrabold text-white text-sm bg-blue-600/60 px-2.5 py-0.5 rounded-lg border border-blue-400/40">
-                ⭐ {computedMetrics.purataKeseluruhan} / 5.00
-              </span>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleCopyLink}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-bold rounded-xl backdrop-blur-md border border-white/20 transition-all"
-            >
-              {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-blue-300" />}
-              <span>{copiedLink ? 'Disalin!' : 'Salin Pautan'}</span>
-            </button>
-          </div>
         </div>
       </div>
 
@@ -527,12 +501,12 @@ export const StudentSurveyForm: React.FC<StudentSurveyFormProps> = ({
           </div>
         </div>
 
-        {/* SECTION 2: SEMUA 56 SOALAN MENGIKUT KATEGORI TEPAT CSV */}
+        {/* SECTION 2: SEMUA SOALAN MENGIKUT KATEGORI TEPAT CSV */}
         <div className="space-y-6">
           <div className="flex items-center justify-between px-2">
             <div>
               <h2 className="text-xl font-black text-slate-900 tracking-tight">
-                Penilaian Soal Selidik (56 Item)
+                Penilaian Soal Selidik
               </h2>
               <p className="text-xs text-slate-500 font-medium">
                 Skala: 1-Sangat Tidak Memuaskan, 2-Tidak Memuaskan, 3-Sederhana, 4-Memuaskan, 5-Sangat Memuaskan
@@ -730,17 +704,17 @@ export const StudentSurveyForm: React.FC<StudentSurveyFormProps> = ({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full sm:w-auto flex-1 sm:flex-none sm:min-w-[280px] inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-base rounded-2xl shadow-xl shadow-blue-500/25 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+            className="w-full sm:w-auto flex-1 sm:flex-none sm:min-w-[200px] inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-base rounded-2xl shadow-xl shadow-blue-500/25 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
           >
             {isSubmitting ? (
               <>
                 <RefreshCw className="w-5 h-5 animate-spin" />
-                <span>Menghantar Borang Soal Selidik...</span>
+                <span>Menghantar...</span>
               </>
             ) : (
               <>
                 <Send className="w-5 h-5" />
-                <span>Hantar Maklum Balas Soal Selidik</span>
+                <span>Hantar</span>
               </>
             )}
           </button>
