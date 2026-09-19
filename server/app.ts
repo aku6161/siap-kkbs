@@ -1029,8 +1029,9 @@ router.post('/admin/gemini/analyze', async (req, res, next) => {
   }
 });
 
-// Weekly Backup Cron Endpoint
+// Weekly Backup Cron Endpoint (Triggered automatically every Sunday 2:00 AM)
 router.post('/cron/backup', handleBackupCron);
+router.get('/cron/backup', handleBackupCron);
 
 // Admin manual backup trigger
 router.post('/admin/backup/trigger', async (_req, res, next) => {

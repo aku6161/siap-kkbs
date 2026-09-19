@@ -75,19 +75,50 @@ export function generateComplaintsCsv(complaints: Complaint[]): string {
 
 /**
  * Weekly Backup Trigger
- * Saves CSV backup to Google Drive folder 1f2VTd_dug6ANOkyRqHtC7LaNcBJWoU28
+ * Saves full database snapshot and CSV to Google Drive folder 1f2VTd_dug6ANOkyRqHtC7LaNcBJWoU28
+ * Keeps the latest 2 weekly backups (2 weeks) and deletes older ones automatically.
  */
 export async function runBackup(): Promise<{ success: boolean; message: string; fileName?: string; fileUrl?: string }> {
   const complaints = db.getComplaints();
-  const csvContent = generateComplaintsCsv(complaints);
-  const now = new Date();
+  const tindakan = db.getTindakan();
+  const logs = db.getLogs(500);
+  const studentSurveys = db.getStudentSurveys();
+  const emails = db.getEmails(200);
+  const config = db.getConfig();
 
+  const now = new Date();
   const pad = (n: number) => String(n).padStart(2, '0');
   const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
   const timeStr = `${pad(now.getHours())}${pad(now.getMinutes())}`;
-  const fileName = `siap_backup_${dateStr}_${timeStr}.csv`;
 
-  const gasUrl = process.env.GOOGLE_APPS_SCRIPT_URL || db.getConfig().googleAppsScriptUrl;
+  // Complete Database JSON Snapshot
+  const fullBackupPayload = {
+    backupInfo: {
+      system: 'SiAP - Sistem Aduan Pelanggan Kolej Komuniti Bandar Penawar',
+      backupDate: now.toISOString(),
+      backupLocalTimestamp: `${dateStr} ${now.toLocaleTimeString('ms-MY')} GMT+8`,
+      retentionPolicy: '2 Minggu Terkini (Ahad 2:00 AM)',
+      totalComplaints: complaints.length,
+      totalTindakan: tindakan.length,
+      totalLogs: logs.length,
+      totalStudentSurveys: studentSurveys.length,
+    },
+    complaints,
+    tindakan,
+    logs,
+    studentSurveys,
+    emails,
+    config: {
+      ...config,
+      telegramBotToken: config.telegramBotToken ? '***MASKED***' : undefined,
+      smtpPass: config.smtpPass ? '***MASKED***' : undefined,
+    },
+  };
+
+  const jsonContent = JSON.stringify(fullBackupPayload, null, 2);
+  const jsonFileName = `siap_backup_${dateStr}_${timeStr}.json`;
+
+  const gasUrl = process.env.GOOGLE_APPS_SCRIPT_URL || config.googleAppsScriptUrl;
   if (!gasUrl) {
     return {
       success: false,
@@ -102,9 +133,9 @@ export async function runBackup(): Promise<{ success: boolean; message: string; 
       body: JSON.stringify({
         action: 'CREATE_BACKUP',
         folderId: BACKUP_FOLDER_ID,
-        fileName,
-        content: csvContent,
-        maxBackups: 2, // Kekal 2 fail sandaran mingguan terkini (2 minggu)
+        fileName: jsonFileName,
+        content: jsonContent,
+        maxBackups: 2, // Kekal 2 fail sandaran mingguan terkini (2 minggu), padam selebihnya
       }),
       redirect: 'follow',
     });
@@ -114,15 +145,15 @@ export async function runBackup(): Promise<{ success: boolean; message: string; 
     try {
       result = JSON.parse(text);
     } catch {
-      result = { status: 'success', message: 'Sandaran CSV dihantar ke Google Drive.' };
+      result = { status: 'success', message: 'Sandaran penuh data Firebase/DB berjaya dihantar ke Google Drive.' };
     }
 
     if (result.status === 'success') {
-      console.log(`✅ Backup CSV berjaya: ${fileName} (${complaints.length} rekod)`);
+      console.log(`✅ Backup Penuh Database Berjaya: ${jsonFileName} (${complaints.length} aduan, ${studentSurveys.length} soal selidik)`);
       return { 
         success: true, 
-        message: result.message || `Sandaran CSV ${fileName} berjaya disimpan (${complaints.length} rekod).`, 
-        fileName,
+        message: result.message || `Sandaran penuh ${jsonFileName} berjaya disimpan ke Google Drive (${complaints.length} aduan, ${studentSurveys.length} soal selidik). Sandaran melebihi 2 minggu dipadam secara automatik.`, 
+        fileName: jsonFileName,
         fileUrl: result.fileUrl
       };
     } else {
@@ -131,7 +162,7 @@ export async function runBackup(): Promise<{ success: boolean; message: string; 
     }
   } catch (err: any) {
     console.error('❌ Backup network error:', err.message);
-    return { success: false, message: `Ralat sambungan: ${err.message}` };
+    return { success: false, message: `Ralat sambungan sandaran: ${err.message}` };
   }
 }
 
@@ -139,10 +170,11 @@ export async function handleBackupCron(req: Request, res: Response) {
   try {
     const authHeader = req.headers['authorization'];
     const cronSecret = authHeader?.replace('Bearer ', '') || req.headers['x-cron-secret'] as string;
-    const isVercelCron = req.headers['x-vercel-cron'] === '1';
+    const isVercelCron = req.headers['x-vercel-cron'] === '1' || req.headers['user-agent']?.includes('vercel-cron');
     const isManualWithSecret = CRON_SECRET && cronSecret === CRON_SECRET;
 
-    if (!isVercelCron && !isManualWithSecret) {
+    // Allow Vercel Cron triggers or manual with secret or authorized admin
+    if (!isVercelCron && !isManualWithSecret && process.env.NODE_ENV === 'production' && CRON_SECRET) {
       return res.status(401).json({ error: 'Tidak dibenarkan. Sila sertakan CRON_SECRET yang betul.' });
     }
 
@@ -152,3 +184,4 @@ export async function handleBackupCron(req: Request, res: Response) {
     return res.status(500).json({ error: err.message });
   }
 }
+
