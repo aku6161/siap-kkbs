@@ -1,3 +1,86 @@
+export interface SurveyQuestionDef {
+  id: number;
+  sectionId: string;
+  sectionTitle: string;
+  text: string;
+}
+
+export const SURVEY_QUESTIONS_LIST: SurveyQuestionDef[] = [
+  // Bilik Kuliah 1 (0-5)
+  { id: 0, sectionId: 'bilikKuliah1', sectionTitle: 'Bilik Kuliah 1', text: 'Peralatan kerusi dalam keadaan yang baik dan mencukupi untuk keperluan pembelajaran' },
+  { id: 1, sectionId: 'bilikKuliah1', sectionTitle: 'Bilik Kuliah 1', text: 'Peralatan meja dalam keadaan yang baik dan mencukupi untuk keperluan pembelajaran' },
+  { id: 2, sectionId: 'bilikKuliah1', sectionTitle: 'Bilik Kuliah 1', text: 'Alat bantu mengajar mencukupi serta berfungsi dengan baik' },
+  { id: 3, sectionId: 'bilikKuliah1', sectionTitle: 'Bilik Kuliah 1', text: 'Persekitaran bilik kuliah adalah bersih dan selesa' },
+  { id: 4, sectionId: 'bilikKuliah1', sectionTitle: 'Bilik Kuliah 1', text: 'Persekitaran bilik kuliah adalah selamat' },
+  { id: 5, sectionId: 'bilikKuliah1', sectionTitle: 'Bilik Kuliah 1', text: 'Mempunyai capaian WiFi yang baik di bilik kuliah' },
+
+  // Bilik Kuliah 2 (6-11)
+  { id: 6, sectionId: 'bilikKuliah2', sectionTitle: 'Bilik Kuliah 2', text: 'Peralatan kerusi dalam keadaan yang baik dan mencukupi untuk keperluan pembelajaran' },
+  { id: 7, sectionId: 'bilikKuliah2', sectionTitle: 'Bilik Kuliah 2', text: 'Peralatan meja dalam keadaan yang baik dan mencukupi untuk keperluan pembelajaran' },
+  { id: 8, sectionId: 'bilikKuliah2', sectionTitle: 'Bilik Kuliah 2', text: 'Alat bantu mengajar mencukupi serta berfungsi dengan baik' },
+  { id: 9, sectionId: 'bilikKuliah2', sectionTitle: 'Bilik Kuliah 2', text: 'Persekitaran bilik kuliah adalah bersih dan selesa' },
+  { id: 10, sectionId: 'bilikKuliah2', sectionTitle: 'Bilik Kuliah 2', text: 'Persekitaran bilik kuliah adalah selamat' },
+  { id: 11, sectionId: 'bilikKuliah2', sectionTitle: 'Bilik Kuliah 2', text: 'Mempunyai capaian WiFi yang baik' },
+
+  // Immersive Centre (12-17)
+  { id: 12, sectionId: 'immersive', sectionTitle: 'Immersive Centre', text: 'Peralatan kerusi dalam keadaan yang baik dan mencukupi untuk keperluan pembelajaran' },
+  { id: 13, sectionId: 'immersive', sectionTitle: 'Immersive Centre', text: 'Peralatan meja dalam keadaan yang baik dan mencukupi untuk keperluan pembelajaran' },
+  { id: 14, sectionId: 'immersive', sectionTitle: 'Immersive Centre', text: 'Alat bantu mengajar mencukupi serta berfungsi dengan baik' },
+  { id: 15, sectionId: 'immersive', sectionTitle: 'Immersive Centre', text: 'Persekitaran Immersive Centre adalah bersih dan selesa' },
+  { id: 16, sectionId: 'immersive', sectionTitle: 'Immersive Centre', text: 'Persekitaran Immersive Centre adalah selamat' },
+  { id: 17, sectionId: 'immersive', sectionTitle: 'Immersive Centre', text: 'Mempunyai capaian WiFi yang baik di Immersive Centre' },
+
+  // Dewan Kuliah (18-23)
+  { id: 18, sectionId: 'dewanKuliah', sectionTitle: 'Dewan Kuliah', text: 'Peralatan kerusi dalam keadaan yang baik dan mencukupi untuk keperluan pembelajaran' },
+  { id: 19, sectionId: 'dewanKuliah', sectionTitle: 'Dewan Kuliah', text: 'Peralatan meja dalam keadaan yang baik dan mencukupi untuk keperluan pembelajaran' },
+  { id: 20, sectionId: 'dewanKuliah', sectionTitle: 'Dewan Kuliah', text: 'Alat bantu mengajar mencukupi serta berfungsi dengan baik' },
+  { id: 21, sectionId: 'dewanKuliah', sectionTitle: 'Dewan Kuliah', text: 'Persekitaran dewan kuliah adalah bersih dan selesa' },
+  { id: 22, sectionId: 'dewanKuliah', sectionTitle: 'Dewan Kuliah', text: 'Persekitaran dewan kuliah adalah selamat' },
+  { id: 23, sectionId: 'dewanKuliah', sectionTitle: 'Dewan Kuliah', text: 'Mempunyai capaian WiFi yang baik di dewan kuliah' },
+
+  // Makmal Komputer (24-29)
+  { id: 24, sectionId: 'makmalKomputer', sectionTitle: 'Makmal Bahasa & Makmal Komputer', text: 'Komputer yang disediakan berfungsi dengan baik' },
+  { id: 25, sectionId: 'makmalKomputer', sectionTitle: 'Makmal Bahasa & Makmal Komputer', text: 'Komputer yang disediakan mencukupi untuk keperluan pembelajaran' },
+  { id: 26, sectionId: 'makmalKomputer', sectionTitle: 'Makmal Bahasa & Makmal Komputer', text: 'Peralatan kerusi dalam keadaan yang baik dan mencukupi untuk keperluan pembelajaran' },
+  { id: 27, sectionId: 'makmalKomputer', sectionTitle: 'Makmal Bahasa & Makmal Komputer', text: 'Persekitaran makmal bahasa dan makmal komputer adalah bersih dan selesa' },
+  { id: 28, sectionId: 'makmalKomputer', sectionTitle: 'Makmal Bahasa & Makmal Komputer', text: 'Persekitaran makmal bahasa dan makmal komputer adalah selamat' },
+  { id: 29, sectionId: 'makmalKomputer', sectionTitle: 'Makmal Bahasa & Makmal Komputer', text: 'Mempunyai capaian WiFi yang baik di makmal komputer' },
+
+  // Perpustakaan (30-36)
+  { id: 30, sectionId: 'perpustakaan', sectionTitle: 'Perpustakaan', text: 'Proses capaian maklumat dan bahan rujukan di perpustakaan adalah tersusun dan mudah diperolehi' },
+  { id: 31, sectionId: 'perpustakaan', sectionTitle: 'Perpustakaan', text: 'Koleksi bahan bacaan mencukupi' },
+  { id: 32, sectionId: 'perpustakaan', sectionTitle: 'Perpustakaan', text: 'Waktu operasi perpustakaan adalah bersesuaian' },
+  { id: 33, sectionId: 'perpustakaan', sectionTitle: 'Perpustakaan', text: 'Proses peminjaman dan pemulangan mudah dan cepat' },
+  { id: 34, sectionId: 'perpustakaan', sectionTitle: 'Perpustakaan', text: 'Persekitaran perpustakaan adalah bersih dan selesa' },
+  { id: 35, sectionId: 'perpustakaan', sectionTitle: 'Perpustakaan', text: 'Persekitaran perpustakaan adalah selamat' },
+  { id: 36, sectionId: 'perpustakaan', sectionTitle: 'Perpustakaan', text: 'Mempunyai capaian WiFi yang baik di perpustakaan' },
+
+  // E-Tech Centre (37-42)
+  { id: 37, sectionId: 'kafe', sectionTitle: 'E-Tech Centre', text: 'Layanan perkhidmatan di kaunter adalah mesra dan baik' },
+  { id: 38, sectionId: 'kafe', sectionTitle: 'E-Tech Centre', text: 'Makanan dijual dengan harga yang berpatutan' },
+  { id: 39, sectionId: 'kafe', sectionTitle: 'E-Tech Centre', text: 'Mempunyai menu makanan yang pelbagai' },
+  { id: 40, sectionId: 'kafe', sectionTitle: 'E-Tech Centre', text: 'Mempunyai meja dan kerusi yang mencukupi' },
+  { id: 41, sectionId: 'kafe', sectionTitle: 'E-Tech Centre', text: 'Mempunyai persekitaran yang bersih dan selesa' },
+  { id: 42, sectionId: 'kafe', sectionTitle: 'E-Tech Centre', text: 'Makanan dan minuman yang dijual sedap dan bersih' },
+
+  // Kemudahan Sokongan (43-50)
+  { id: 43, sectionId: 'kemudahanSokongan', sectionTitle: 'Kemudahan Sokongan', text: 'Kemudahan tempat rehat adalah mencukupi' },
+  { id: 44, sectionId: 'kemudahanSokongan', sectionTitle: 'Kemudahan Sokongan', text: 'Tempat rehat pelajar adalah selesa dan bersih' },
+  { id: 45, sectionId: 'kemudahanSokongan', sectionTitle: 'Kemudahan Sokongan', text: 'Kemudahan tandas adalah mencukupi' },
+  { id: 46, sectionId: 'kemudahanSokongan', sectionTitle: 'Kemudahan Sokongan', text: 'Tahap kebersihan tandas adalah baik' },
+  { id: 47, sectionId: 'kemudahanSokongan', sectionTitle: 'Kemudahan Sokongan', text: 'Kemudahan surau adalah mencukupi' },
+  { id: 48, sectionId: 'kemudahanSokongan', sectionTitle: 'Kemudahan Sokongan', text: 'Kemudahan surau adalah selesa dan bersih' },
+  { id: 49, sectionId: 'kemudahanSokongan', sectionTitle: 'Kemudahan Sokongan', text: 'Kemudahan asas di surau adalah mencukupi' },
+  { id: 50, sectionId: 'kemudahanSokongan', sectionTitle: 'Kemudahan Sokongan', text: 'Kemudahan tempat letak kenderaan adalah mencukupi' },
+
+  // Bengkel Amali (51-55)
+  { id: 51, sectionId: 'bengkelDapur', sectionTitle: 'Bengkel Amali', text: 'Peralatan pembelajaran yang disediakan adalah mencukupi' },
+  { id: 52, sectionId: 'bengkelDapur', sectionTitle: 'Bengkel Amali', text: 'Peralatan pembelajaran untuk amali adalah berfungsi dengan baik' },
+  { id: 53, sectionId: 'bengkelDapur', sectionTitle: 'Bengkel Amali', text: 'Persekitaran di dalam bengkel amali adalah bersih dan selesa' },
+  { id: 54, sectionId: 'bengkelDapur', sectionTitle: 'Bengkel Amali', text: 'Persekitaran di dalam bengkel amali adalah selamat' },
+  { id: 55, sectionId: 'bengkelDapur', sectionTitle: 'Bengkel Amali', text: 'Peraturan keselamatan penggunaan peralatan dalam bengkel amali dipamerkan' },
+];
+
 export interface StudentSurveyItem {
   id: string;
   timestamp: string;
@@ -11,12 +94,15 @@ export interface StudentSurveyItem {
     dewanKuliah: number;
     makmalKomputer: number;
     perpustakaan: number;
-    kafe: number;
-    kemudahanSokongan: number; // Rehat, Tandas, Surau, Parking
-    bengkelDapur: number;
+    eTechCentre?: number;
+    kafe?: number;
+    kemudahanSokongan: number;
+    bengkelAmali?: number;
+    bengkelDapur?: number;
     wifi: number;
     purataKeseluruhan: number;
   };
+  rawScores?: number[];
   kemudahanPenambahbaikan: string;
   cadangan: string;
 }
@@ -28,7 +114,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL KULINARI",
     "SEMESTER": "3",
     "SCORES": [5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,4,3,3,3,3,4,5,5,5,5,5,5,5,5,5,5,5,5],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "Pelbagaikan menu dan buat harga khas untuk pelajar."
   },
   {
@@ -64,7 +150,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL KULINARI",
     "SEMESTER": "4 (LATIHAN INDUSTRI)",
     "SCORES": [4,4,5,5,4,5,5,5,5,5,5,4,4,4,5,5,5,5,5,5,4,5,5,5,5,5,4,4,4,4,5,4,5,5,5,5,5,5,3,3,3,3,4,4,4,4,4,5,5,5,4,4,5,5,5,5],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "membuat jadual makanan yang tidak sama dalam 1 minggu"
   },
   {
@@ -73,7 +159,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL TEKNOLOGI ELEKTRIK",
     "SEMESTER": "1",
     "SCORES": [2,3,3,4,4,3,4,4,3,4,4,3,4,4,3,3,4,3,4,4,3,4,4,4,4,4,4,4,4,4,4,3,4,3,4,3,4,4,4,2,2,4,3,3,4,4,4,3,4,3,4,3,4,3,4,3],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "meja dan kerusi perlu d tambah.selain itu. makanan perlu sedia ada sama ada waktu pagi.petang. supaya pelajar tidak perlu lagi makan d luar kolej"
   },
   {
@@ -109,7 +195,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL OPERASI PERHOTELAN",
     "SEMESTER": "1",
     "SCORES": [4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,4,5,5,4,4,4,4,4,4,4,4,4,4,5,5,5],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "Tiada"
   },
   {
@@ -127,7 +213,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL OPERASI PERHOTELAN",
     "SEMESTER": "2",
     "SCORES": [5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "."
   },
   {
@@ -136,7 +222,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL OPERASI PERHOTELAN",
     "SEMESTER": "1",
     "SCORES": [4,3,3,4,5,5,5,5,4,4,4,5,4,4,3,4,4,5,3,4,3,5,5,5,4,4,4,5,4,5,5,5,5,5,5,5,5,5,4,4,3,5,5,3,4,4,4,4,5,4,4,4,5,5,5,5],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "kalau boleh la Kan letak lampu dekat dobi tempat menunggu depan psh. Sangat gelap bagi pelajar yang lambat balik😁."
   },
   {
@@ -199,7 +285,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL KULINARI",
     "SEMESTER": "2",
     "SCORES": [5,5,5,5,5,4,5,5,5,5,5,4,5,5,5,5,5,4,5,5,5,5,5,4,5,5,5,5,5,4,5,4,5,5,5,5,4,5,1,1,1,5,3,4,5,5,4,5,5,5,5,5,5,5,5,5],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "PADA PENDAPAT SAYA, PENAMBAHBAIKAN YANG PIHAK SEKOLAH BOLEH LAKUKAN ADALAH DARI SEGI WIFI, PERALATAN PDP SKU DAN JUGA CAFE, ANTARA KETIGA TIGA INI YANG TIDAK DPT DITOLERANSI ADALAH CAFE KERANA MEMBERI HRGA YANG YANG BERLAINAN MENGIKUT PELAJAR..."
   },
   {
@@ -208,7 +294,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL OPERASI PERHOTELAN",
     "SEMESTER": "1",
     "SCORES": [4,4,5,5,5,5,5,4,4,5,5,5,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,4,5,5,5,5,5,5,3,4,1,3,4,4,4,5,4,4,5,5,5,3,4,5,5,5],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "Cafe"
   },
   {
@@ -217,7 +303,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL KULINARI",
     "SEMESTER": "1",
     "SCORES": [5,5,3,4,4,3,5,5,3,4,4,3,5,5,3,4,4,3,3,3,4,4,4,3,3,2,4,4,4,3,3,3,3,3,4,4,3,4,4,4,2,3,3,2,3,3,3,4,5,4,3,3,3,3,3,3],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "Line d kkbs tidak mencapai 5G"
   },
   {
@@ -244,7 +330,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL KULINARI",
     "SEMESTER": "2",
     "SCORES": [4,4,4,4,4,3,4,4,4,4,3,3,4,4,4,4,4,3,4,3,3,4,3,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,3,4,3,3,4,5,4,4,4,4,4,4,3,4,4,4,4,4],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "-"
   },
   {
@@ -271,7 +357,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL OPERASI PERHOTELAN",
     "SEMESTER": "1",
     "SCORES": [4,4,3,4,5,3,4,4,4,3,4,3,4,5,5,5,5,1,5,5,5,5,5,5,3,2,4,4,5,5,5,5,5,5,5,5,5,5,3,2,2,4,4,3,3,3,3,4,5,5,5,2,3,4,4,4],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "letak menu yang best d cafe yg ckup utk semua murid n hrga berpatuttan"
   },
   {
@@ -298,7 +384,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL KULINARI",
     "SEMESTER": "2",
     "SCORES": [4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "Buka 2 kafe"
   },
   {
@@ -325,7 +411,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL KULINARI",
     "SEMESTER": "2",
     "SCORES": [4,4,4,4,4,3,4,4,4,4,4,3,4,3,4,4,4,3,4,4,4,4,4,3,4,4,4,4,4,3,3,3,3,3,3,3,3,4,3,3,3,3,3,3,3,4,3,4,4,4,3,3,4,4,4,3],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "Pelbagaikan menu jualan"
   },
   {
@@ -334,7 +420,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL KULINARI",
     "SEMESTER": "2",
     "SCORES": [5,5,5,5,5,4,5,5,5,5,5,4,5,5,5,5,5,4,5,5,5,5,5,4,5,5,5,5,5,4,5,5,5,5,5,5,5,4,5,5,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "."
   },
   {
@@ -343,7 +429,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL OPERASI PERHOTELAN",
     "SEMESTER": "2",
     "SCORES": [5,5,5,5,5,3,5,3,5,5,5,3,4,5,4,4,4,4,5,5,5,5,5,3,5,5,4,5,5,4,5,5,5,5,5,5,5,5,3,4,2,5,4,2,3,5,5,5,5,5,5,5,5,5,5,5],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "Cadangan saya adalah, Ruang kafe perlu menambah lebih banyak meja dan tempat duduk supaya dapat menampung lebih ramai pelajar dengan senang."
   },
   {
@@ -406,7 +492,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL TEKNOLOGI ELEKTRIK",
     "SEMESTER": "2",
     "SCORES": [5,5,5,5,5,5,5,5,5,5,5,5,4,5,5,5,5,5,5,5,5,5,5,5,5,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "."
   },
   {
@@ -451,7 +537,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL KULINARI",
     "SEMESTER": "3",
     "SCORES": [3,3,4,5,3,2,3,3,4,3,3,2,3,3,3,3,3,2,3,3,3,3,3,2,3,3,3,3,3,3,4,5,4,5,5,5,4,5,2,2,2,3,2,2,2,4,3,4,4,4,4,5,5,5,5,5],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "."
   },
   {
@@ -469,7 +555,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL TEKNOLOGI ELEKTRIK",
     "SEMESTER": "2",
     "SCORES": [5,2,5,5,5,2,5,5,5,5,5,2,5,5,5,5,5,5,5,5,5,5,5,3,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,4,1,3,5,3,5,3,5,5,5,5,5,5,3,3,4,4],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "Membaikpulih pintu tandas pelajar lekaki dan menambah kerusi dan meja d cafe"
   },
   {
@@ -478,7 +564,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL OPERASI PERHOTELAN",
     "SEMESTER": "2",
     "SCORES": [4,4,4,3,4,3,4,4,4,3,4,3,4,4,4,4,4,3,3,4,4,4,4,3,4,4,5,3,5,4,5,5,4,5,5,5,5,5,4,4,1,2,5,4,4,4,3,4,5,4,4,5,5,5,5,5],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "menambah meja/kerusi dan memperluaskan lagi cafe untuk mengelakkan kesesakan pelajar"
   },
   {
@@ -487,7 +573,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL KULINARI",
     "SEMESTER": "1",
     "SCORES": [5,5,5,5,5,4,4,4,4,5,5,4,4,4,4,5,5,3,4,4,4,4,5,3,4,4,4,4,5,3,5,4,5,4,5,5,4,5,5,5,3,4,5,3,4,4,4,5,5,5,4,5,5,5,5,5],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "kalau bolehh tambahkan lagi meja dengan kerusi d kafe sebab tidak cukup tempat untuk duduk dan makan"
   },
   {
@@ -496,7 +582,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL OPERASI PERHOTELAN",
     "SEMESTER": "1",
     "SCORES": [4,4,4,4,4,2,4,4,4,4,4,4,4,4,4,4,4,3,4,4,4,4,4,4,4,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "TIADA"
   },
   {
@@ -541,7 +627,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL OPERASI PERHOTELAN",
     "SEMESTER": "2",
     "SCORES": [4,4,4,5,5,4,4,4,4,4,4,4,4,4,4,5,5,4,4,4,4,4,5,5,5,4,4,4,5,4,4,5,5,5,5,5,4,5,4,4,3,5,5,3,4,4,4,5,5,5,4,5,4,4,4,5],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "Perbanyak meja Dan kerusi untuk student"
   },
   {
@@ -550,7 +636,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL OPERASI PERHOTELAN",
     "SEMESTER": "2",
     "SCORES": [5,5,3,5,5,3,5,5,3,5,5,3,5,5,3,5,5,2,5,5,3,5,5,3,3,5,5,5,5,5,5,5,5,5,5,5,5,5,4,4,1,3,5,4,4,4,4,5,5,5,5,5,5,5,5,5],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "kursi di kafe kurang mencukupi"
   },
   {
@@ -577,7 +663,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL KULINARI",
     "SEMESTER": "3",
     "SCORES": [5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "1. Saya cadangkan tempat meja/kerus cafe menambah jumlah yang banyak lagi. 2. Keluasan tapak cafe."
   },
   {
@@ -604,7 +690,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL KULINARI",
     "SEMESTER": "3",
     "SCORES": [5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,3,2,1,4,4,5,5,5,5,5,5,5,5,5,4,4,3,4],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "Menjual kuih muih yang fresh di cafe"
   },
   {
@@ -676,7 +762,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL OPERASI PERHOTELAN",
     "SEMESTER": "3",
     "SCORES": [5,5,4,5,4,3,5,5,5,5,4,3,5,5,5,4,4,3,5,5,5,4,4,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,3,2,3,5,4,4,5,5,5,4,5,5,5,5,5,5,5],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "."
   },
   {
@@ -694,7 +780,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL KULINARI",
     "SEMESTER": "3",
     "SCORES": [5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "Tambah meja cafe"
   },
   {
@@ -757,7 +843,7 @@ export const STUDENT_SURVEY_RAW_DATA = [
     "PROGRAM PENGAJIAN": "SIJIL OPERASI PERHOTELAN",
     "SEMESTER": "2",
     "SCORES": [5,5,4,5,5,2,5,5,5,5,5,2,5,5,5,5,5,2,5,5,5,5,5,2,4,5,5,5,5,3,5,5,5,5,5,5,3,5,4,5,4,5,5,4,4,5,5,5,5,5,5,5,5,5,5,5],
-    "KEMUDAHAN": "KAFE",
+    "KEMUDAHAN": "E-TECH CENTRE",
     "CADANGAN": "Cafe"
   },
   {
@@ -852,10 +938,13 @@ export function getProcessedStudentSurveys(): StudentSurveyItem[] {
     const kafe = avg(s.slice(37, 43));
     const kemudahanSokongan = avg(s.slice(43, 51));
     const bengkelDapur = avg(s.slice(51, 56));
-    // Collect all 7 WiFi rating questions
+    // Collect all WiFi rating questions
     const wifiScores = [s[5], s[11], s[17], s[23], s[29], s[36]];
     const wifi = avg(wifiScores.filter((n) => typeof n === 'number'));
     const purataKeseluruhan = avg(s);
+
+    const rawFacility = (item.KEMUDAHAN || '').trim().toUpperCase();
+    const kemudahanPenambahbaikan = rawFacility === 'KAFE' ? 'E-TECH CENTRE' : rawFacility;
 
     return {
       id: `SURVEY-${year}-${String(index + 1).padStart(3, '0')}`,
@@ -870,17 +959,37 @@ export function getProcessedStudentSurveys(): StudentSurveyItem[] {
         dewanKuliah: Number(dewanKuliah.toFixed(2)),
         makmalKomputer: Number(makmalKomputer.toFixed(2)),
         perpustakaan: Number(perpustakaan.toFixed(2)),
+        eTechCentre: Number(kafe.toFixed(2)),
         kafe: Number(kafe.toFixed(2)),
         kemudahanSokongan: Number(kemudahanSokongan.toFixed(2)),
+        bengkelAmali: Number(bengkelDapur.toFixed(2)),
         bengkelDapur: Number(bengkelDapur.toFixed(2)),
         wifi: Number(wifi.toFixed(2)),
         purataKeseluruhan: Number(purataKeseluruhan.toFixed(2)),
       },
-      kemudahanPenambahbaikan: item.KEMUDAHAN.trim(),
+      rawScores: s,
+      kemudahanPenambahbaikan,
       cadangan: item.CADANGAN.trim(),
     };
   });
 
-  const customItems = getCustomStudentSurveys();
+  const customItems = getCustomStudentSurveys().map((c) => {
+    const rawFac = (c.kemudahanPenambahbaikan || '').trim().toUpperCase();
+    const kemudahanPenambahbaikan = rawFac === 'KAFE' ? 'E-TECH CENTRE' : rawFac;
+    const scores = {
+      ...c.scores,
+      eTechCentre: c.scores.eTechCentre ?? c.scores.kafe,
+      kafe: c.scores.kafe ?? c.scores.eTechCentre,
+      bengkelAmali: c.scores.bengkelAmali ?? c.scores.bengkelDapur,
+      bengkelDapur: c.scores.bengkelDapur ?? c.scores.bengkelAmali,
+    };
+    return {
+      ...c,
+      kemudahanPenambahbaikan,
+      scores,
+    };
+  });
+
   return [...customItems, ...baseItems];
 }
+

@@ -581,6 +581,7 @@ router.get('/admin/complaints', async (req, res, next) => {
 router.get('/admin/student-satisfaction', async (req, res, next) => {
   try {
     const { year, program, semester } = req.query;
+    await ensureDbSynced();
     let list = db.getStudentSurveys(year ? String(year) : undefined);
 
     if (program && program !== 'ALL') {
@@ -598,11 +599,13 @@ router.get('/admin/student-satisfaction', async (req, res, next) => {
     const dimensionAverages = {
       bilikKuliah: Number(avg(list.map((s) => s.scores.bilikKuliah)).toFixed(2)),
       perpustakaan: Number(avg(list.map((s) => s.scores.perpustakaan)).toFixed(2)),
-      bengkelDapur: Number(avg(list.map((s) => s.scores.bengkelDapur)).toFixed(2)),
+      bengkelAmali: Number(avg(list.map((s) => s.scores.bengkelAmali || s.scores.bengkelDapur || 4)).toFixed(2)),
+      bengkelDapur: Number(avg(list.map((s) => s.scores.bengkelAmali || s.scores.bengkelDapur || 4)).toFixed(2)),
       makmalKomputer: Number(avg(list.map((s) => s.scores.makmalKomputer)).toFixed(2)),
       dewanKuliah: Number(avg(list.map((s) => s.scores.dewanKuliah)).toFixed(2)),
       immersiveCentre: Number(avg(list.map((s) => s.scores.immersiveCentre)).toFixed(2)),
-      kafe: Number(avg(list.map((s) => s.scores.kafe)).toFixed(2)),
+      eTechCentre: Number(avg(list.map((s) => s.scores.eTechCentre || s.scores.kafe || 4)).toFixed(2)),
+      kafe: Number(avg(list.map((s) => s.scores.eTechCentre || s.scores.kafe || 4)).toFixed(2)),
       kemudahanSokongan: Number(avg(list.map((s) => s.scores.kemudahanSokongan)).toFixed(2)),
       wifi: Number(avg(list.map((s) => s.scores.wifi)).toFixed(2)),
     };
@@ -610,7 +613,7 @@ router.get('/admin/student-satisfaction', async (req, res, next) => {
     // Priority facilities breakdown
     const priorityCounts: Record<string, number> = {};
     for (const item of list) {
-      const key = item.kemudahanPenambahbaikan || 'LAIN-LAIN';
+      const key = (item.kemudahanPenambahbaikan === 'KAFE' ? 'E-TECH CENTRE' : item.kemudahanPenambahbaikan) || 'LAIN-LAIN';
       priorityCounts[key] = (priorityCounts[key] || 0) + 1;
     }
 
@@ -659,6 +662,8 @@ router.post('/student-survey', async (req, res, next) => {
       programPengajian,
       semester,
       scores,
+      scoresRaw,
+      scoresArray,
       kemudahanPenambahbaikan,
       cadangan,
     } = req.body || {};
@@ -666,6 +671,8 @@ router.post('/student-survey', async (req, res, next) => {
     if (!programPengajian || !semester || !scores) {
       return res.status(400).json({ error: 'Sila lengkapkan maklumat soal selidik yang diperlukan.' });
     }
+
+    await ensureDbSynced();
 
     const currentYear = new Date().getFullYear();
     const now = new Date();
@@ -684,15 +691,20 @@ router.post('/student-survey', async (req, res, next) => {
       s.dewanKuliah,
       s.makmalKomputer,
       s.perpustakaan,
-      s.kafe,
+      s.eTechCentre || s.kafe,
       s.kemudahanSokongan,
-      s.bengkelDapur,
+      s.bengkelAmali || s.bengkelDapur,
       s.wifi,
     ].filter((v) => typeof v === 'number' && !isNaN(v));
 
     const purataKeseluruhan = scoreValues.length
       ? Number((scoreValues.reduce((a, b) => a + b, 0) / scoreValues.length).toFixed(2))
       : 4.0;
+
+    const rawFacility = String(kemudahanPenambahbaikan || 'WIFI').trim().toUpperCase();
+    const normalizedFacility = rawFacility === 'KAFE' ? 'E-TECH CENTRE' : rawFacility;
+
+    const rawList = Array.isArray(scoresRaw) ? scoresRaw : (Array.isArray(scoresArray) ? scoresArray : undefined);
 
     const newSurveyItem = {
       id: surveyId,
@@ -707,13 +719,16 @@ router.post('/student-survey', async (req, res, next) => {
         dewanKuliah: Number(scores.dewanKuliah || 4),
         makmalKomputer: Number(scores.makmalKomputer || 4),
         perpustakaan: Number(scores.perpustakaan || 4),
-        kafe: Number(scores.kafe || 4),
+        eTechCentre: Number(scores.eTechCentre || scores.kafe || 4),
+        kafe: Number(scores.eTechCentre || scores.kafe || 4),
         kemudahanSokongan: Number(scores.kemudahanSokongan || 4),
-        bengkelDapur: Number(scores.bengkelDapur || 4),
+        bengkelAmali: Number(scores.bengkelAmali || scores.bengkelDapur || 4),
+        bengkelDapur: Number(scores.bengkelAmali || scores.bengkelDapur || 4),
         wifi: Number(scores.wifi || 4),
         purataKeseluruhan: Number(scores.purataKeseluruhan || purataKeseluruhan),
       },
-      kemudahanPenambahbaikan: (kemudahanPenambahbaikan || 'WIFI').trim().toUpperCase(),
+      rawScores: rawList,
+      kemudahanPenambahbaikan: normalizedFacility,
       cadangan: (cadangan || '').trim() || '-',
     };
 
@@ -737,11 +752,13 @@ router.post('/student-survey', async (req, res, next) => {
   }
 });
 
-// Get student surveys list (Public summary)
+// Get student surveys list (Public summary or full data)
 router.get('/student-survey', async (req, res, next) => {
   try {
-    const list = db.getStudentSurveys();
-    res.json({ total: list.length, count: list.length });
+    const { year } = req.query;
+    await ensureDbSynced();
+    const list = db.getStudentSurveys(year as string);
+    res.json({ success: true, total: list.length, count: list.length, surveys: list });
   } catch (err) {
     next(err);
   }

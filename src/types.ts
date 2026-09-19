@@ -143,12 +143,15 @@ export interface StudentSurveyItem {
     dewanKuliah: number;
     makmalKomputer: number;
     perpustakaan: number;
-    kafe: number;
+    eTechCentre?: number;
+    kafe?: number;
     kemudahanSokongan: number;
-    bengkelDapur: number;
+    bengkelAmali?: number;
+    bengkelDapur?: number;
     wifi: number;
     purataKeseluruhan: number;
   };
+  rawScores?: number[];
   kemudahanPenambahbaikan: string;
   cadangan: string;
 }
@@ -160,11 +163,13 @@ export interface StudentSurveyAnalytics {
   dimensionAverages: {
     bilikKuliah: number;
     perpustakaan: number;
-    bengkelDapur: number;
+    bengkelAmali: number;
+    bengkelDapur?: number;
     makmalKomputer: number;
     dewanKuliah: number;
     immersiveCentre: number;
-    kafe: number;
+    eTechCentre: number;
+    kafe?: number;
     kemudahanSokongan: number;
     wifi: number;
   };
@@ -180,4 +185,5 @@ export interface StudentSurveyAnalytics {
   }>;
   surveys: StudentSurveyItem[];
 }
+
 

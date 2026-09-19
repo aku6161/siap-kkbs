@@ -34,7 +34,11 @@ import {
   CartesianGrid,
 } from 'recharts';
 import * as XLSX from 'xlsx';
-import { getProcessedStudentSurveys, StudentSurveyItem } from '../data/studentSatisfactionData';
+import {
+  getProcessedStudentSurveys,
+  StudentSurveyItem,
+  SURVEY_QUESTIONS_LIST,
+} from '../data/studentSatisfactionData';
 import { StudentSurveyForm } from './StudentSurveyForm';
 
 interface AdminStudentSatisfactionProps {
@@ -52,11 +56,29 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
   const [isSurveyModalOpen, setIsSurveyModalOpen] = useState<boolean>(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState<boolean>(false);
   const [linkCopied, setLinkCopied] = useState<boolean>(false);
+  const [surveysFromApi, setSurveysFromApi] = useState<StudentSurveyItem[] | null>(null);
+
+  // Fetch live surveys on mount
+  React.useEffect(() => {
+    fetch('/api/student-survey')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data.surveys)) {
+          setSurveysFromApi(data.surveys);
+        }
+      })
+      .catch(() => {
+        // Fallback to local
+      });
+  }, []);
 
   // All survey items
   const allSurveys: StudentSurveyItem[] = useMemo(() => {
+    if (surveysFromApi && surveysFromApi.length > 0) {
+      return surveysFromApi;
+    }
     return getProcessedStudentSurveys();
-  }, []);
+  }, [surveysFromApi]);
 
   // Filtered surveys by Year, Program, Semester, Search
   const baseFilteredSurveys = useMemo(() => {
@@ -111,12 +133,12 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
     return [
       { name: 'Bilik Kuliah', score: Number(avg(baseFilteredSurveys.map((s) => s.scores.bilikKuliah)).toFixed(2)) },
       { name: 'Perpustakaan', score: Number(avg(baseFilteredSurveys.map((s) => s.scores.perpustakaan)).toFixed(2)) },
-      { name: 'Bengkel / Dapur', score: Number(avg(baseFilteredSurveys.map((s) => s.scores.bengkelDapur)).toFixed(2)) },
+      { name: 'Bengkel Amali', score: Number(avg(baseFilteredSurveys.map((s) => s.scores.bengkelAmali ?? s.scores.bengkelDapur ?? 4)).toFixed(2)) },
       { name: 'Makmal Komputer', score: Number(avg(baseFilteredSurveys.map((s) => s.scores.makmalKomputer)).toFixed(2)) },
       { name: 'Dewan Kuliah', score: Number(avg(baseFilteredSurveys.map((s) => s.scores.dewanKuliah)).toFixed(2)) },
       { name: 'Immersive Centre', score: Number(avg(baseFilteredSurveys.map((s) => s.scores.immersiveCentre)).toFixed(2)) },
       { name: 'Kemudahan Sokongan', score: Number(avg(baseFilteredSurveys.map((s) => s.scores.kemudahanSokongan)).toFixed(2)) },
-      { name: 'Kafe', score: Number(avg(baseFilteredSurveys.map((s) => s.scores.kafe)).toFixed(2)) },
+      { name: 'E-Tech Centre', score: Number(avg(baseFilteredSurveys.map((s) => s.scores.eTechCentre ?? s.scores.kafe ?? 4)).toFixed(2)) },
       { name: 'Capaian WiFi', score: Number(avg(baseFilteredSurveys.map((s) => s.scores.wifi)).toFixed(2)) },
     ].sort((a, b) => b.score - a.score);
   }, [baseFilteredSurveys, totalResponden]);
@@ -125,7 +147,7 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
   const priorityChartData = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const item of baseFilteredSurveys) {
-      const key = item.kemudahanPenambahbaikan || 'LAIN-LAIN';
+      const key = (item.kemudahanPenambahbaikan === 'KAFE' ? 'E-TECH CENTRE' : item.kemudahanPenambahbaikan) || 'LAIN-LAIN';
       counts[key] = (counts[key] || 0) + 1;
     }
     const colors = ['#0284c7', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#64748b', '#06b6d4'];
@@ -153,12 +175,31 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
     }
   };
 
-  // Export to native .xlsx format using SheetJS (xlsx)
+  // Export to native .xlsx format using SheetJS (xlsx) with 3 rich sheets
   const handleExportXLSX = () => {
     setIsExporting(true);
     try {
-      // 1. Data Sheet
-      const sheetData = [
+      // 1. Executive Summary Sheet
+      const summaryData = [
+        ['LAPORAN STATISTIK KEPUASAN PELAJAR - SiAP (KOLEJ KOMUNITI BANDAR PENAWAR)'],
+        ['Tarikh Laporan Dihasilkan', new Date().toLocaleString('ms-MY')],
+        ['Tahun Tapisan', selectedYear === 'ALL' ? 'Semua Tahun' : selectedYear],
+        ['Program Pengajian', selectedProgram === 'ALL' ? 'Semua Program' : selectedProgram],
+        ['Semester', selectedSemester === 'ALL' ? 'Semua Semester' : selectedSemester],
+        ['Jumlah Responden', totalResponden],
+        ['Purata Skor Keseluruhan', `${overallAvgScore} / 5.0 (${overallPercentage}%)`],
+        ['Responden Lelaki', genderBreakdown.lelaki],
+        ['Responden Perempuan', genderBreakdown.perempuan],
+        [],
+        ['KATEGORI KEMUDAHAN', 'PURATA SKOR (/5.0)', 'PERATUSAN KEPUASAN (%)'],
+        ...dimensionChartData.map((d) => [d.name, d.score, `${((d.score / 5) * 100).toFixed(1)}%`]),
+        [],
+        ['ISU / KEMUDAHAN PERLU TINDAKAN SEGERA', 'BILANGAN PELAJAR', 'PERATUSAN (%)'],
+        ...priorityChartData.map((p) => [p.name, p.count, `${p.percent}%`]),
+      ];
+
+      // 2. Category Level Data Sheet
+      const categorySheetData = [
         [
           'ID',
           'Tarikh & Masa',
@@ -166,14 +207,14 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
           'Jantina',
           'Program Pengajian',
           'Semester',
-          'Skor Bilik Kuliah (/5)',
+          'Skor Bilik Kuliah 1 & 2 (/5)',
           'Skor Immersive Centre (/5)',
           'Skor Dewan Kuliah (/5)',
           'Skor Makmal Komputer (/5)',
           'Skor Perpustakaan (/5)',
-          'Skor Kafe (/5)',
+          'Skor E-Tech Centre (/5)',
           'Skor Kemudahan Sokongan (/5)',
-          'Skor Bengkel & Dapur (/5)',
+          'Skor Bengkel Amali (/5)',
           'Skor WiFi (/5)',
           'Purata Skor Keseluruhan (/5)',
           'Kemudahan Perlu Penambahbaikan Segera',
@@ -191,66 +232,111 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
           s.scores.dewanKuliah,
           s.scores.makmalKomputer,
           s.scores.perpustakaan,
-          s.scores.kafe,
+          s.scores.eTechCentre ?? s.scores.kafe ?? 4,
           s.scores.kemudahanSokongan,
-          s.scores.bengkelDapur,
+          s.scores.bengkelAmali ?? s.scores.bengkelDapur ?? 4,
           s.scores.wifi,
           s.scores.purataKeseluruhan,
-          s.kemudahanPenambahbaikan,
+          s.kemudahanPenambahbaikan === 'KAFE' ? 'E-TECH CENTRE' : s.kemudahanPenambahbaikan,
           s.cadangan,
         ]),
       ];
 
-      // 2. Summary Sheet
-      const summaryData = [
-        ['LAPORAN STATISTIK KEPUASAN PELAJAR - SiAP'],
-        ['Tarikh Laporan Dihasilkan', new Date().toLocaleString('ms-MY')],
-        ['Tahun Tapisan', selectedYear === 'ALL' ? 'Semua Tahun' : selectedYear],
-        ['Program Pengajian', selectedProgram === 'ALL' ? 'Semua Program' : selectedProgram],
-        ['Semester', selectedSemester === 'ALL' ? 'Semua Semester' : selectedSemester],
-        ['Jumlah Responden', totalResponden],
-        ['Purata Skor Keseluruhan', `${overallAvgScore} / 5.0 (${overallPercentage}%)`],
-        ['Responden Lelaki', genderBreakdown.lelaki],
-        ['Responden Perempuan', genderBreakdown.perempuan],
-        [],
-        ['KATEGORI KEMUDAHAN', 'PURATA SKOR (/5.0)', 'PERATUSAN KEPUASAN (%)'],
-        ...dimensionChartData.map((d) => [d.name, d.score, `${((d.score / 5) * 100).toFixed(1)}%`]),
-        [],
-        ['ISU / KEMUDAHAN PERLU TINDAKAN SEGERA', 'BILANGAN PELAJAR', 'PERATUSAN (%)'],
-        ...priorityChartData.map((p) => [p.name, p.count, `${p.percent}%`]),
+      // 3. Complete 56 Questions Detailed Raw Sheet
+      const questionHeaders = [
+        'ID',
+        'Tarikh & Masa',
+        'Tahun',
+        'Jantina',
+        'Program Pengajian',
+        'Semester',
+        'Kemudahan Perlu Penambahbaikan Segera',
+        ...SURVEY_QUESTIONS_LIST.map(
+          (q) => `[Q${q.id + 1} - ${q.sectionTitle}] ${q.text}`
+        ),
+        'Purata Skor Keseluruhan (/5)',
+        'Cadangan Penambahbaikan / Catatan',
       ];
+
+      const questionRows = baseFilteredSurveys.map((s) => {
+        const rawScores = Array.isArray(s.rawScores) && s.rawScores.length === 56
+          ? s.rawScores
+          : SURVEY_QUESTIONS_LIST.map((q) => {
+              // Fallback to category average if raw item not available
+              if (q.sectionId === 'bilikKuliah1' || q.sectionId === 'bilikKuliah2') return s.scores.bilikKuliah;
+              if (q.sectionId === 'immersive') return s.scores.immersiveCentre;
+              if (q.sectionId === 'dewanKuliah') return s.scores.dewanKuliah;
+              if (q.sectionId === 'makmalKomputer') return s.scores.makmalKomputer;
+              if (q.sectionId === 'perpustakaan') return s.scores.perpustakaan;
+              if (q.sectionId === 'kafe') return s.scores.eTechCentre ?? s.scores.kafe;
+              if (q.sectionId === 'kemudahanSokongan') return s.scores.kemudahanSokongan;
+              if (q.sectionId === 'bengkelDapur') return s.scores.bengkelAmali ?? s.scores.bengkelDapur;
+              return 4;
+            });
+
+        return [
+          s.id,
+          s.timestamp,
+          s.year,
+          s.jantina,
+          s.programPengajian,
+          s.semester,
+          s.kemudahanPenambahbaikan === 'KAFE' ? 'E-TECH CENTRE' : s.kemudahanPenambahbaikan,
+          ...rawScores,
+          s.scores.purataKeseluruhan,
+          s.cadangan,
+        ];
+      });
+
+      const detailedSheetData = [questionHeaders, ...questionRows];
 
       const wb = XLSX.utils.book_new();
 
-      const wsData = XLSX.utils.aoa_to_sheet(sheetData);
       const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+      const wsCategory = XLSX.utils.aoa_to_sheet(categorySheetData);
+      const wsDetailed = XLSX.utils.aoa_to_sheet(detailedSheetData);
 
       // Set column widths for readability
-      wsData['!cols'] = [
+      wsSummary['!cols'] = [{ wch: 45 }, { wch: 25 }, { wch: 25 }];
+
+      wsCategory['!cols'] = [
         { wch: 16 }, // ID
         { wch: 28 }, // Timestamp
         { wch: 8 },  // Year
         { wch: 12 }, // Jantina
         { wch: 30 }, // Program
         { wch: 14 }, // Semester
-        { wch: 22 }, // Bilik Kuliah
+        { wch: 24 }, // Bilik Kuliah
         { wch: 24 }, // Immersive Centre
         { wch: 22 }, // Dewan Kuliah
         { wch: 24 }, // Makmal Komputer
         { wch: 22 }, // Perpustakaan
-        { wch: 16 }, // Kafe
+        { wch: 22 }, // E-Tech Centre
         { wch: 26 }, // Kemudahan Sokongan
-        { wch: 24 }, // Bengkel Dapur
+        { wch: 24 }, // Bengkel Amali
         { wch: 16 }, // WiFi
         { wch: 26 }, // Overall
-        { wch: 32 }, // Priority Issue
+        { wch: 34 }, // Priority Issue
         { wch: 60 }, // Cadangan
       ];
 
-      wsSummary['!cols'] = [{ wch: 45 }, { wch: 25 }, { wch: 25 }];
+      // Column widths for detailed 56 questions sheet
+      wsDetailed['!cols'] = [
+        { wch: 16 }, // ID
+        { wch: 28 }, // Timestamp
+        { wch: 8 },  // Year
+        { wch: 12 }, // Jantina
+        { wch: 30 }, // Program
+        { wch: 14 }, // Semester
+        { wch: 32 }, // Kemudahan Segera
+        ...SURVEY_QUESTIONS_LIST.map(() => ({ wch: 22 })),
+        { wch: 26 }, // Purata
+        { wch: 60 }, // Cadangan
+      ];
 
       XLSX.utils.book_append_sheet(wb, wsSummary, 'Ringkasan Eksekutif');
-      XLSX.utils.book_append_sheet(wb, wsData, 'Data Lengkap Pelajar');
+      XLSX.utils.book_append_sheet(wb, wsCategory, 'Data Kategori & Cadangan');
+      XLSX.utils.book_append_sheet(wb, wsDetailed, 'Skor Lengkap 56 Soalan');
 
       const yearStr = selectedYear === 'ALL' ? 'Semua_Tahun' : `Tahun_${selectedYear}`;
       const fileName = `SiAP_Statistik_Kepuasan_Pelajar_${yearStr}_${new Date().toISOString().substring(0, 10)}.xlsx`;
@@ -295,7 +381,7 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
               Borang Soal Selidik Kepuasan Pelajar Digital
             </h3>
             <p className="text-xs sm:text-sm text-blue-100/90 leading-relaxed">
-              Kongsikan pautan atau kod QR kepada pelajar KKBS untuk mendapatkan penilaian fasiliti, kafeteria, Wi-Fi dan cadangan penambahbaikan secara terus.
+              Kongsikan pautan atau kod QR kepada pelajar KKBS untuk mendapatkan penilaian fasiliti, E-Tech Centre, Wi-Fi dan cadangan penambahbaikan secara terus.
             </p>
           </div>
 
@@ -443,7 +529,7 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="cth: wifi, kafe, aircond..."
+                placeholder="cth: wifi, e-tech centre, tandas, surau..."
                 className="w-full pl-9 pr-3 py-2.5 text-xs text-slate-900 bg-white/95 border border-slate-200 focus:border-blue-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 shadow-xs"
               />
             </div>
@@ -458,46 +544,59 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
         
         <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-400 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-950/50">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 shrink-0">
               <FileSpreadsheet className="w-7 h-7" />
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/25 text-emerald-300 border border-emerald-400/50">
-                  Format [.xlsx] Excel Rasmi
+                <span className="text-xs font-black uppercase tracking-wider text-emerald-400 bg-emerald-950/80 px-2.5 py-0.5 rounded-md border border-emerald-500/30">
+                  Format Asli .xlsx (SheetJS)
                 </span>
-                <span className="text-xs text-emerald-200 font-semibold">
-                  • {baseFilteredSurveys.length} Rekod Terkini
-                </span>
+                {selectedYear !== 'ALL' && (
+                  <span className="text-xs font-bold text-amber-300 bg-amber-950/85 px-2 py-0.5 rounded-md border border-amber-500/30">
+                    Tahun {selectedYear}
+                  </span>
+                )}
               </div>
-              <h3 className="text-lg sm:text-xl font-black text-white">
-                Muat Turun Laporan Kepuasan Pelajar [.xlsx]
+              <h3 className="text-lg sm:text-xl font-black text-white tracking-tight">
+                Muat Turun Laporan Statistik Kepuasan Pelajar (.xlsx)
               </h3>
-              <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
-                Menjana fail Microsoft Excel (.xlsx) komprehensif mengandungi 2 helaian: <em>Ringkasan Eksekutif</em> (Analisis Dimensi & Isu) dan <em>Data Lengkap Pelajar</em> mengikut tahun dan tapisan semasa.
+              <p className="text-xs text-slate-300 max-w-xl leading-relaxed">
+                Jana dan muat turun fail Excel lengkap mengandungi Ringkasan Eksekutif, Purata Kategori, serta Skor Terperinci Kesemua 56 Soalan Penilaian mengikut tapisan semasa.
               </p>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0">
-            <button
-              id="btn-download-xlsx"
-              onClick={handleExportXLSX}
-              disabled={isExporting}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 active:scale-95 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-emerald-500/30 transition-all flex items-center justify-center gap-2.5 cursor-pointer border border-emerald-200 disabled:opacity-50"
-            >
-              <Download className="w-4 h-4 text-slate-950" />
-              <span>{isExporting ? 'Menjana [.xlsx]...' : 'MUAT TURUN LAPORAN [.XLSX]'}</span>
-            </button>
-          </div>
+          <button
+            id="btn-muat-turun-laporan-excel"
+            onClick={handleExportXLSX}
+            disabled={isExporting || totalResponden === 0}
+            className={`px-6 py-4 rounded-2xl font-black text-xs sm:text-sm shadow-xl flex items-center justify-center gap-3 transition-all cursor-pointer shrink-0 ${
+              exportSuccess
+                ? 'bg-emerald-500 text-white shadow-emerald-500/40'
+                : totalResponden === 0
+                ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
+                : 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-500 text-white shadow-emerald-500/30 hover:scale-105 active:scale-95'
+            }`}
+          >
+            {isExporting ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>Menjana Fail .xlsx...</span>
+              </>
+            ) : exportSuccess ? (
+              <>
+                <CheckCircle2 className="w-5 h-5 text-white animate-bounce" />
+                <span>Fail .xlsx Berjaya Dimuat Turun!</span>
+              </>
+            ) : (
+              <>
+                <Download className="w-5 h-5 text-white" />
+                <span>Muat Turun Laporan (.xlsx)</span>
+              </>
+            )}
+          </button>
         </div>
-
-        {exportSuccess && (
-          <div className="mt-4 p-3 rounded-xl bg-emerald-500/20 border border-emerald-400/60 text-emerald-200 text-xs font-bold flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            <span>Laporan format [.xlsx] berjaya dijana dan dimuat turun!</span>
-          </div>
-        )}
       </div>
 
       {/* 3. METRIK UTAMA (KPI CARDS) */}
@@ -580,7 +679,7 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
             </div>
           </div>
           <div className="text-2xl sm:text-3xl font-black text-amber-700 flex items-center justify-between">
-            <span>{priorityChartData[1]?.name || 'KAFE'}</span>
+            <span>{priorityChartData[1]?.name || 'E-TECH CENTRE'}</span>
             <span className="text-xs font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
               {priorityChartData[1]?.count || 0} Undian
             </span>
@@ -605,7 +704,7 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
                   <span>Purata Skor Mengikut Kategori Kemudahan (/5.0)</span>
                 </h3>
                 <p className="text-xs text-slate-500">
-                  Penilaian tertinggi: Bilik Kuliah & Perpustakaan • Perlu perhatian: Kafe & WiFi
+                  Penilaian tertinggi: Bilik Kuliah & Perpustakaan • Perlu perhatian: E-Tech Centre & WiFi
                 </p>
               </div>
             </div>
@@ -640,146 +739,138 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
           </div>
         </div>
 
-        {/* Chart 2: Keperluan Penambahbaikan Segera (Interactive Pie & Click Filter) */}
+        {/* Chart 2: Keperluan Penambahbaikan Segera (Pie Chart) */}
         <div className="lg:col-span-5 glass-card p-6 sm:p-8 rounded-3xl border border-white/80 shadow-md flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-sm sm:text-base font-bold text-slate-900">
-                Kemudahan Perlu Penambahbaikan Segera
-              </h3>
-              {selectedFacilityFilter && (
-                <button
-                  onClick={() => setSelectedFacilityFilter(null)}
-                  className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 cursor-pointer"
-                >
-                  <X className="w-3 h-3" />
-                  <span>Papar Semua</span>
-                </button>
-              )}
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h3 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
+                  <PieChart className="w-4 h-4 text-rose-600" />
+                  <span>Kemudahan Perlu Penambahbaikan Segera</span>
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Peratusan maklum balas mengikut fasiliti yang paling kritikal
+                </p>
+              </div>
             </div>
-            <p className="text-xs text-slate-500 mb-3">
-              Klik pada mana-mana item di bawah untuk menapis cadangan berkaitan
-            </p>
 
-            <div className="h-52 w-full">
+            <div className="h-56 w-full relative flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={priorityChartData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={45}
-                    outerRadius={75}
-                    paddingAngle={3}
+                    innerRadius={55}
+                    outerRadius={80}
+                    paddingAngle={4}
                     dataKey="count"
                     onClick={(data) => handleFacilityClick(data.name)}
-                    cursor="pointer"
+                    className="cursor-pointer"
                   >
                     {priorityChartData.map((entry, index) => (
                       <Cell
-                        key={`pie-cell-${index}`}
+                        key={`cell-${index}`}
                         fill={entry.color}
-                        stroke={selectedFacilityFilter === entry.name ? '#000' : '#fff'}
-                        strokeWidth={selectedFacilityFilter === entry.name ? 2 : 1}
+                        stroke={selectedFacilityFilter === entry.name ? '#000' : 'none'}
+                        strokeWidth={selectedFacilityFilter === entry.name ? 2 : 0}
                       />
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(val: any, name: any, item: any) => [`${val} Pelajar (${item.payload.percent}%) - Klik untuk tapis`, item.payload.name]}
-                    contentStyle={{ borderRadius: '12px', border: '1px solid #cbd5e1' }}
+                    formatter={(val: any, name: any) => [`${val} pelajar (${priorityChartData.find((p) => p.name === name)?.percent || 0}%)`, name]}
+                    contentStyle={{ borderRadius: '12px', border: '1px solid #cbd5e1', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span className="text-xl sm:text-2xl font-black text-slate-900">{totalResponden}</span>
+                <span className="text-[10px] text-slate-400 font-bold uppercase">Responden</span>
+              </div>
             </div>
+          </div>
 
-            {/* Interactive Facility Filter Buttons */}
-            <div className="space-y-1.5 mt-2 max-h-36 overflow-y-auto pr-1 text-xs">
-              {priorityChartData.map((p, idx) => {
-                const isSelected = selectedFacilityFilter === p.name;
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => handleFacilityClick(p.name)}
-                    className={`w-full flex items-center justify-between p-2 rounded-xl border text-left transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-md font-bold'
-                        : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="w-2.5 h-2.5 rounded-full shrink-0"
-                        style={{ backgroundColor: isSelected ? '#fff' : p.color }}
-                      />
-                      <span className="font-bold">{p.name}</span>
-                    </div>
-                    <span className="font-mono text-[11px]">
-                      {p.count} undian ({p.percent}%)
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+          {/* Dynamic Clickable Badges Legend */}
+          <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-1.5 justify-center">
+            {priorityChartData.slice(0, 5).map((p) => {
+              const isSelected = selectedFacilityFilter === p.name;
+              return (
+                <button
+                  key={p.name}
+                  onClick={() => handleFacilityClick(p.name)}
+                  className={`text-[11px] font-bold px-2.5 py-1 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 border ${
+                    isSelected
+                      ? 'bg-slate-900 text-white border-slate-900 ring-2 ring-blue-400/40 shadow-sm'
+                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                  }`}
+                  title={`Klik untuk tapis cadangan ${p.name}`}
+                >
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
+                  <span>{p.name} ({p.count})</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
       </div>
 
-      {/* 5. SENARAI MAKLUM BALAS & CADANGAN PELAJAR (HANYA PAPAR [KEPERLUAN SEGERA] & [CADANGAN PENAMBAHBAIKAN]) */}
-      <div id="section-cadangan-pelajar" className="glass-card rounded-3xl border border-white/80 shadow-xl overflow-hidden">
-        
-        <div className="p-6 border-b border-slate-200/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-blue-600" />
-                <span>Senarai Maklum Balas & Cadangan Pelajar</span>
-              </h3>
+      {/* 5. SENARAI MAKLUM BALAS & CADANGAN PELAJAR */}
+      <div id="section-cadangan-pelajar" className="glass-card p-6 sm:p-8 rounded-3xl border border-white/80 shadow-xl space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/60 pb-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20">
+              <MessageSquare className="w-5 h-5" />
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Hanya memaparkan <strong>Keperluan Segera</strong> dan <strong>Cadangan Penambahbaikan</strong> pelajar.
-            </p>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-black text-slate-900">
+                  Senarai Maklum Balas & Cadangan Pelajar
+                </h3>
+                {selectedFacilityFilter && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-blue-100 text-blue-800 text-xs font-black border border-blue-200">
+                    <span>Tapis: {selectedFacilityFilter}</span>
+                    <button
+                      onClick={() => setSelectedFacilityFilter(null)}
+                      className="hover:text-rose-600 ml-1 text-slate-500"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-500">
+                Memaparkan keperluan segera dan cadangan penambahbaikan terbuka daripada pelajar
+              </p>
+            </div>
           </div>
 
-          {/* Active Filter Pill or Reset Indicator */}
           <div className="flex items-center gap-2">
-            {selectedFacilityFilter ? (
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-md shadow-blue-500/20">
-                <span>🎯 Menapis: {selectedFacilityFilter} ({tableSurveys.length} Cadangan)</span>
-                <button
-                  onClick={() => setSelectedFacilityFilter(null)}
-                  className="hover:bg-white/20 p-1 rounded-md transition-colors cursor-pointer"
-                  title="Batal tapisan & papar semua cadangan"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ) : (
-              <span className="text-xs font-bold text-slate-600 px-3.5 py-1.5 rounded-xl bg-slate-100 border border-slate-200">
-                Memaparkan Semua ({tableSurveys.length} Cadangan)
-              </span>
-            )}
+            <span className="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-xl">
+              {tableSurveys.length} Rekod Maklum Balas
+            </span>
           </div>
         </div>
 
-        {/* Focused 2-Column Table: [Keperluan Segera] & [Cadangan Penambahbaikan] */}
-        <div className="overflow-x-auto max-h-[550px] overflow-y-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead className="bg-slate-100/90 sticky top-0 z-10 border-b border-slate-200 text-slate-700 font-black uppercase tracking-wider">
-              <tr>
-                <th className="py-3.5 px-6 w-1/4 sm:w-1/5">Keperluan Segera</th>
-                <th className="py-3.5 px-6 w-3/4 sm:w-4/5">Cadangan Penambahbaikan</th>
+        {/* Suggestions Table with 2 columns */}
+        <div className="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white shadow-xs">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-black uppercase tracking-wider text-slate-500">
+                <th className="py-3.5 px-6 w-1/3">Keperluan Segera</th>
+                <th className="py-3.5 px-6 w-2/3">Cadangan Penambahbaikan</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-800">
+            <tbody className="divide-y divide-slate-100 text-xs">
               {tableSurveys.length === 0 ? (
                 <tr>
-                  <td colSpan={2} className="py-12 text-center text-slate-500">
-                    <p className="font-semibold text-sm">Tiada maklum balas dijumpai untuk kriteria ini.</p>
+                  <td colSpan={2} className="py-12 text-center text-slate-400">
+                    <p className="font-bold text-sm text-slate-600">Tiada cadangan maklum balas dijumpai</p>
+                    <p className="text-xs mt-1">Cuba ubah tapisan tahun, program atau perkataan carian anda.</p>
                     {selectedFacilityFilter && (
                       <button
                         onClick={() => setSelectedFacilityFilter(null)}
-                        className="mt-2 text-xs font-bold text-blue-600 hover:underline cursor-pointer"
+                        className="mt-3 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold hover:bg-blue-100 transition-all cursor-pointer"
                       >
                         Klik di sini untuk memaparkan semua cadangan
                       </button>
@@ -790,9 +881,7 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
                 tableSurveys.map((survey) => {
                   const isCurrentFilter = selectedFacilityFilter === survey.kemudahanPenambahbaikan;
                   return (
-                    <tr key={survey.id} className="hover:bg-blue-50/50 transition-colors">
-                      
-                      {/* Column 1: Keperluan Segera */}
+                    <tr key={survey.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-4 px-6 align-top">
                         <button
                           onClick={() => handleFacilityClick(survey.kemudahanPenambahbaikan)}
@@ -801,7 +890,7 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
                               ? 'bg-blue-600 text-white border-blue-600 ring-2 ring-blue-400/40'
                               : survey.kemudahanPenambahbaikan === 'WIFI'
                               ? 'bg-sky-100 text-sky-900 border-sky-300 hover:bg-sky-200'
-                              : survey.kemudahanPenambahbaikan === 'KAFE'
+                              : survey.kemudahanPenambahbaikan === 'E-TECH CENTRE'
                               ? 'bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200'
                               : survey.kemudahanPenambahbaikan === 'TANDAS'
                               ? 'bg-rose-100 text-rose-900 border-rose-300 hover:bg-rose-200'
@@ -815,8 +904,6 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
                           {survey.programPengajian.replace('SIJIL ', '')} • Sem {survey.semester} ({survey.year})
                         </div>
                       </td>
-
-                      {/* Column 2: Cadangan Penambahbaikan */}
                       <td className="py-4 px-6 align-top">
                         <div className="text-slate-800 text-xs sm:text-sm leading-relaxed font-medium">
                           {survey.cadangan === '-' || survey.cadangan === '.' || !survey.cadangan ? (
@@ -824,13 +911,12 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
                               Tiada catatan tambahan diberikan
                             </span>
                           ) : (
-                            <div className="bg-white/80 p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
+                            <div className="bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
                               "{survey.cadangan}"
                             </div>
                           )}
                         </div>
                       </td>
-
                     </tr>
                   );
                 })

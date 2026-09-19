@@ -261,8 +261,10 @@ export const StudentSurveyForm: React.FC<StudentSurveyFormProps> = ({
       dewanKuliah: Number(dewanKuliah.toFixed(2)),
       makmalKomputer: Number(makmalKomputer.toFixed(2)),
       perpustakaan: Number(perpustakaan.toFixed(2)),
+      eTechCentre: Number(kafe.toFixed(2)),
       kafe: Number(kafe.toFixed(2)),
       kemudahanSokongan: Number(kemudahanSokongan.toFixed(2)),
+      bengkelAmali: Number(bengkelDapur.toFixed(2)),
       bengkelDapur: Number(bengkelDapur.toFixed(2)),
       wifi: Number(wifi.toFixed(2)),
       purataKeseluruhan: Number(purataKeseluruhan.toFixed(2)),
@@ -285,6 +287,7 @@ export const StudentSurveyForm: React.FC<StudentSurveyFormProps> = ({
       programPengajian,
       semester,
       scores: computedMetrics,
+      rawScores: scoresArray,
       kemudahanPenambahbaikan: kemudahanPenambahbaikan.trim().toUpperCase(),
       cadangan: cadangan.trim() || '-',
     };
