@@ -30,7 +30,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onSelectCategory,
   onSearchRef,
 }) => {
-  const [quickRef, setQuickRef] = useState('');
   const [ratingData, setRatingData] = useState<RatingSummary>({
     averageRating: 5.0,
     totalRatings: 0,
@@ -115,13 +114,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     }
   };
 
-  const handleQuickSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (quickRef.trim()) {
-      onSearchRef(quickRef.trim());
-    }
-  };
-
   const getCategoryIcon = (iconName: string) => {
     switch (iconName) {
       case 'Building2':
@@ -177,7 +169,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </p>
 
             {/* Primary Action Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <button
                 id="hero-btn-buat-aduan"
                 onClick={() => onNavigate('aduan')}
@@ -197,30 +189,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <span>SEMAK ADUAN</span>
                 <Search className="w-5 h-5 ml-1" />
               </button>
-            </div>
-
-            {/* Quick Reference Tracker Input Card - Frosted Glass Panel */}
-            <div className="max-w-xl mx-auto glass-card p-2 sm:p-2.5 rounded-2xl border border-white/80 shadow-lg">
-              <form onSubmit={handleQuickSearch} className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    id="hero-quick-search-input"
-                    type="text"
-                    value={quickRef}
-                    onChange={(e) => setQuickRef(e.target.value)}
-                    placeholder="Masukkan No. Rujukan (cth: SIAP-2026-00001)"
-                    className="w-full pl-11 pr-4 py-3 text-sm text-slate-900 bg-white/70 backdrop-blur-md focus:bg-white border border-white/60 focus:border-blue-400 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all font-mono shadow-inner"
-                  />
-                </div>
-                <button
-                  id="hero-quick-search-submit"
-                  type="submit"
-                  className="px-5 py-3 rounded-xl bg-slate-900/90 hover:bg-slate-900 text-white text-sm font-semibold transition-all shrink-0 shadow-md active:scale-95"
-                >
-                  Semak
-                </button>
-              </form>
             </div>
 
           </div>
