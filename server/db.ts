@@ -1,4 +1,5 @@
-import { Complaint, ComplaintCategory, ComplaintStatus, EmailLog, LogItem, SystemStats, TindakanItem } from '../src/types.js';
+import { Complaint, ComplaintCategory, ComplaintStatus, EmailLog, LogItem, SystemStats, TindakanItem, StudentSurveyItem } from '../src/types.js';
+import { getProcessedStudentSurveys } from '../src/data/studentSatisfactionData.js';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import path from 'path';
@@ -20,6 +21,7 @@ export const SUPABASE_TABLES = {
   LOGS: 'siap_logs',
   EMAILS: 'siap_emails',
   CONFIG: 'siap_config',
+  STUDENT_SURVEYS: 'siap_student_satisfaction',
 } as const;
 
 let supabaseClient: SupabaseClient | null = null;
@@ -637,6 +639,13 @@ class Database {
 
   public getEmails(limit: number = 50): EmailLog[] {
     return this.store.emails.slice(0, limit);
+  }
+
+  public getStudentSurveys(year?: string | number): StudentSurveyItem[] {
+    const all = getProcessedStudentSurveys();
+    if (!year || year === 'ALL') return all;
+    const yNum = typeof year === 'string' ? parseInt(year, 10) : year;
+    return all.filter((item) => item.year === yNum);
   }
 
   public getConfig() {

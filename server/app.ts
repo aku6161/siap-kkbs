@@ -577,6 +577,80 @@ router.get('/admin/complaints', async (req, res, next) => {
   }
 });
 
+// Student satisfaction survey analytics & data
+router.get('/admin/student-satisfaction', async (req, res, next) => {
+  try {
+    const { year, program, semester } = req.query;
+    let list = db.getStudentSurveys(year ? String(year) : undefined);
+
+    if (program && program !== 'ALL') {
+      list = list.filter((s) => s.programPengajian.toLowerCase() === String(program).toLowerCase());
+    }
+    if (semester && semester !== 'ALL') {
+      list = list.filter((s) => s.semester === String(semester));
+    }
+
+    const total = list.length;
+    const avg = (arr: number[]) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0);
+    
+    const overallScore = Number(avg(list.map((s) => s.scores.purataKeseluruhan)).toFixed(2));
+    
+    const dimensionAverages = {
+      bilikKuliah: Number(avg(list.map((s) => s.scores.bilikKuliah)).toFixed(2)),
+      perpustakaan: Number(avg(list.map((s) => s.scores.perpustakaan)).toFixed(2)),
+      bengkelDapur: Number(avg(list.map((s) => s.scores.bengkelDapur)).toFixed(2)),
+      makmalKomputer: Number(avg(list.map((s) => s.scores.makmalKomputer)).toFixed(2)),
+      dewanKuliah: Number(avg(list.map((s) => s.scores.dewanKuliah)).toFixed(2)),
+      immersiveCentre: Number(avg(list.map((s) => s.scores.immersiveCentre)).toFixed(2)),
+      kafe: Number(avg(list.map((s) => s.scores.kafe)).toFixed(2)),
+      kemudahanSokongan: Number(avg(list.map((s) => s.scores.kemudahanSokongan)).toFixed(2)),
+      wifi: Number(avg(list.map((s) => s.scores.wifi)).toFixed(2)),
+    };
+
+    // Priority facilities breakdown
+    const priorityCounts: Record<string, number> = {};
+    for (const item of list) {
+      const key = item.kemudahanPenambahbaikan || 'LAIN-LAIN';
+      priorityCounts[key] = (priorityCounts[key] || 0) + 1;
+    }
+
+    const priorityBreakdown = Object.entries(priorityCounts)
+      .map(([name, count]) => ({
+        name,
+        count,
+        percent: total ? Math.round((count / total) * 100) : 0,
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    // Program breakdown
+    const programCounts: Record<string, { count: number; totalScore: number }> = {};
+    for (const item of list) {
+      const prog = item.programPengajian;
+      if (!programCounts[prog]) programCounts[prog] = { count: 0, totalScore: 0 };
+      programCounts[prog].count += 1;
+      programCounts[prog].totalScore += item.scores.purataKeseluruhan;
+    }
+
+    const programBreakdown = Object.entries(programCounts).map(([program, val]) => ({
+      program,
+      count: val.count,
+      averageScore: Number((val.totalScore / val.count).toFixed(2)),
+    }));
+
+    res.json({
+      total,
+      overallScore,
+      overallPercentage: Number(((overallScore / 5) * 100).toFixed(1)),
+      dimensionAverages,
+      priorityBreakdown,
+      programBreakdown,
+      surveys: list,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Admin update complaint details / release officer / update status
 router.patch('/admin/complaints/:noRujukan', async (req, res, next) => {
   try {

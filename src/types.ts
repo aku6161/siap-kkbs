@@ -129,3 +129,55 @@ export interface SystemStats {
   totalRating: number;
   unassignedCount: number;
 }
+
+export interface StudentSurveyItem {
+  id: string;
+  timestamp: string;
+  year: number;
+  jantina: 'LELAKI' | 'PEREMPUAN';
+  programPengajian: string;
+  semester: string;
+  scores: {
+    bilikKuliah: number;
+    immersiveCentre: number;
+    dewanKuliah: number;
+    makmalKomputer: number;
+    perpustakaan: number;
+    kafe: number;
+    kemudahanSokongan: number;
+    bengkelDapur: number;
+    wifi: number;
+    purataKeseluruhan: number;
+  };
+  kemudahanPenambahbaikan: string;
+  cadangan: string;
+}
+
+export interface StudentSurveyAnalytics {
+  total: number;
+  overallScore: number;
+  overallPercentage: number;
+  dimensionAverages: {
+    bilikKuliah: number;
+    perpustakaan: number;
+    bengkelDapur: number;
+    makmalKomputer: number;
+    dewanKuliah: number;
+    immersiveCentre: number;
+    kafe: number;
+    kemudahanSokongan: number;
+    wifi: number;
+  };
+  priorityBreakdown: Array<{
+    name: string;
+    count: number;
+    percent: number;
+  }>;
+  programBreakdown: Array<{
+    program: string;
+    count: number;
+    averageScore: number;
+  }>;
+  surveys: StudentSurveyItem[];
+}
+

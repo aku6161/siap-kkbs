@@ -34,11 +34,13 @@ import {
   Printer,
   Trash2,
   FileText,
+  GraduationCap,
 } from 'lucide-react';
 import { CATEGORIES, STATUS_CONFIG } from '../data/categories';
 import { Complaint, ComplaintCategory, ComplaintStatus, SystemStats, TindakanItem } from '../types';
 import { printComplaintReport } from '../utils/printReport';
 import { AdminComplaintDetailModal } from './AdminComplaintDetailModal';
+import { AdminStudentSatisfaction } from './AdminStudentSatisfaction';
 
 interface AdminDashboardProps {
   isAdminLoggedIn: boolean;
@@ -51,7 +53,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onLogin,
   onLogout,
 }) => {
-  const [activeTab, setActiveTab] = useState<'ringkasan' | 'senarai'>('ringkasan');
+  const [activeTab, setActiveTab] = useState<'ringkasan' | 'senarai' | 'kepuasan_pelajar'>('ringkasan');
   const [passwordInput, setPasswordInput] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -355,6 +357,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         >
           <ListOrdered className="w-4 h-4" />
           <span>Senarai Aduan ({complaints.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('kepuasan_pelajar')}
+          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-2 cursor-pointer ${
+            activeTab === 'kepuasan_pelajar'
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25 border border-white/20'
+              : 'bg-white/70 backdrop-blur-md text-slate-600 hover:bg-white border border-white/80'
+          }`}
+        >
+          <GraduationCap className="w-4 h-4" />
+          <span>Statistik Kepuasan Pelajar</span>
         </button>
       </div>
 
@@ -686,6 +700,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
         </div>
+      )}
+
+      {/* ==========================================
+          TAB 3: STATISTIK KEPUASAN PELAJAR
+         ========================================== */}
+      {activeTab === 'kepuasan_pelajar' && (
+        <AdminStudentSatisfaction />
       )}
 
       {/* DETAIL MODAL */}
