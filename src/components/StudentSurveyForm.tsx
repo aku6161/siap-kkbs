@@ -411,7 +411,7 @@ export const StudentSurveyForm: React.FC<StudentSurveyFormProps> = ({
             Kajian Soal Selidik Kepuasan Pelajar Terhadap Fasiliti & Kemudahan KKBS
           </h1>
           <p className="text-blue-100/90 text-xs sm:text-sm max-w-2xl leading-relaxed">
-            Sila berikan maklum balas dan penilaian ikhlas anda bagi setiap aspek di bawah mengikut skala 1 (Sangat Tidak Memuaskan) hingga 5 (Sangat Memuaskan).
+            Sila berikan maklum balas dan penilaian ikhlas anda bagi setiap aspek di bawah.
           </p>
         </div>
       </div>
@@ -502,14 +502,39 @@ export const StudentSurveyForm: React.FC<StudentSurveyFormProps> = ({
 
         {/* SECTION 2: SEMUA SOALAN MENGIKUT KATEGORI TEPAT CSV */}
         <div className="space-y-6">
-          <div className="flex items-center justify-between px-2">
+          <div className="bg-slate-900/80 backdrop-blur-xl border border-white/20 rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h2 className="text-xl font-black text-slate-900 tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
+                <span className="inline-flex w-3 h-3 rounded-full bg-blue-400 animate-pulse shadow-sm shadow-blue-400/50"></span>
                 Penilaian Soal Selidik
               </h2>
-              <p className="text-xs text-slate-500 font-medium">
-                Skala: 1-Sangat Tidak Memuaskan, 2-Tidak Memuaskan, 3-Sederhana, 4-Memuaskan, 5-Sangat Memuaskan
+              <p className="text-xs sm:text-sm text-blue-200/90 font-medium mt-1">
+                Panduan Skala Penilaian:
               </p>
+            </div>
+            
+            {/* Skala Legend Badges */}
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/20 border border-rose-400/30 text-rose-200 text-xs font-bold shadow-sm">
+                <span className="w-5 h-5 rounded-lg bg-rose-500 text-white flex items-center justify-center text-[10px] font-black">1</span>
+                <span>Sangat Tidak Memuaskan</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-400/30 text-amber-200 text-xs font-bold shadow-sm">
+                <span className="w-5 h-5 rounded-lg bg-amber-500 text-white flex items-center justify-center text-[10px] font-black">2</span>
+                <span>Tidak Memuaskan</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-yellow-500/20 border border-yellow-400/30 text-yellow-200 text-xs font-bold shadow-sm">
+                <span className="w-5 h-5 rounded-lg bg-yellow-500 text-slate-950 flex items-center justify-center text-[10px] font-black">3</span>
+                <span>Sederhana</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-500/20 border border-blue-400/30 text-blue-200 text-xs font-bold shadow-sm">
+                <span className="w-5 h-5 rounded-lg bg-blue-500 text-white flex items-center justify-center text-[10px] font-black">4</span>
+                <span>Memuaskan</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-bold shadow-sm">
+                <span className="w-5 h-5 rounded-lg bg-emerald-500 text-white flex items-center justify-center text-[10px] font-black">5</span>
+                <span>Sangat Memuaskan</span>
+              </div>
             </div>
           </div>
 
