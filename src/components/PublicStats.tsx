@@ -48,13 +48,13 @@ export const PublicStats: React.FC<PublicStatsProps> = ({ onNavigateToCreate }) 
       
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto">
-        <span className="text-xs font-bold text-blue-700 uppercase tracking-wider bg-white/80 px-3.5 py-1.5 rounded-full border border-white/90 shadow-xs backdrop-blur-md">
+        <span className="text-xs font-bold text-cyan-300 uppercase tracking-wider bg-slate-900/80 px-3.5 py-1.5 rounded-full border border-cyan-400/40 shadow-lg backdrop-blur-md">
           Ketelusan & Prestasi
         </span>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-3">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-white mt-3 drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]">
           Statistik & Kepuasan Pelanggan
         </h1>
-        <p className="text-sm text-slate-600 mt-2">
+        <p className="text-sm sm:text-base text-slate-200 mt-2 font-medium drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]">
           Data ketelusan prestasi aduan dan kepuasan pelanggan yang dikemas kini secara langsung dari pangkalan data.
         </p>
       </div>
