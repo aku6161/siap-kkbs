@@ -174,14 +174,16 @@ class Database {
       const logTable = SUPABASE_TABLES.LOGS;
       const emailTable = SUPABASE_TABLES.EMAILS;
       const cfgTable = SUPABASE_TABLES.CONFIG;
+      const surveyTable = SUPABASE_TABLES.STUDENT_SURVEYS;
 
-      // Run all 5 Supabase queries concurrently in parallel for maximum speed (<300ms)
-      const [compRes, tindRes, logRes, emailRes, cfgRes] = await Promise.all([
+      // Run Supabase queries concurrently in parallel for maximum speed (<300ms)
+      const [compRes, tindRes, logRes, emailRes, cfgRes, surveyRes] = await Promise.all([
         supabaseClient.from(compTable).select('*').order('"tarikhMasa"', { ascending: false }),
         supabaseClient.from(tindTable).select('*').order('"tarikhMasa"', { ascending: false }),
         supabaseClient.from(logTable).select('*').order('"tarikhMasa"', { ascending: false }),
         supabaseClient.from(emailTable).select('*').order('"tarikhMasa"', { ascending: false }),
         supabaseClient.from(cfgTable).select('*').eq('id', 'system_config').maybeSingle(),
+        supabaseClient.from(surveyTable).select('*'),
       ]);
 
       if (compRes.data) {
@@ -195,6 +197,9 @@ class Database {
       }
       if (emailRes.data) {
         this.store.emails = emailRes.data as EmailLog[];
+      }
+      if (surveyRes.data && Array.isArray(surveyRes.data)) {
+        this.store.studentSurveys = surveyRes.data as StudentSurveyItem[];
       }
       if (cfgRes.data) {
         const { id: _id, lastSequenceNumber, ...configData } = cfgRes.data as any;

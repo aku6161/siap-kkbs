@@ -148,7 +148,7 @@ export const SURVEY_SECTIONS = [
   },
   {
     id: 'bengkelDapur',
-    title: 'Bengkel / Restoran / Bilik Simulasi / Bilik Dobi / Dapur',
+    title: 'Bengkel Amali',
     icon: Wrench,
     badgeColor: 'bg-rose-100 text-rose-800 border-rose-200',
     questions: [
@@ -176,7 +176,6 @@ const SEMESTER_OPTIONS = [
 
 const PRIORITY_FACILITY_OPTIONS = [
   'WIFI',
-  'KAFE',
   'E-TECH CENTRE',
   'TANDAS',
   'SURAU',
@@ -542,12 +541,8 @@ export const StudentSurveyForm: React.FC<StudentSurveyFormProps> = ({
                     </div>
                   </div>
 
-                  {/* Section Fast Fill helper & Average Pill */}
+                  {/* Section Fast Fill helper */}
                   <div className="flex items-center gap-2 flex-wrap">
-                    <div className="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
-                      Purata: <span className="text-blue-700 font-black">{secAvg}</span>
-                    </div>
-
                     <div className="inline-flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200 text-[11px] font-semibold text-slate-500">
                       <span className="px-1 hidden sm:inline">Set Pantas:</span>
                       {[5, 4, 3].map((val) => (
