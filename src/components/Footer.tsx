@@ -18,13 +18,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             © {new Date().getFullYear()} SiAP (Sistem Aduan Pelanggan). Hak Cipta Terpelihara.
           </div>
           
-          <div className="flex items-center gap-4 sm:gap-6 flex-wrap justify-center">
-            <button
-              onClick={() => onNavigate('soalselidik')}
-              className="hover:text-blue-300 text-slate-300 font-semibold cursor-pointer transition-colors"
-            >
-              Soal Selidik Pelajar
-            </button>
+          <div className="flex items-center gap-6">
             <span className="hover:text-slate-300 cursor-pointer transition-colors">Polisi Privasi</span>
             <span className="hover:text-slate-300 cursor-pointer transition-colors">Terma Perkhidmatan</span>
             

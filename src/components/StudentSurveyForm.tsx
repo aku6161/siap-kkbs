@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   GraduationCap,
   Sparkles,
@@ -14,19 +14,152 @@ import {
   Wrench,
   HelpCircle,
   ArrowRight,
+  ArrowLeft,
   RefreshCw,
   Share2,
   Copy,
   Check,
   Award,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
-import { StudentSurveyItem } from '../data/studentSatisfactionData';
-import { saveCustomStudentSurvey } from '../data/studentSatisfactionData';
+import { StudentSurveyItem, saveCustomStudentSurvey } from '../data/studentSatisfactionData';
 
 interface StudentSurveyFormProps {
   onSuccess?: (survey: StudentSurveyItem) => void;
   onCancel?: () => void;
 }
+
+export const SURVEY_SECTIONS = [
+  {
+    id: 'bilikKuliah1',
+    title: 'Bilik Kuliah (Sesi 1 / Teori)',
+    icon: Building2,
+    badgeColor: 'bg-blue-100 text-blue-800 border-blue-200',
+    questions: [
+      { id: 0, text: 'Peralatan kerusi dalam keadaan yang baik dan mencukupi untuk keperluan pembelajaran' },
+      { id: 1, text: 'Peralatan meja dalam keadaan yang baik dan mencukupi untuk keperluan pembelajaran' },
+      { id: 2, text: 'Alat bantu mengajar mencukupi serta berfungsi dengan baik' },
+      { id: 3, text: 'Persekitaran bilik kuliah adalah bersih dan selesa' },
+      { id: 4, text: 'Persekitaran bilik kuliah adalah selamat' },
+      { id: 5, text: 'Mempunyai capaian WiFi yang baik di bilik kuliah' },
+    ],
+  },
+  {
+    id: 'bilikKuliah2',
+    title: 'Bilik Kuliah (Sesi 2 / Amali)',
+    icon: Building2,
+    badgeColor: 'bg-blue-100 text-blue-800 border-blue-200',
+    questions: [
+      { id: 6, text: 'Peralatan kerusi dalam keadaan yang baik dan mencukupi untuk keperluan pembelajaran' },
+      { id: 7, text: 'Peralatan meja dalam keadaan yang baik dan mencukupi untuk keperluan pembelajaran' },
+      { id: 8, text: 'Alat bantu mengajar mencukupi serta berfungsi dengan baik' },
+      { id: 9, text: 'Persekitaran bilik kuliah adalah bersih dan selesa' },
+      { id: 10, text: 'Persekitaran bilik kuliah adalah selamat' },
+      { id: 11, text: 'Mempunyai capaian WiFi yang baik' },
+    ],
+  },
+  {
+    id: 'immersive',
+    title: 'Immersive Centre',
+    icon: Layers,
+    badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+    questions: [
+      { id: 12, text: 'Peralatan kerusi dalam keadaan yang baik dan mencukupi untuk keperluan pembelajaran' },
+      { id: 13, text: 'Peralatan meja dalam keadaan yang baik dan mencukupi untuk keperluan pembelajaran' },
+      { id: 14, text: 'Alat bantu mengajar mencukupi serta berfungsi dengan baik' },
+      { id: 15, text: 'Persekitaran Immersive Centre adalah bersih dan selesa' },
+      { id: 16, text: 'Persekitaran Immersive Centre adalah selamat' },
+      { id: 17, text: 'Mempunyai capaian WiFi yang baik di Immersive Centre' },
+    ],
+  },
+  {
+    id: 'dewanKuliah',
+    title: 'Dewan Kuliah Utama',
+    icon: GraduationCap,
+    badgeColor: 'bg-purple-100 text-purple-800 border-purple-200',
+    questions: [
+      { id: 18, text: 'Peralatan kerusi dalam keadaan yang baik dan mencukupi untuk keperluan pembelajaran' },
+      { id: 19, text: 'Peralatan meja dalam keadaan yang baik dan mencukupi untuk keperluan pembelajaran' },
+      { id: 20, text: 'Alat bantu mengajar mencukupi serta berfungsi dengan baik' },
+      { id: 21, text: 'Persekitaran dewan kuliah adalah bersih dan selesa' },
+      { id: 22, text: 'Persekitaran dewan kuliah adalah selamat' },
+      { id: 23, text: 'Mempunyai capaian WiFi yang baik di dewan kuliah' },
+    ],
+  },
+  {
+    id: 'makmalKomputer',
+    title: 'Makmal Bahasa & Makmal Komputer',
+    icon: Laptop,
+    badgeColor: 'bg-cyan-100 text-cyan-800 border-cyan-200',
+    questions: [
+      { id: 24, text: 'Komputer yang disediakan berfungsi dengan baik' },
+      { id: 25, text: 'Komputer yang disediakan mencukupi untuk keperluan pembelajaran' },
+      { id: 26, text: 'Peralatan kerusi dalam keadaan yang baik dan mencukupi untuk keperluan pembelajaran' },
+      { id: 27, text: 'Persekitaran makmal bahasa dan makmal komputer adalah bersih dan selesa' },
+      { id: 28, text: 'Persekitaran makmal bahasa dan makmal komputer adalah selamat' },
+      { id: 29, text: 'Mempunyai capaian WiFi yang baik di makmal komputer' },
+    ],
+  },
+  {
+    id: 'perpustakaan',
+    title: 'Perpustakaan & Pusat Sumber',
+    icon: BookOpen,
+    badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    questions: [
+      { id: 30, text: 'Proses capaian maklumat dan bahan rujukan di perpustakaan adalah tersusun dan mudah diperolehi' },
+      { id: 31, text: 'Koleksi bahan bacaan mencukupi' },
+      { id: 32, text: 'Waktu operasi perpustakaan adalah bersesuaian' },
+      { id: 33, text: 'Proses peminjaman dan pemulangan mudah dan cepat' },
+      { id: 34, text: 'Persekitaran perpustakaan adalah bersih dan selesa' },
+      { id: 35, text: 'Persekitaran perpustakaan adalah selamat' },
+      { id: 36, text: 'Mempunyai capaian WiFi yang baik di perpustakaan' },
+    ],
+  },
+  {
+    id: 'kafe',
+    title: 'Kafeteria / Kafe Kolej',
+    icon: Coffee,
+    badgeColor: 'bg-amber-100 text-amber-800 border-amber-200',
+    questions: [
+      { id: 37, text: 'Layanan perkhidmatan di kaunter adalah mesra dan baik' },
+      { id: 38, text: 'Makanan dijual dengan harga yang berpatutan' },
+      { id: 39, text: 'Mempunyai menu makanan yang pelbagai' },
+      { id: 40, text: 'Mempunyai meja dan kerusi yang mencukupi' },
+      { id: 41, text: 'Mempunyai persekitaran yang bersih dan selesa' },
+      { id: 42, text: 'Makanan dan minuman yang dijual sedap dan bersih' },
+    ],
+  },
+  {
+    id: 'kemudahanSokongan',
+    title: 'Kemudahan Sokongan (Tempat Rehat, Tandas, Surau, Tempat Letak Kenderaan)',
+    icon: HelpCircle,
+    badgeColor: 'bg-teal-100 text-teal-800 border-teal-200',
+    questions: [
+      { id: 43, text: 'Kemudahan tempat rehat adalah mencukupi' },
+      { id: 44, text: 'Tempat rehat pelajar adalah selesa dan bersih' },
+      { id: 45, text: 'Kemudahan tandas adalah mencukupi' },
+      { id: 46, text: 'Tahap kebersihan tandas adalah baik' },
+      { id: 47, text: 'Kemudahan surau adalah mencukupi' },
+      { id: 48, text: 'Kemudahan surau adalah selesa dan bersih' },
+      { id: 49, text: 'Kemudahan asas di surau adalah mencukupi' },
+      { id: 50, text: 'Kemudahan tempat letak kenderaan adalah mencukupi' },
+    ],
+  },
+  {
+    id: 'bengkelDapur',
+    title: 'Bengkel / Restoran / Bilik Simulasi / Bilik Dobi / Dapur',
+    icon: Wrench,
+    badgeColor: 'bg-rose-100 text-rose-800 border-rose-200',
+    questions: [
+      { id: 51, text: 'Peralatan pembelajaran yang disediakan adalah mencukupi' },
+      { id: 52, text: 'Peralatan pembelajaran untuk amali adalah berfungsi dengan baik' },
+      { id: 53, text: 'Persekitaran di dalam bengkel / restoran / bilik simulasi / bilik dobi / dapur adalah bersih dan selesa' },
+      { id: 54, text: 'Persekitaran di dalam bengkel / restoran / bilik simulasi / bilik dobi / dapur adalah selamat' },
+      { id: 55, text: 'Peraturan keselamatan penggunaan peralatan dalam bengkel / restoran / bilik simulasi / bilik dobi / dapur dipamerkan' },
+    ],
+  },
+];
 
 const PROGRAM_OPTIONS = [
   'SIJIL KULINARI',
@@ -45,195 +178,119 @@ const SEMESTER_OPTIONS = [
   '4 (LATIHAN INDUSTRI)',
 ];
 
-const PRIORITY_FACILITIES = [
-  { id: 'WIFI', name: 'Wi-Fi & Internet', icon: '📶' },
-  { id: 'KAFE', name: 'Kafe / Makanan', icon: '🍽️' },
-  { id: 'TANDAS', name: 'Tandas Pelajar', icon: '🚻' },
-  { id: 'SURAU', name: 'Surau & Ruang Solat', icon: '🕌' },
-  { id: 'MAKMAL KOMPUTER', name: 'Makmal Komputer', icon: '💻' },
-  { id: 'BILIK KULIAH', name: 'Bilik Kuliah / Aircond', icon: '🏫' },
-  { id: 'PERALATAN PDP SKE', name: 'Peralatan Bengkel / SKE', icon: '⚡' },
-  { id: 'PERPUSTAKAAN', name: 'Perpustakaan', icon: '📚' },
-  { id: 'ASRAMA', name: 'Asrama Pelajar', icon: '🏢' },
-  { id: 'LAIN-LAIN', name: 'Lain-lain Kemudahan', icon: '🔧' },
+const PRIORITY_FACILITY_OPTIONS = [
+  'WIFI',
+  'KAFE',
+  'TANDAS',
+  'SURAU',
+  'KOMPUTER',
+  'KERUSI',
+  'PERALATAN PDP SKE',
+  'PERALATAN PDP SKU',
+  'PERALATAN PDP SOP',
+  'PERPUSTAKAAN',
+  'ASRAMA',
+  'BILIK KULIAH',
+  'LAIN-LAIN',
 ];
 
-const RATING_DIMENSIONS = [
-  {
-    key: 'bilikKuliah',
-    title: 'Bilik Kuliah & Pembelajaran',
-    desc: 'Keselesaan kerusi, meja, projektor, pencahayaan dan penghawa dingin bilik kuliah.',
-    icon: Building2,
-    color: 'text-blue-600',
-    bg: 'bg-blue-50',
-  },
-  {
-    key: 'immersiveCentre',
-    title: 'Immersive Centre & Multimedia',
-    desc: 'Kelengkapan teknologi simulasi, audio visual dan ruang interaktif moden.',
-    icon: Layers,
-    color: 'text-indigo-600',
-    bg: 'bg-indigo-50',
-  },
-  {
-    key: 'dewanKuliah',
-    title: 'Dewan Kuliah Utama',
-    desc: 'Kapasiti, sistem bunyi, paparan skrin dan keselesaan semasa kuliah umum.',
-    icon: GraduationCap,
-    color: 'text-purple-600',
-    bg: 'bg-purple-50',
-  },
-  {
-    key: 'makmalKomputer',
-    title: 'Makmal Komputer & Perisian',
-    desc: 'Prestasi PC, perisian kursus yang terkini, dan kelajuan capaian makmal.',
-    icon: Laptop,
-    color: 'text-cyan-600',
-    bg: 'bg-cyan-50',
-  },
-  {
-    key: 'perpustakaan',
-    title: 'Perpustakaan & Pusat Sumber',
-    desc: 'Koleksi buku/rujukan, ruang belajar kondusif, dan perkhidmatan kaunter.',
-    icon: BookOpen,
-    color: 'text-emerald-600',
-    bg: 'bg-emerald-50',
-  },
-  {
-    key: 'kafe',
-    title: 'Kafe & Kafeteria',
-    desc: 'Kepelbagaian makanan, kualiti masakan, harga berpatutan dan kebersihan ruang makan.',
-    icon: Coffee,
-    color: 'text-amber-600',
-    bg: 'bg-amber-50',
-  },
-  {
-    key: 'kemudahanSokongan',
-    title: 'Kemudahan Sokongan & Sanitasi',
-    desc: 'Kebersihan tandas, keselesaan surau, ruang rehat, dan tempat letak kenderaan.',
-    icon: HelpCircle,
-    color: 'text-teal-600',
-    bg: 'bg-teal-50',
-  },
-  {
-    key: 'bengkelDapur',
-    title: 'Bengkel & Dapur Latihan Kulinari/Teknikal',
-    desc: 'Kelengkapan mesin/peralatan amali, aspek keselamatan, dan ruang kerja praktikal.',
-    icon: Wrench,
-    color: 'text-rose-600',
-    bg: 'bg-rose-50',
-  },
-  {
-    key: 'wifi',
-    title: 'Capaian Rangkaian Wi-Fi Kolej',
-    desc: 'Kestabilan sambungan, kelajuan muat turun, dan liputan di seluruh kawasan kolej.',
-    icon: Wifi,
-    color: 'text-sky-600',
-    bg: 'bg-sky-50',
-  },
-];
-
-const RATING_LABELS: Record<number, { text: string; emoji: string; color: string }> = {
-  1: { text: 'Sangat Lemah', emoji: '😞', color: 'text-rose-600 bg-rose-50 border-rose-200' },
-  2: { text: 'Kurang Memuaskan', emoji: '🙁', color: 'text-amber-600 bg-amber-50 border-amber-200' },
+const RATING_DESCRIPTIONS: Record<number, { text: string; emoji: string; color: string }> = {
+  1: { text: 'Sangat Tidak Memuaskan', emoji: '😡', color: 'text-rose-600 bg-rose-50 border-rose-200' },
+  2: { text: 'Tidak Memuaskan', emoji: '🙁', color: 'text-amber-600 bg-amber-50 border-amber-200' },
   3: { text: 'Sederhana', emoji: '😐', color: 'text-yellow-600 bg-yellow-50 border-yellow-200' },
   4: { text: 'Memuaskan', emoji: '😊', color: 'text-blue-600 bg-blue-50 border-blue-200' },
-  5: { text: 'Sangat Cemerlang', emoji: '🤩', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
+  5: { text: 'Sangat Memuaskan', emoji: '🤩', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
 };
 
 export const StudentSurveyForm: React.FC<StudentSurveyFormProps> = ({
   onSuccess,
   onCancel,
 }) => {
-  // Form States
+  // Step navigation (0: Demografi, 1..9: Sections, 10: Cadangan Akhir)
+  const [currentStep, setCurrentStep] = useState<number>(0);
+
+  // Demographics
   const [jantina, setJantina] = useState<'LELAKI' | 'PEREMPUAN'>('LELAKI');
   const [programPengajian, setProgramPengajian] = useState<string>('SIJIL KULINARI');
   const [semester, setSemester] = useState<string>('1');
 
-  // Ratings State (Default 4 - Memuaskan)
-  const [scores, setScores] = useState<Record<string, number>>({
-    bilikKuliah: 4,
-    immersiveCentre: 4,
-    dewanKuliah: 4,
-    makmalKomputer: 4,
-    perpustakaan: 4,
-    kafe: 4,
-    kemudahanSokongan: 4,
-    bengkelDapur: 4,
-    wifi: 4,
-  });
+  // Exact 56 Question Scores (Initialized to 4)
+  const [scoresArray, setScoresArray] = useState<number[]>(() => Array(56).fill(4));
 
+  // Priority and open text
   const [kemudahanPenambahbaikan, setKemudahanPenambahbaikan] = useState<string>('WIFI');
   const [cadangan, setCadangan] = useState<string>('');
-  
+
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submittedSurvey, setSubmittedSurvey] = useState<StudentSurveyItem | null>(null);
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleScoreChange = (dimensionKey: string, score: number) => {
-    setScores((prev) => ({
-      ...prev,
-      [dimensionKey]: score,
-    }));
+  const handleScoreChange = (index: number, val: number) => {
+    setScoresArray((prev) => {
+      const next = [...prev];
+      next[index] = val;
+      return next;
+    });
   };
 
-  const calculateOverallAverage = () => {
-    const vals = Object.values(scores);
-    const sum = vals.reduce((a, b) => a + b, 0);
-    return Number((sum / vals.length).toFixed(2));
+  const handleSetAllCurrentSection = (val: number, sectionQuestions: { id: number }[]) => {
+    setScoresArray((prev) => {
+      const next = [...prev];
+      sectionQuestions.forEach((q) => {
+        next[q.id] = val;
+      });
+      return next;
+    });
   };
+
+  // Computes structured dimension scores from 56 scores
+  const computedMetrics = useMemo(() => {
+    const s = scoresArray;
+    const avg = (arr: number[]) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0);
+
+    const bilikKuliah = avg(s.slice(0, 12));
+    const immersiveCentre = avg(s.slice(12, 18));
+    const dewanKuliah = avg(s.slice(18, 24));
+    const makmalKomputer = avg(s.slice(24, 30));
+    const perpustakaan = avg(s.slice(30, 37));
+    const kafe = avg(s.slice(37, 43));
+    const kemudahanSokongan = avg(s.slice(43, 51));
+    const bengkelDapur = avg(s.slice(51, 56));
+    const wifiScores = [s[5], s[11], s[17], s[23], s[29], s[36]];
+    const wifi = avg(wifiScores);
+    const purataKeseluruhan = avg(s);
+
+    return {
+      bilikKuliah: Number(bilikKuliah.toFixed(2)),
+      immersiveCentre: Number(immersiveCentre.toFixed(2)),
+      dewanKuliah: Number(dewanKuliah.toFixed(2)),
+      makmalKomputer: Number(makmalKomputer.toFixed(2)),
+      perpustakaan: Number(perpustakaan.toFixed(2)),
+      kafe: Number(kafe.toFixed(2)),
+      kemudahanSokongan: Number(kemudahanSokongan.toFixed(2)),
+      bengkelDapur: Number(bengkelDapur.toFixed(2)),
+      wifi: Number(wifi.toFixed(2)),
+      purataKeseluruhan: Number(purataKeseluruhan.toFixed(2)),
+    };
+  }, [scoresArray]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setErrorMessage(null);
 
-    const purata = calculateOverallAverage();
     const currentYear = new Date().getFullYear();
     const now = new Date();
     const timestamp = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${now.toLocaleTimeString('en-US')} GMT+8`;
 
-    const surveyPayload = {
-      jantina,
-      programPengajian,
-      semester,
-      scores: {
-        bilikKuliah: scores.bilikKuliah || 4,
-        immersiveCentre: scores.immersiveCentre || 4,
-        dewanKuliah: scores.dewanKuliah || 4,
-        makmalKomputer: scores.makmalKomputer || 4,
-        perpustakaan: scores.perpustakaan || 4,
-        kafe: scores.kafe || 4,
-        kemudahanSokongan: scores.kemudahanSokongan || 4,
-        bengkelDapur: scores.bengkelDapur || 4,
-        wifi: scores.wifi || 4,
-        purataKeseluruhan: purata,
-      },
-      kemudahanPenambahbaikan,
-      cadangan: cadangan.trim() || '-',
-    };
-
-    let generatedItem: StudentSurveyItem = {
+    const surveyItem: StudentSurveyItem = {
       id: `SURVEY-${currentYear}-${Math.floor(100 + Math.random() * 900)}`,
       timestamp,
       year: currentYear,
       jantina,
       programPengajian,
       semester,
-      scores: {
-        bilikKuliah: scores.bilikKuliah || 4,
-        immersiveCentre: scores.immersiveCentre || 4,
-        dewanKuliah: scores.dewanKuliah || 4,
-        makmalKomputer: scores.makmalKomputer || 4,
-        perpustakaan: scores.perpustakaan || 4,
-        kafe: scores.kafe || 4,
-        kemudahanSokongan: scores.kemudahanSokongan || 4,
-        bengkelDapur: scores.bengkelDapur || 4,
-        wifi: scores.wifi || 4,
-        purataKeseluruhan: purata,
-      },
-      kemudahanPenambahbaikan,
+      scores: computedMetrics,
+      kemudahanPenambahbaikan: kemudahanPenambahbaikan.trim().toUpperCase(),
       cadangan: cadangan.trim() || '-',
     };
 
@@ -241,26 +298,32 @@ export const StudentSurveyForm: React.FC<StudentSurveyFormProps> = ({
       const response = await fetch('/api/student-survey', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(surveyPayload),
+        body: JSON.stringify({
+          jantina,
+          programPengajian,
+          semester,
+          scores: computedMetrics,
+          scoresRaw: scoresArray,
+          kemudahanPenambahbaikan,
+          cadangan,
+        }),
       });
 
       if (response.ok) {
         const data = await response.json();
         if (data.survey) {
-          generatedItem = data.survey;
+          surveyItem.id = data.survey.id;
         }
       }
     } catch {
-      // Fallback to client-side storage if offline or running in mock mode
+      // Local fallback
     }
 
-    // Persist to local storage to ensure stats immediately reflect in client
-    saveCustomStudentSurvey(generatedItem);
-
+    saveCustomStudentSurvey(surveyItem);
     setIsSubmitting(false);
-    setSubmittedSurvey(generatedItem);
+    setSubmittedSurvey(surveyItem);
     if (onSuccess) {
-      onSuccess(generatedItem);
+      onSuccess(surveyItem);
     }
   };
 
@@ -275,11 +338,8 @@ export const StudentSurveyForm: React.FC<StudentSurveyFormProps> = ({
   if (submittedSurvey) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-10 animate-fade-in">
-        <div className="bg-white/90 backdrop-blur-xl border border-white/80 rounded-3xl p-8 sm:p-12 shadow-2xl text-center relative overflow-hidden">
-          <div className="absolute -top-24 -right-24 w-60 h-60 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-24 -left-24 w-60 h-60 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-tr from-emerald-500 to-teal-400 text-white rounded-3xl shadow-lg shadow-emerald-500/30 mb-6 animate-bounce">
+        <div className="bg-white/95 backdrop-blur-xl border border-white/80 rounded-3xl p-8 sm:p-12 shadow-2xl text-center relative overflow-hidden">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-tr from-emerald-500 to-teal-400 text-white rounded-3xl shadow-lg shadow-emerald-500/30 mb-6">
             <CheckCircle2 className="w-10 h-10" />
           </div>
 
@@ -287,7 +347,7 @@ export const StudentSurveyForm: React.FC<StudentSurveyFormProps> = ({
             Terima Kasih Atas Maklum Balas Anda!
           </h2>
           <p className="text-slate-600 max-w-lg mx-auto mb-6 text-sm sm:text-base leading-relaxed">
-            Maklum balas anda bagi <span className="font-bold text-slate-900">{submittedSurvey.programPengajian}</span> (Semester {submittedSurvey.semester}) telah direkodkan ke dalam Sistem Statistik Kepuasan Pelajar KKBS.
+            Maklum balas anda bagi program <span className="font-bold text-slate-900">{submittedSurvey.programPengajian}</span> (Semester {submittedSurvey.semester}) telah direkodkan ke dalam Sistem Statistik Kepuasan Pelajar KKBS.
           </p>
 
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-full text-xs font-mono font-bold text-slate-700 mb-8 border border-slate-200">
@@ -295,37 +355,33 @@ export const StudentSurveyForm: React.FC<StudentSurveyFormProps> = ({
             <span className="text-blue-600 font-extrabold">{submittedSurvey.id}</span>
           </div>
 
-          {/* Rating Summary Card */}
-          <div className="bg-slate-50/80 rounded-2xl p-6 border border-slate-200/80 max-w-lg mx-auto mb-8 text-left">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+          <div className="bg-slate-50/80 rounded-2xl p-6 border border-slate-200/80 max-w-lg mx-auto mb-8 text-left space-y-3">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Purata Skor Diberikan</span>
               <div className="flex items-center gap-1 text-emerald-600 font-extrabold text-lg">
                 <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
                 <span>{submittedSurvey.scores.purataKeseluruhan} / 5.00</span>
               </div>
             </div>
-            <div className="pt-4 space-y-2 text-xs text-slate-600">
-              <div className="flex justify-between">
-                <span>Kemudahan Keutamaan Segera:</span>
-                <span className="font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md">
-                  {submittedSurvey.kemudahanPenambahbaikan}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Cadangan:</span>
-                <span className="font-medium text-slate-800 text-right max-w-[240px] truncate">
-                  {submittedSurvey.cadangan}
-                </span>
-              </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-500">Keperluan Segera:</span>
+              <span className="font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md">
+                {submittedSurvey.kemudahanPenambahbaikan}
+              </span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-500">Cadangan:</span>
+              <span className="font-medium text-slate-800 text-right max-w-[240px] truncate">
+                {submittedSurvey.cadangan}
+              </span>
             </div>
           </div>
 
-          {/* Share with peers */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
               type="button"
               onClick={handleCopyLink}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-md transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-md transition-all duration-200"
             >
               {copiedLink ? <Check className="w-4 h-4 text-emerald-300" /> : <Share2 className="w-4 h-4" />}
               {copiedLink ? 'Pautan Disalin!' : 'Kongsi Borang Kepada Rakan'}
@@ -335,17 +391,8 @@ export const StudentSurveyForm: React.FC<StudentSurveyFormProps> = ({
               type="button"
               onClick={() => {
                 setSubmittedSurvey(null);
-                setScores({
-                  bilikKuliah: 4,
-                  immersiveCentre: 4,
-                  dewanKuliah: 4,
-                  makmalKomputer: 4,
-                  perpustakaan: 4,
-                  kafe: 4,
-                  kemudahanSokongan: 4,
-                  bengkelDapur: 4,
-                  wifi: 4,
-                });
+                setCurrentStep(0);
+                setScoresArray(Array(56).fill(4));
                 setCadangan('');
               }}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-white hover:bg-slate-50 text-slate-700 font-bold text-sm rounded-xl border border-slate-300 shadow-sm transition-all"
@@ -363,50 +410,54 @@ export const StudentSurveyForm: React.FC<StudentSurveyFormProps> = ({
     <div className="max-w-4xl mx-auto px-4 py-8 animate-fade-in">
       
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-3xl p-6 sm:p-10 text-white shadow-2xl relative overflow-hidden mb-8">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-2xl relative overflow-hidden mb-8 border border-blue-800">
         <div className="relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-xs font-semibold text-blue-200 border border-white/15 mb-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-xs font-semibold text-blue-200 border border-white/15 mb-3">
             <GraduationCap className="w-4 h-4 text-amber-400" />
-            Borang Maklum Balas Rasmi Kolej Komuniti Bandar Penawar
+            Borang Soal Selidik Rasmi Kolej Komuniti Bandar Penawar
           </div>
-          <h1 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight mb-3">
-            Soal Selidik Kepuasan Pelajar Terhadap Fasiliti & Kemudahan KKBS
+          <h1 className="text-xl sm:text-3xl font-black tracking-tight leading-tight mb-2">
+            Kajian Soal Selidik Kepuasan Pelajar Terhadap Fasiliti & Kemudahan KKBS
           </h1>
-          <p className="text-blue-100/90 text-sm sm:text-base max-w-2xl leading-relaxed">
-            Suara anda membentuk masa depan kolej. Sila berikan penilaian jujur bagi membantu pihak pengurusan mempertingkatkan kualiti prasarana pembelajaran dan kebajikan pelajar.
+          <p className="text-blue-100/90 text-xs sm:text-sm max-w-2xl leading-relaxed">
+            Sila berikan maklum balas dan penilaian ikhlas anda bagi setiap aspek di bawah mengikut skala 1 (Sangat Tidak Memuaskan) hingga 5 (Sangat Memuaskan).
           </p>
 
-          <div className="mt-6 flex flex-wrap items-center gap-3">
+          <div className="mt-4 flex items-center justify-between flex-wrap gap-3 pt-3 border-t border-white/10">
+            <div className="text-xs text-blue-200 font-semibold flex items-center gap-2">
+              <span>📊 Purata Keseluruhan:</span>
+              <span className="font-extrabold text-white text-sm bg-blue-600/60 px-2.5 py-0.5 rounded-lg border border-blue-400/40">
+                ⭐ {computedMetrics.purataKeseluruhan} / 5.00
+              </span>
+            </div>
+
             <button
               type="button"
               onClick={handleCopyLink}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-white/15 hover:bg-white/25 text-white text-xs font-bold rounded-xl backdrop-blur-md border border-white/20 transition-all"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-bold rounded-xl backdrop-blur-md border border-white/20 transition-all"
             >
               {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-blue-300" />}
-              {copiedLink ? 'Pautan Borang Disalin!' : 'Salin Pautan Soal Selidik'}
+              <span>{copiedLink ? 'Disalin!' : 'Salin Pautan'}</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <form onSubmit={handleSubmit} className="space-y-6">
         
         {/* SECTION 1: DEMOGRAFI */}
-        <div className="bg-white/80 backdrop-blur-xl border border-white/80 rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className="bg-white/90 backdrop-blur-xl border border-white/80 rounded-3xl p-6 sm:p-8 shadow-xl">
           <div className="flex items-center gap-3 pb-4 mb-6 border-b border-slate-200/80">
             <div className="w-8 h-8 rounded-xl bg-blue-600 text-white font-black flex items-center justify-center text-sm shadow-md shadow-blue-500/20">
               1
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900">Maklumat Responden</h2>
-              <p className="text-xs text-slate-500">Pilih program dan semester pengajian anda</p>
+              <h2 className="text-lg font-bold text-slate-900">Maklumat Responden Pelajar</h2>
+              <p className="text-xs text-slate-500">Pilih jantina, program pengajian dan semester</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {/* Jantina */}
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
@@ -416,7 +467,7 @@ export const StudentSurveyForm: React.FC<StudentSurveyFormProps> = ({
                 <button
                   type="button"
                   onClick={() => setJantina('LELAKI')}
-                  className={`py-3 px-4 rounded-xl text-xs font-bold transition-all border ${
+                  className={`py-3 px-3 rounded-xl text-xs font-bold transition-all border ${
                     jantina === 'LELAKI'
                       ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20'
                       : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
@@ -427,7 +478,7 @@ export const StudentSurveyForm: React.FC<StudentSurveyFormProps> = ({
                 <button
                   type="button"
                   onClick={() => setJantina('PEREMPUAN')}
-                  className={`py-3 px-4 rounded-xl text-xs font-bold transition-all border ${
+                  className={`py-3 px-3 rounded-xl text-xs font-bold transition-all border ${
                     jantina === 'PEREMPUAN'
                       ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20'
                       : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
@@ -446,7 +497,7 @@ export const StudentSurveyForm: React.FC<StudentSurveyFormProps> = ({
               <select
                 value={programPengajian}
                 onChange={(e) => setProgramPengajian(e.target.value)}
-                className="w-full py-3 px-3.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-xs"
+                className="w-full py-3 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
               >
                 {PROGRAM_OPTIONS.map((prog) => (
                   <option key={prog} value={prog}>
@@ -464,7 +515,7 @@ export const StudentSurveyForm: React.FC<StudentSurveyFormProps> = ({
               <select
                 value={semester}
                 onChange={(e) => setSemester(e.target.value)}
-                className="w-full py-3 px-3.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-xs"
+                className="w-full py-3 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
               >
                 {SEMESTER_OPTIONS.map((sem) => (
                   <option key={sem} value={sem}>
@@ -473,164 +524,198 @@ export const StudentSurveyForm: React.FC<StudentSurveyFormProps> = ({
                 ))}
               </select>
             </div>
-
           </div>
         </div>
 
-        {/* SECTION 2: PENILAIAN FASILITI & KEMUDAHAN */}
-        <div className="bg-white/80 backdrop-blur-xl border border-white/80 rounded-3xl p-6 sm:p-8 shadow-xl">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-6 border-b border-slate-200/80 gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-blue-600 text-white font-black flex items-center justify-center text-sm shadow-md shadow-blue-500/20">
-                2
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">Penilaian Fasiliti & Kemudahan</h2>
-                <p className="text-xs text-slate-500">Skala 1 (Sangat Lemah) hingga 5 (Sangat Cemerlang)</p>
-              </div>
-            </div>
-
-            {/* Live Average Pill */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 rounded-xl">
-              <span className="text-xs text-slate-600 font-semibold">Purata Penilaian:</span>
-              <span className="text-sm font-black text-blue-700 flex items-center gap-1">
-                <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                {calculateOverallAverage()} / 5.0
-              </span>
+        {/* SECTION 2: SEMUA 56 SOALAN MENGIKUT KATEGORI TEPAT CSV */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between px-2">
+            <div>
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                Penilaian Soal Selidik (56 Item)
+              </h2>
+              <p className="text-xs text-slate-500 font-medium">
+                Skala: 1-Sangat Tidak Memuaskan, 2-Tidak Memuaskan, 3-Sederhana, 4-Memuaskan, 5-Sangat Memuaskan
+              </p>
             </div>
           </div>
 
-          <div className="space-y-6">
-            {RATING_DIMENSIONS.map((dim) => {
-              const currentVal = scores[dim.key] || 4;
-              const IconComp = dim.icon;
-              const activeLabel = RATING_LABELS[currentVal];
+          {SURVEY_SECTIONS.map((sec, secIdx) => {
+            const IconComp = sec.icon;
+            const secScores = sec.questions.map((q) => scoresArray[q.id]);
+            const secAvg = secScores.length
+              ? (secScores.reduce((a, b) => a + b, 0) / secScores.length).toFixed(2)
+              : '0.00';
 
-              return (
-                <div
-                  key={dim.key}
-                  className="bg-slate-50/70 hover:bg-slate-50 border border-slate-200/70 rounded-2xl p-4 sm:p-5 transition-all"
-                >
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    
-                    {/* Title & Desc */}
-                    <div className="flex items-start gap-3.5 flex-1">
-                      <div className={`p-2.5 rounded-xl ${dim.bg} ${dim.color} shrink-0 mt-0.5 shadow-xs`}>
-                        <IconComp className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-bold text-slate-900 mb-0.5">
-                          {dim.title}
-                        </h3>
-                        <p className="text-xs text-slate-500 leading-relaxed max-w-xl">
-                          {dim.desc}
-                        </p>
-                      </div>
+            return (
+              <div
+                key={sec.id}
+                className="bg-white/90 backdrop-blur-xl border border-white/80 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6"
+              >
+                {/* Section Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200/80 gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
+                      <IconComp className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-base sm:text-lg font-black text-slate-900">
+                        {secIdx + 1}. {sec.title}
+                      </h3>
+                      <p className="text-xs text-slate-500">
+                        {sec.questions.length} soalan penilaian
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Section Fast Fill helper & Average Pill */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+                      Purata: <span className="text-blue-700 font-black">{secAvg}</span>
                     </div>
 
-                    {/* Rating Scale Buttons 1-5 */}
-                    <div className="flex flex-col items-end gap-2 shrink-0">
-                      <div className="flex items-center gap-1.5">
-                        {[1, 2, 3, 4, 5].map((num) => {
-                          const isSelected = currentVal === num;
-                          return (
-                            <button
-                              key={num}
-                              type="button"
-                              onClick={() => handleScoreChange(dim.key, num)}
-                              className={`w-10 h-10 rounded-xl text-sm font-black transition-all flex items-center justify-center ${
-                                isSelected
-                                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30 scale-105'
-                                  : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
-                              }`}
-                            >
-                              {num}
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {/* Active Label Badge */}
-                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md border inline-flex items-center gap-1 ${activeLabel.color}`}>
-                        <span>{activeLabel.emoji}</span>
-                        <span>{activeLabel.text}</span>
-                      </span>
+                    <div className="inline-flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200 text-[11px] font-semibold text-slate-500">
+                      <span className="px-1 hidden sm:inline">Set Pantas:</span>
+                      {[5, 4, 3].map((val) => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => handleSetAllCurrentSection(val, sec.questions)}
+                          className="px-2 py-0.5 rounded-lg bg-white hover:bg-blue-600 hover:text-white border border-slate-200 text-slate-700 font-bold transition-all shadow-2xs"
+                          title={`Setkan semua soalan bahagian ini kepada ${val}`}
+                        >
+                          Semua {val}
+                        </button>
+                      ))}
                     </div>
-
                   </div>
                 </div>
-              );
-            })}
-          </div>
+
+                {/* Questions in Section */}
+                <div className="space-y-4">
+                  {sec.questions.map((q, qIndex) => {
+                    const currentScore = scoresArray[q.id];
+                    const activeDesc = RATING_DESCRIPTIONS[currentScore];
+
+                    return (
+                      <div
+                        key={q.id}
+                        className="bg-slate-50/70 hover:bg-slate-50 border border-slate-200/70 rounded-2xl p-4 transition-all"
+                      >
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                          
+                          {/* Question Text */}
+                          <div className="flex items-start gap-3 flex-1">
+                            <span className="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
+                              {qIndex + 1}
+                            </span>
+                            <div>
+                              <p className="text-xs sm:text-sm font-bold text-slate-800 leading-snug">
+                                {q.text}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* 1-5 Rating Selector */}
+                          <div className="flex flex-col items-end gap-1.5 shrink-0 self-end md:self-center">
+                            <div className="flex items-center gap-1">
+                              {[1, 2, 3, 4, 5].map((scoreNum) => {
+                                const isSelected = currentScore === scoreNum;
+                                return (
+                                  <button
+                                    key={scoreNum}
+                                    type="button"
+                                    onClick={() => handleScoreChange(q.id, scoreNum)}
+                                    className={`w-9 h-9 rounded-xl text-xs font-black transition-all flex items-center justify-center cursor-pointer ${
+                                      isSelected
+                                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30 scale-105 ring-2 ring-blue-400/40'
+                                        : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                                    }`}
+                                  >
+                                    {scoreNum}
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            {/* Label */}
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border inline-flex items-center gap-1 ${activeDesc.color}`}>
+                              <span>{activeDesc.emoji}</span>
+                              <span>{activeDesc.text}</span>
+                            </span>
+                          </div>
+
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+              </div>
+            );
+          })}
         </div>
 
-        {/* SECTION 3: KEPERLUAN SEGERA & CADANGAN */}
-        <div className="bg-white/80 backdrop-blur-xl border border-white/80 rounded-3xl p-6 sm:p-8 shadow-xl">
-          <div className="flex items-center gap-3 pb-4 mb-6 border-b border-slate-200/80">
+        {/* SECTION 3: KEPERLUAN SEGERA & CADANGAN PENAMBAHBAIKAN */}
+        <div className="bg-white/90 backdrop-blur-xl border border-white/80 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+          <div className="flex items-center gap-3 pb-4 border-b border-slate-200/80">
             <div className="w-8 h-8 rounded-xl bg-blue-600 text-white font-black flex items-center justify-center text-sm shadow-md shadow-blue-500/20">
               3
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900">Keperluan Segera & Cadangan Penambahbaikan</h2>
-              <p className="text-xs text-slate-500">Bantu kami mengetahui bahagian yang memerlukan tindakan segera</p>
+              <h2 className="text-lg font-bold text-slate-900">
+                Kemudahan Yang Perlu Penambahbaikan Segera & Cadangan
+              </h2>
+              <p className="text-xs text-slate-500">
+                Pilih bahagian paling kritikal dan nyatakan cadangan penambahbaikan anda
+              </p>
             </div>
           </div>
 
           <div className="space-y-6">
-            
-            {/* Keperluan Segera Facility Picker */}
+            {/* Priority Facility */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">
-                Kemudahan Yang Paling Memerlukan Penambahbaikan Segera <span className="text-rose-500">*</span>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2.5">
+                KEMUDAHAN YANG PERLU PENAMBAHBAIKAN SEGERA <span className="text-rose-500">*</span>
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
-                {PRIORITY_FACILITIES.map((fac) => {
-                  const isSelected = kemudahanPenambahbaikan === fac.id;
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                {PRIORITY_FACILITY_OPTIONS.map((fac) => {
+                  const isSelected = kemudahanPenambahbaikan === fac;
                   return (
                     <button
-                      key={fac.id}
+                      key={fac}
                       type="button"
-                      onClick={() => setKemudahanPenambahbaikan(fac.id)}
-                      className={`p-3 rounded-xl text-xs font-bold transition-all border flex flex-col items-center text-center gap-1.5 ${
+                      onClick={() => setKemudahanPenambahbaikan(fac)}
+                      className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all border text-center ${
                         isSelected
-                          ? 'bg-rose-50 border-rose-400 text-rose-700 shadow-sm ring-2 ring-rose-400'
+                          ? 'bg-rose-50 border-rose-400 text-rose-700 shadow-xs ring-2 ring-rose-400'
                           : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
                       }`}
                     >
-                      <span className="text-xl">{fac.icon}</span>
-                      <span className="line-clamp-1">{fac.name}</span>
+                      {fac}
                     </button>
                   );
                 })}
               </div>
             </div>
 
-            {/* Cadangan Penambahbaikan Textarea */}
+            {/* Open Suggestions */}
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                Cadangan / Ulasan Tambahan Anda
+                CADANGAN PENAMBAHBAIKAN / CATATAN
               </label>
               <textarea
                 rows={4}
                 value={cadangan}
                 onChange={(e) => setCadangan(e.target.value)}
-                placeholder="Contoh: Kelajuan Wi-Fi di blok B perlu dinaik taraf, tambah pilihan menu berpatutan di kafeteria, baiki pintu tandas..."
-                className="w-full p-4 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-xs resize-none"
+                placeholder="Contoh: Rangkaian WiFi di bengkel SKE perlu diperbaiki, tambah kerusi dan menu di kafe, perbaiki kunci pintu tandas..."
+                className="w-full p-4 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs resize-none"
               />
             </div>
-
           </div>
         </div>
 
-        {/* Error Notification */}
-        {errorMessage && (
-          <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs font-semibold flex items-center gap-2">
-            <span>⚠️</span>
-            <span>{errorMessage}</span>
-          </div>
-        )}
-
-        {/* Action Buttons */}
+        {/* Submit Bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
           {onCancel && (
             <button
@@ -645,12 +730,12 @@ export const StudentSurveyForm: React.FC<StudentSurveyFormProps> = ({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full sm:w-auto flex-1 sm:flex-none sm:min-w-[260px] inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-base rounded-2xl shadow-xl shadow-blue-500/25 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+            className="w-full sm:w-auto flex-1 sm:flex-none sm:min-w-[280px] inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-base rounded-2xl shadow-xl shadow-blue-500/25 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
           >
             {isSubmitting ? (
               <>
                 <RefreshCw className="w-5 h-5 animate-spin" />
-                <span>Menghantar Soal Selidik...</span>
+                <span>Menghantar Borang Soal Selidik...</span>
               </>
             ) : (
               <>
