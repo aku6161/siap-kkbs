@@ -2,11 +2,11 @@ import React, { useState, useMemo } from 'react';
 import {
   GraduationCap,
   Download,
-  FileSpreadsheet,
   CheckCircle2,
   AlertTriangle,
   Star,
   Users,
+  Calendar,
   MessageSquare,
   Sparkles,
   X,
@@ -443,37 +443,45 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
           </div>
         </div>
 
-        {/* Kad Muat Turun Laporan */}
-        <div className="bg-gradient-to-r from-emerald-950 via-teal-950 to-slate-950 rounded-2xl p-4 sm:p-5 text-white border border-emerald-500/30 shadow-lg relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-md shadow-emerald-500/30 shrink-0">
-              <FileSpreadsheet className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h3 className="text-sm sm:text-base font-black text-white tracking-tight">
-                Muat Turun Laporan Statistik Kepuasan Pelajar
-              </h3>
-              <p className="text-xs text-slate-300">
-                Laporan lengkap Ringkasan Eksekutif, Purata Kategori &amp; Skor 56 Soalan Penilaian.
-              </p>
-            </div>
+        {/* Filter Tahun & Butang Muat Turun Laporan */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-1">
+          {/* Dropdown Tahun (Gaya Asal) */}
+          <div className="w-full sm:w-64">
+            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+              <Calendar className="w-3.5 h-3.5 text-blue-600" />
+              Tahun
+            </label>
+            <select
+              id="filter-tahun-select"
+              value={selectedYear}
+              onChange={(e) => {
+                setSelectedYear(e.target.value);
+                setSelectedFacilityFilter(null);
+              }}
+              className="w-full px-3.5 py-2.5 text-xs font-bold text-slate-900 bg-white/95 border border-slate-200 focus:border-blue-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 shadow-xs cursor-pointer"
+            >
+              <option value="ALL">Semua Tahun</option>
+              <option value="2026">2026</option>
+              <option value="2025">2025</option>
+            </select>
           </div>
 
+          {/* Butang Muat Turun Laporan */}
           <button
             id="btn-muat-turun-laporan-excel"
             onClick={handleExportXLSX}
             disabled={isExporting || totalResponden === 0}
-            className={`px-6 py-3 rounded-2xl font-bold text-xs sm:text-sm shadow-lg flex items-center justify-center gap-2.5 transition-all cursor-pointer shrink-0 ${
+            className={`px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0 ${
               exportSuccess
                 ? 'bg-emerald-500 text-white shadow-emerald-500/40'
                 : totalResponden === 0
                 ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
-                : 'bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white shadow-emerald-500/30 hover:scale-105'
+                : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-500/30 hover:scale-105 active:scale-95'
             }`}
           >
             {isExporting ? (
               <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 <span>Menjana Laporan...</span>
               </>
             ) : exportSuccess ? (
