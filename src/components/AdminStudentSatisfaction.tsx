@@ -17,6 +17,8 @@ import {
   QrCode,
   ExternalLink,
   Link as LinkIcon,
+  BarChart3,
+  PieChart as PieChartIcon,
 } from 'lucide-react';
 import {
   BarChart,
@@ -601,7 +603,7 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
           <div className="w-full text-left">
             <div className="flex items-start gap-3.5 mb-5 pb-3.5 border-b border-slate-200/60 text-left">
               <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
-                <BarChart className="w-5 h-5" />
+                <BarChart3 className="w-5 h-5 text-white" />
               </div>
               <div className="text-left">
                 <h3 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight text-left">
@@ -648,7 +650,7 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
           <div className="w-full text-left">
             <div className="flex items-start gap-3.5 mb-5 pb-3.5 border-b border-slate-200/60 text-left">
               <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-500 to-pink-600 text-white flex items-center justify-center shadow-md shadow-rose-500/20 shrink-0">
-                <PieChart className="w-5 h-5" />
+                <PieChartIcon className="w-5 h-5 text-white" />
               </div>
               <div className="text-left">
                 <h3 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight text-left">
