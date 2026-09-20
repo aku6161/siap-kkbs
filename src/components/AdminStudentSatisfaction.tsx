@@ -597,18 +597,16 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Chart 1: Skor Purata Mengikut Dimensi Kemudahan */}
-        <div className="lg:col-span-7 glass-card p-6 sm:p-8 rounded-3xl border border-white/80 shadow-md flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
-                  <BarChart className="w-4 h-4 text-blue-600" />
-                  <span>Purata Skor Mengikut Kategori Kemudahan (/5.0)</span>
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Penilaian tertinggi: Bilik Kuliah & Perpustakaan • Perlu perhatian: E-Tech Centre & WiFi
-                </p>
-              </div>
+        <div className="lg:col-span-7 glass-card p-6 sm:p-8 rounded-3xl border border-white/80 shadow-md flex flex-col justify-between text-left">
+          <div className="text-left">
+            <div className="mb-4 text-left">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2 text-left">
+                <BarChart className="w-4 h-4 text-blue-600 shrink-0" />
+                <span>Purata Skor Mengikut Kategori Kemudahan (/5.0)</span>
+              </h3>
+              <p className="text-xs text-slate-500 text-left mt-1">
+                Penilaian tertinggi: Bilik Kuliah &amp; Perpustakaan • Perlu perhatian: E-Tech Centre &amp; WiFi
+              </p>
             </div>
 
             <div className="h-72 w-full pt-2">
@@ -642,18 +640,16 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
         </div>
 
         {/* Chart 2: Keperluan Penambahbaikan Segera (Pie Chart) */}
-        <div className="lg:col-span-5 glass-card p-6 sm:p-8 rounded-3xl border border-white/80 shadow-md flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <h3 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
-                  <PieChart className="w-4 h-4 text-rose-600" />
-                  <span>Kemudahan Perlu Penambahbaikan Segera</span>
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Peratusan maklum balas mengikut fasiliti yang paling kritikal
-                </p>
-              </div>
+        <div className="lg:col-span-5 glass-card p-6 sm:p-8 rounded-3xl border border-white/80 shadow-md flex flex-col justify-between text-left">
+          <div className="text-left">
+            <div className="mb-4 text-left">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2 text-left">
+                <PieChart className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>Kemudahan Perlu Penambahbaikan Segera</span>
+              </h3>
+              <p className="text-xs text-slate-500 text-left mt-1">
+                Peratusan maklum balas mengikut fasiliti yang paling kritikal
+              </p>
             </div>
 
             <div className="h-56 w-full relative flex items-center justify-center">
@@ -718,30 +714,30 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
       </div>
 
       {/* 5. SENARAI MAKLUM BALAS & CADANGAN PELAJAR */}
-      <div id="section-cadangan-pelajar" className="glass-card p-6 sm:p-8 rounded-3xl border border-white/80 shadow-xl space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/60 pb-5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20">
+      <div id="section-cadangan-pelajar" className="glass-card p-6 sm:p-8 rounded-3xl border border-white/80 shadow-xl space-y-6 text-left">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/60 pb-5 text-left">
+          <div className="flex items-center gap-3 text-left">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20 shrink-0">
               <MessageSquare className="w-5 h-5" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-black text-slate-900">
-                  Senarai Maklum Balas & Cadangan Pelajar
+            <div className="text-left">
+              <div className="flex flex-wrap items-center gap-2 text-left">
+                <h3 className="text-lg font-black text-slate-900 text-left">
+                  Senarai Maklum Balas &amp; Cadangan Pelajar
                 </h3>
                 {selectedFacilityFilter && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-blue-100 text-blue-800 text-xs font-black border border-blue-200">
                     <span>Tapis: {selectedFacilityFilter}</span>
                     <button
                       onClick={() => setSelectedFacilityFilter(null)}
-                      className="hover:text-rose-600 ml-1 text-slate-500"
+                      className="hover:text-rose-600 ml-1 text-slate-500 cursor-pointer"
                     >
                       <X className="w-3 h-3" />
                     </button>
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 text-left mt-0.5">
                 Memaparkan keperluan segera dan cadangan penambahbaikan terbuka daripada pelajar
               </p>
             </div>
