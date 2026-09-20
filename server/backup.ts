@@ -79,11 +79,12 @@ export function generateComplaintsCsv(complaints: Complaint[]): string {
  * Keeps the latest 2 weekly backups (2 weeks) and deletes older ones automatically.
  */
 export async function runBackup(): Promise<{ success: boolean; message: string; fileName?: string; fileUrl?: string }> {
-  const complaints = db.getComplaints();
-  const tindakan = db.getTindakan();
-  const logs = db.getLogs(500);
-  const studentSurveys = db.getStudentSurveys();
-  const emails = db.getEmails(200);
+  const snapshot = db.getFullSnapshot();
+  const complaints = snapshot.complaints || [];
+  const tindakan = snapshot.tindakan || [];
+  const logs = snapshot.logs || [];
+  const studentSurveys = db.getStudentSurveys ? db.getStudentSurveys() : [];
+  const emails = snapshot.emails || [];
   const config = db.getConfig();
 
   const now = new Date();

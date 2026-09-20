@@ -68,6 +68,21 @@ function showAlert(title, message) {
 }
 
 /**
+ * Uji Kebenaran DriveApp & Sahkan Akses Google Drive (Jalankan ini sekali untuk benarkan kebenaran/authorization)
+ */
+function testDrivePermission() {
+  try {
+    var folder = DriveApp.getFolderById(GOOGLE_DRIVE_FOLDER_ID);
+    var dummy = folder.createFile("Ujian_Kebenaran_DriveApp.txt", "Kebenaran DriveApp Berjaya pada " + new Date().toString());
+    Logger.log("✅ DriveApp Dibenarkan! URL Fail: " + dummy.getUrl());
+    showAlert("✅ Kebenaran Google Drive Berjaya!", "Akses Google Drive telah disahkan dan sedia digunakan untuk sandaran mingguan.\\nFail ujian: " + dummy.getUrl());
+  } catch (e) {
+    Logger.log("❌ Ralat DriveApp: " + e.toString());
+    showAlert("❌ Ralat Akses Google Drive", e.toString());
+  }
+}
+
+/**
  * Menu Khas Auto-Sync dalam Google Sheets
  */
 function onOpen() {
@@ -78,7 +93,7 @@ function onOpen() {
       .addItem("📥 Tampal Data JSON SiAP (Manual Import)", "showImportDialog")
       .addSeparator()
       .addItem("⚙️ Tetapkan Struktur 5 Sheet Database", "setupDatabaseSheets")
-      .addItem("📁 Uji Akses Folder Google Drive", "testDriveFolderAccess")
+      .addItem("📁 Uji Akses Folder Google Drive", "testDrivePermission")
       .addToUi();
   } catch (e) {
     Logger.log("onOpen error: " + e.toString());
