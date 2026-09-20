@@ -594,19 +594,23 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
       </div>
 
       {/* 4. CARTA VISUAL ANALITIK (RECHARTS) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left">
         
         {/* Chart 1: Skor Purata Mengikut Dimensi Kemudahan */}
-        <div style={{ textAlign: 'left' }} className="lg:col-span-7 glass-card p-6 sm:p-8 rounded-3xl border border-white/80 shadow-md flex flex-col justify-between text-left">
-          <div style={{ textAlign: 'left' }} className="text-left w-full">
-            <div style={{ textAlign: 'left' }} className="mb-4 text-left w-full">
-              <h3 style={{ textAlign: 'left', justifyContent: 'flex-start' }} className="text-sm sm:text-base font-bold text-slate-900 text-left flex items-center justify-start gap-2">
-                <BarChart className="w-4 h-4 text-blue-600 shrink-0" />
-                <span>Purata Skor Mengikut Kategori Kemudahan (/5.0)</span>
-              </h3>
-              <p style={{ textAlign: 'left' }} className="text-xs text-slate-500 text-left mt-1">
-                Penilaian tertinggi: Bilik Kuliah &amp; Perpustakaan • Perlu perhatian: E-Tech Centre &amp; WiFi
-              </p>
+        <div className="lg:col-span-7 glass-card p-6 sm:p-8 rounded-3xl border border-white/80 shadow-md flex flex-col justify-between text-left">
+          <div className="w-full text-left">
+            <div className="flex items-start gap-3.5 mb-5 pb-3.5 border-b border-slate-200/60 text-left">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
+                <BarChart className="w-5 h-5" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight text-left">
+                  Purata Skor Mengikut Kategori Kemudahan (/5.0)
+                </h3>
+                <p className="text-xs text-slate-500 text-left mt-0.5">
+                  Penilaian tertinggi: Bilik Kuliah &amp; Perpustakaan • Perlu perhatian: E-Tech Centre &amp; WiFi
+                </p>
+              </div>
             </div>
 
             <div className="h-72 w-full pt-2">
@@ -640,16 +644,20 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
         </div>
 
         {/* Chart 2: Keperluan Penambahbaikan Segera (Pie Chart) */}
-        <div style={{ textAlign: 'left' }} className="lg:col-span-5 glass-card p-6 sm:p-8 rounded-3xl border border-white/80 shadow-md flex flex-col justify-between text-left">
-          <div style={{ textAlign: 'left' }} className="text-left w-full">
-            <div style={{ textAlign: 'left' }} className="mb-4 text-left w-full">
-              <h3 style={{ textAlign: 'left', justifyContent: 'flex-start' }} className="text-sm sm:text-base font-bold text-slate-900 text-left flex items-center justify-start gap-2">
-                <PieChart className="w-4 h-4 text-rose-600 shrink-0" />
-                <span>Kemudahan Perlu Penambahbaikan Segera</span>
-              </h3>
-              <p style={{ textAlign: 'left' }} className="text-xs text-slate-500 text-left mt-1">
-                Peratusan maklum balas mengikut fasiliti yang paling kritikal
-              </p>
+        <div className="lg:col-span-5 glass-card p-6 sm:p-8 rounded-3xl border border-white/80 shadow-md flex flex-col justify-between text-left">
+          <div className="w-full text-left">
+            <div className="flex items-start gap-3.5 mb-5 pb-3.5 border-b border-slate-200/60 text-left">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-500 to-pink-600 text-white flex items-center justify-center shadow-md shadow-rose-500/20 shrink-0">
+                <PieChart className="w-5 h-5" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight text-left">
+                  Kemudahan Perlu Penambahbaikan Segera
+                </h3>
+                <p className="text-xs text-slate-500 text-left mt-0.5">
+                  Peratusan maklum balas mengikut fasiliti yang paling kritikal
+                </p>
+              </div>
             </div>
 
             <div className="h-56 w-full relative flex items-center justify-center">
