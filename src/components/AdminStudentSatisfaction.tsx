@@ -598,9 +598,9 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
         
         {/* Chart 1: Skor Purata Mengikut Dimensi Kemudahan */}
         <div className="lg:col-span-7 glass-card p-6 sm:p-8 rounded-3xl border border-white/80 shadow-md flex flex-col justify-between text-left">
-          <div className="text-left">
-            <div className="mb-4 text-left">
-              <h3 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2 text-left">
+          <div className="text-left w-full">
+            <div className="mb-4 text-left w-full">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 text-left flex items-center justify-start gap-2">
                 <BarChart className="w-4 h-4 text-blue-600 shrink-0" />
                 <span>Purata Skor Mengikut Kategori Kemudahan (/5.0)</span>
               </h3>
@@ -641,9 +641,9 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
 
         {/* Chart 2: Keperluan Penambahbaikan Segera (Pie Chart) */}
         <div className="lg:col-span-5 glass-card p-6 sm:p-8 rounded-3xl border border-white/80 shadow-md flex flex-col justify-between text-left">
-          <div className="text-left">
-            <div className="mb-4 text-left">
-              <h3 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2 text-left">
+          <div className="text-left w-full">
+            <div className="mb-4 text-left w-full">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 text-left flex items-center justify-start gap-2">
                 <PieChart className="w-4 h-4 text-rose-600 shrink-0" />
                 <span>Kemudahan Perlu Penambahbaikan Segera</span>
               </h3>
