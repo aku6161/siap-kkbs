@@ -3,7 +3,6 @@ import {
   GraduationCap,
   Download,
   FileSpreadsheet,
-  Search,
   CheckCircle2,
   AlertTriangle,
   Star,
@@ -12,7 +11,6 @@ import {
   MessageSquare,
   Sparkles,
   X,
-  Filter,
   Eye,
   Copy,
   Check,
@@ -446,151 +444,94 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
           </div>
         </div>
 
-        {/* Filters Row: Tahun Dropdown, Program Dropdown, Semester Dropdown, Search */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
-          
-          {/* Dropdown Tahun */}
-          <div>
-            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5 text-blue-600" />
-              Tahun
-            </label>
-            <select
-              id="filter-tahun-select"
-              value={selectedYear}
-              onChange={(e) => {
-                setSelectedYear(e.target.value);
-                setSelectedFacilityFilter(null);
-              }}
-              className="w-full px-3.5 py-2.5 text-xs font-bold text-slate-900 bg-white/95 border border-slate-200 focus:border-blue-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 shadow-xs cursor-pointer"
-            >
-              <option value="ALL">Semua Tahun</option>
-              <option value="2026">2026</option>
-              <option value="2025">2025</option>
-            </select>
-          </div>
+        {/* Kad Muat Turun Laporan */}
+        <div className="mt-2 bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 rounded-2xl p-5 sm:p-6 relative overflow-hidden border border-blue-500/30 shadow-xl">
+          {/* Decorative glows */}
+          <div className="absolute -top-10 -right-10 w-48 h-48 bg-blue-500/15 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
 
-          {/* Dropdown Program */}
-          <div>
-            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">
-              Program Pengajian
-            </label>
-            <select
-              value={selectedProgram}
-              onChange={(e) => {
-                setSelectedProgram(e.target.value);
-                setSelectedFacilityFilter(null);
-              }}
-              className="w-full px-3.5 py-2.5 text-xs font-semibold text-slate-900 bg-white/95 border border-slate-200 focus:border-blue-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 shadow-xs cursor-pointer"
-            >
-              <option value="ALL">Semua Program Pengajian</option>
-              <option value="SIJIL KULINARI">Sijil Kulinari</option>
-              <option value="SIJIL TEKNOLOGI ELEKTRIK">Sijil Teknologi Elektrik</option>
-              <option value="SIJIL OPERASI PERHOTELAN">Sijil Operasi Perhotelan</option>
-            </select>
-          </div>
-
-          {/* Dropdown Semester */}
-          <div>
-            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">
-              Semester Pengajian
-            </label>
-            <select
-              value={selectedSemester}
-              onChange={(e) => {
-                setSelectedSemester(e.target.value);
-                setSelectedFacilityFilter(null);
-              }}
-              className="w-full px-3.5 py-2.5 text-xs font-semibold text-slate-900 bg-white/95 border border-slate-200 focus:border-blue-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 shadow-xs cursor-pointer"
-            >
-              <option value="ALL">Semua Semester</option>
-              <option value="1">Semester 1</option>
-              <option value="2">Semester 2</option>
-              <option value="3">Semester 3</option>
-              <option value="4 (LATIHAN INDUSTRI)">Semester 4 (Latihan Industri)</option>
-            </select>
-          </div>
-
-          {/* Carian Kata Kunci */}
-          <div>
-            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">
-              Carian Kata Kunci / Isu
-            </label>
-            <div className="relative">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="cth: wifi, e-tech centre, tandas, surau..."
-                className="w-full pl-9 pr-3 py-2.5 text-xs text-slate-900 bg-white/95 border border-slate-200 focus:border-blue-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 shadow-xs"
-              />
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      {/* 2. KAD MUAT TURUN LAPORAN FORMAT [.XLSX] (EXCEL DOWNLOAD CARD) */}
-      <div className="bg-gradient-to-r from-emerald-950 via-teal-950 to-slate-950 rounded-3xl p-6 sm:p-8 text-white shadow-2xl relative overflow-hidden border border-emerald-500/40">
-        <div className="absolute -top-12 -right-12 w-64 h-64 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none" />
-        
-        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 shrink-0">
-              <FileSpreadsheet className="w-7 h-7" />
-            </div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-black uppercase tracking-wider text-emerald-400 bg-emerald-950/80 px-2.5 py-0.5 rounded-md border border-emerald-500/30">
-                  Format Asli .xlsx (SheetJS)
-                </span>
-                {selectedYear !== 'ALL' && (
-                  <span className="text-xs font-bold text-amber-300 bg-amber-950/85 px-2 py-0.5 rounded-md border border-amber-500/30">
-                    Tahun {selectedYear}
-                  </span>
-                )}
+          <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+            {/* Left: Info + Year selector */}
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/30 shrink-0">
+                <FileSpreadsheet className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-lg sm:text-xl font-black text-white tracking-tight">
-                Muat Turun Laporan Statistik Kepuasan Pelajar (.xlsx)
-              </h3>
-              <p className="text-xs text-slate-300 max-w-xl leading-relaxed">
-                Jana dan muat turun fail Excel lengkap mengandungi Ringkasan Eksekutif, Purata Kategori, serta Skor Terperinci Kesemua 56 Soalan Penilaian mengikut tapisan semasa.
-              </p>
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-500/30">
+                    Format .xlsx · SheetJS
+                  </span>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-blue-300 bg-blue-950/80 px-2 py-0.5 rounded-md border border-blue-500/30">
+                    56 Soalan Penilaian
+                  </span>
+                </div>
+                <h3 className="text-sm sm:text-base font-black text-white tracking-tight leading-snug">
+                  Muat Turun Laporan Statistik Kepuasan Pelajar
+                </h3>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  Jana fail Excel lengkap — Ringkasan Eksekutif, Purata Kategori &amp; Skor Terperinci.
+                </p>
+                {/* Inline year filter */}
+                <div className="flex items-center gap-2 pt-1">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tahun:</label>
+                  <select
+                    id="filter-tahun-select"
+                    value={selectedYear}
+                    onChange={(e) => {
+                      setSelectedYear(e.target.value);
+                      setSelectedFacilityFilter(null);
+                    }}
+                    className="px-2.5 py-1 text-xs font-bold text-white bg-white/10 border border-white/20 focus:border-blue-400 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400/50 cursor-pointer backdrop-blur-md"
+                  >
+                    <option value="ALL" className="bg-slate-900">Semua Tahun</option>
+                    <option value="2026" className="bg-slate-900">2026</option>
+                    <option value="2025" className="bg-slate-900">2025</option>
+                  </select>
+                  {selectedYear !== 'ALL' && (
+                    <span className="text-[10px] font-bold text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded-md border border-amber-500/30">
+                      Tahun {selectedYear}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
 
-          <button
-            id="btn-muat-turun-laporan-excel"
-            onClick={handleExportXLSX}
-            disabled={isExporting || totalResponden === 0}
-            className={`px-6 py-4 rounded-2xl font-black text-xs sm:text-sm shadow-xl flex items-center justify-center gap-3 transition-all cursor-pointer shrink-0 ${
-              exportSuccess
-                ? 'bg-emerald-500 text-white shadow-emerald-500/40'
-                : totalResponden === 0
-                ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
-                : 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-500 text-white shadow-emerald-500/30 hover:scale-105 active:scale-95'
-            }`}
-          >
-            {isExporting ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>Menjana Fail .xlsx...</span>
-              </>
-            ) : exportSuccess ? (
-              <>
-                <CheckCircle2 className="w-5 h-5 text-white animate-bounce" />
-                <span>Fail .xlsx Berjaya Dimuat Turun!</span>
-              </>
-            ) : (
-              <>
-                <Download className="w-5 h-5 text-white" />
-                <span>Muat Turun Laporan (.xlsx)</span>
-              </>
-            )}
-          </button>
+            {/* Right: Download button */}
+            <button
+              id="btn-muat-turun-laporan-excel"
+              onClick={handleExportXLSX}
+              disabled={isExporting || totalResponden === 0}
+              className={`px-5 py-3.5 rounded-2xl font-black text-xs sm:text-sm shadow-xl flex items-center justify-center gap-2.5 transition-all cursor-pointer shrink-0 min-w-[160px] ${
+                exportSuccess
+                  ? 'bg-emerald-500 text-white shadow-emerald-500/40'
+                  : totalResponden === 0
+                  ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-500 text-white shadow-emerald-500/30 hover:scale-105 active:scale-95'
+              }`}
+            >
+              {isExporting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Menjana...</span>
+                </>
+              ) : exportSuccess ? (
+                <>
+                  <CheckCircle2 className="w-5 h-5 text-white animate-bounce" />
+                  <span>Berjaya!</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-5 h-5 text-white" />
+                  <span>Muat Turun (.xlsx)</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
+
+
 
       {/* 3. METRIK UTAMA (KPI CARDS) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
