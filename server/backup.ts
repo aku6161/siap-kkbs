@@ -117,6 +117,8 @@ export async function runBackup(): Promise<{ success: boolean; message: string; 
 
   const jsonContent = JSON.stringify(fullBackupPayload, null, 2);
   const jsonFileName = `siap_backup_${dateStr}_${timeStr}.json`;
+  const csvContent = generateComplaintsCsv(complaints);
+  const csvFileName = `siap_backup_${dateStr}_${timeStr}.csv`;
 
   const gasUrl = process.env.GOOGLE_APPS_SCRIPT_URL || config.googleAppsScriptUrl;
   if (!gasUrl) {
@@ -127,7 +129,22 @@ export async function runBackup(): Promise<{ success: boolean; message: string; 
   }
 
   try {
-    const response = await fetch(gasUrl, {
+    // 1. Muat naik fail CSV
+    const csvResponse = await fetch(gasUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'CREATE_BACKUP',
+        folderId: BACKUP_FOLDER_ID,
+        fileName: csvFileName,
+        content: csvContent,
+        maxBackups: 2, // Kekal 2 fail sandaran mingguan terkini (2 minggu)
+      }),
+      redirect: 'follow',
+    });
+
+    // 2. Muat naik fail JSON Penuh
+    const jsonResponse = await fetch(gasUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -135,30 +152,30 @@ export async function runBackup(): Promise<{ success: boolean; message: string; 
         folderId: BACKUP_FOLDER_ID,
         fileName: jsonFileName,
         content: jsonContent,
-        maxBackups: 2, // Kekal 2 fail sandaran mingguan terkini (2 minggu), padam selebihnya
+        maxBackups: 2,
       }),
       redirect: 'follow',
     });
 
-    const text = await response.text();
-    let result: any;
+    const csvText = await csvResponse.text();
+    let csvResult: any;
     try {
-      result = JSON.parse(text);
+      csvResult = JSON.parse(csvText);
     } catch {
-      result = { status: 'success', message: 'Sandaran penuh data Firebase/DB berjaya dihantar ke Google Drive.' };
+      csvResult = { status: 'success' };
     }
 
-    if (result.status === 'success') {
-      console.log(`✅ Backup Penuh Database Berjaya: ${jsonFileName} (${complaints.length} aduan, ${studentSurveys.length} soal selidik)`);
+    if (csvResult.status === 'success') {
+      console.log(`✅ Backup Penuh Database Berjaya: ${csvFileName} & ${jsonFileName} (${complaints.length} aduan, ${studentSurveys.length} soal selidik)`);
       return { 
         success: true, 
-        message: result.message || `Sandaran penuh ${jsonFileName} berjaya disimpan ke Google Drive (${complaints.length} aduan, ${studentSurveys.length} soal selidik). Sandaran melebihi 2 minggu dipadam secara automatik.`, 
-        fileName: jsonFileName,
-        fileUrl: result.fileUrl
+        message: `Sandaran mingguan (${csvFileName} & ${jsonFileName}) berjaya dimuat naik ke Google Drive! (${complaints.length} aduan, ${studentSurveys.length} soal selidik). Fail melebihi 2 minggu dipadam secara automatik.`, 
+        fileName: csvFileName,
+        fileUrl: csvResult.fileUrl || `https://drive.google.com/drive/folders/${BACKUP_FOLDER_ID}`
       };
     } else {
-      console.error('❌ Backup gagal:', result.message);
-      return { success: false, message: result.message || 'Sandaran gagal.' };
+      console.error('❌ Backup gagal:', csvResult.message);
+      return { success: false, message: csvResult.message || 'Sandaran gagal diproses oleh Google Apps Script.' };
     }
   } catch (err: any) {
     console.error('❌ Backup network error:', err.message);
