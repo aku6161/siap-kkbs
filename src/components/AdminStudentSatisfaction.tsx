@@ -444,65 +444,50 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
           </div>
         </div>
 
-        {/* Kad Muat Turun Laporan */}
-        <div className="mt-2 bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 rounded-2xl p-5 sm:p-6 relative overflow-hidden border border-blue-500/30 shadow-xl">
-          {/* Decorative glows */}
-          <div className="absolute -top-10 -right-10 w-48 h-48 bg-blue-500/15 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
+        {/* Row: Filter Tahun (Gaya Asal) & Kad Muat Turun Laporan (Menggantikan Filter Pengajian, Semester & Carian) */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-1 items-end">
+          {/* Dropdown Tahun (Gaya Asal) */}
+          <div className="md:col-span-1">
+            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+              <Calendar className="w-3.5 h-3.5 text-blue-600" />
+              Tahun
+            </label>
+            <select
+              id="filter-tahun-select"
+              value={selectedYear}
+              onChange={(e) => {
+                setSelectedYear(e.target.value);
+                setSelectedFacilityFilter(null);
+              }}
+              className="w-full px-3.5 py-2.5 text-xs font-bold text-slate-900 bg-white/95 border border-slate-200 focus:border-blue-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 shadow-xs cursor-pointer"
+            >
+              <option value="ALL">Semua Tahun</option>
+              <option value="2026">2026</option>
+              <option value="2025">2025</option>
+            </select>
+          </div>
 
-          <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-            {/* Left: Info + Year selector */}
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/30 shrink-0">
-                <FileSpreadsheet className="w-6 h-6 text-white" />
+          {/* Kad Muat Turun Laporan */}
+          <div className="md:col-span-3 bg-gradient-to-r from-emerald-950 via-teal-950 to-slate-950 rounded-2xl p-4 sm:p-5 text-white border border-emerald-500/30 shadow-lg relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-md shadow-emerald-500/30 shrink-0">
+                <FileSpreadsheet className="w-5 h-5" />
               </div>
-              <div className="space-y-1.5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-500/30">
-                    Format .xlsx · SheetJS
-                  </span>
-                  <span className="text-[10px] font-black uppercase tracking-wider text-blue-300 bg-blue-950/80 px-2 py-0.5 rounded-md border border-blue-500/30">
-                    56 Soalan Penilaian
-                  </span>
-                </div>
-                <h3 className="text-sm sm:text-base font-black text-white tracking-tight leading-snug">
+              <div>
+                <h3 className="text-xs sm:text-sm font-black text-white tracking-tight">
                   Muat Turun Laporan Statistik Kepuasan Pelajar
                 </h3>
-                <p className="text-[11px] text-slate-400 leading-relaxed">
-                  Jana fail Excel lengkap — Ringkasan Eksekutif, Purata Kategori &amp; Skor Terperinci.
+                <p className="text-[11px] text-slate-300">
+                  Laporan lengkap Ringkasan Eksekutif, Purata Kategori &amp; Skor 56 Soalan Penilaian{selectedYear !== 'ALL' ? ` (Tahun ${selectedYear})` : ''}.
                 </p>
-                {/* Inline year filter */}
-                <div className="flex items-center gap-2 pt-1">
-                  <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tahun:</label>
-                  <select
-                    id="filter-tahun-select"
-                    value={selectedYear}
-                    onChange={(e) => {
-                      setSelectedYear(e.target.value);
-                      setSelectedFacilityFilter(null);
-                    }}
-                    className="px-2.5 py-1 text-xs font-bold text-white bg-white/10 border border-white/20 focus:border-blue-400 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400/50 cursor-pointer backdrop-blur-md"
-                  >
-                    <option value="ALL" className="bg-slate-900">Semua Tahun</option>
-                    <option value="2026" className="bg-slate-900">2026</option>
-                    <option value="2025" className="bg-slate-900">2025</option>
-                  </select>
-                  {selectedYear !== 'ALL' && (
-                    <span className="text-[10px] font-bold text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded-md border border-amber-500/30">
-                      Tahun {selectedYear}
-                    </span>
-                  )}
-                </div>
               </div>
             </div>
 
-            {/* Right: Download button */}
             <button
               id="btn-muat-turun-laporan-excel"
               onClick={handleExportXLSX}
               disabled={isExporting || totalResponden === 0}
-              className={`px-5 py-3.5 rounded-2xl font-black text-xs sm:text-sm shadow-xl flex items-center justify-center gap-2.5 transition-all cursor-pointer shrink-0 min-w-[160px] ${
+              className={`px-5 py-2.5 rounded-xl font-bold text-xs shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0 ${
                 exportSuccess
                   ? 'bg-emerald-500 text-white shadow-emerald-500/40'
                   : totalResponden === 0
@@ -512,18 +497,18 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
             >
               {isExporting ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Menjana...</span>
+                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Menjana Laporan...</span>
                 </>
               ) : exportSuccess ? (
                 <>
-                  <CheckCircle2 className="w-5 h-5 text-white animate-bounce" />
-                  <span>Berjaya!</span>
+                  <CheckCircle2 className="w-4 h-4 text-white animate-bounce" />
+                  <span>Berjaya Dimuat Turun!</span>
                 </>
               ) : (
                 <>
-                  <Download className="w-5 h-5 text-white" />
-                  <span>Muat Turun (.xlsx)</span>
+                  <Download className="w-4 h-4 text-white" />
+                  <span>Muat Turun Laporan</span>
                 </>
               )}
             </button>
