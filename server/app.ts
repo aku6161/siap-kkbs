@@ -11,10 +11,12 @@ import {
   sendTelegramNotification,
   getStatusMenuMarkup,
   getStatusMenuText,
+  deleteTelegramMessage,
 } from './telegram.js';
 import { CATEGORIES } from '../src/data/categories.js';
 import { ComplaintCategory, ComplaintStatus } from '../src/types.js';
 import { handleBackupCron, runBackup } from './backup.js';
+import { handleDailyRemindersCron, repostActiveComplaints } from './reminders.js';
 
 const app = express();
 
@@ -438,6 +440,27 @@ router.post('/telegram/webhook', async (req, res, next) => {
               }).catch(() => {});
             }
           }
+
+          // 4. Auto-delete Telegram notification card if complaint is completed / closed
+          if (chatId && (newStatus === 'SELESAI' || newStatus === 'TIDAK_DAPAT_DISELESAIKAN')) {
+            const menuMsgId = cq.message?.message_id;
+            const replyToMsgId = cq.message?.reply_to_message?.message_id;
+            const cardMsgId = complaint?.telegramMessageId;
+            const targetGroup = complaint?.telegramGroupId || chatId;
+
+            // Wait 5 seconds so the officer sees the confirmation alert/card, then clean up
+            setTimeout(async () => {
+              try {
+                if (menuMsgId) await deleteTelegramMessage(chatId, menuMsgId);
+                if (replyToMsgId && replyToMsgId !== menuMsgId) await deleteTelegramMessage(chatId, replyToMsgId);
+                if (cardMsgId && String(cardMsgId) !== String(menuMsgId) && String(cardMsgId) !== String(replyToMsgId)) {
+                  await deleteTelegramMessage(targetGroup, cardMsgId);
+                }
+              } catch (delErr: any) {
+                console.error('Error auto-deleting Telegram messages:', delErr?.message);
+              }
+            }, 5000);
+          }
         }
       } else if (data.startsWith('info:')) {
         const noRujukan = data.replace('info:', '').trim();
@@ -807,6 +830,15 @@ router.patch('/admin/complaints/:noRujukan', async (req, res, next) => {
 
     if (status && status !== comp.status && updated) {
       sendEmailNotification(updated, status as ComplaintStatus, adminNote).catch(() => {});
+
+      // Auto-delete Telegram notification card if resolved / closed via Admin Portal
+      if (['SELESAI', 'TIDAK_DAPAT_DISELESAIKAN'].includes(status as string)) {
+        const targetGroup = updated.telegramGroupId || comp.telegramGroupId;
+        const targetMsgId = updated.telegramMessageId || comp.telegramMessageId;
+        if (targetGroup && targetMsgId) {
+          deleteTelegramMessage(targetGroup, targetMsgId).catch(() => {});
+        }
+      }
     }
 
     res.json({
@@ -824,9 +856,14 @@ router.delete('/admin/complaints/:noRujukan', async (req, res, next) => {
   try {
     const { noRujukan } = req.params;
     await ensureDbSynced();
+    const existing = db.getComplaintByRef(noRujukan);
     const result = await db.deleteComplaint(noRujukan);
     if (!result.success) {
       return res.status(404).json({ error: result.message });
+    }
+
+    if (existing?.telegramGroupId && existing?.telegramMessageId) {
+      deleteTelegramMessage(existing.telegramGroupId, existing.telegramMessageId).catch(() => {});
     }
 
     res.json({
@@ -1037,6 +1074,36 @@ router.get('/cron/backup', handleBackupCron);
 router.post('/admin/backup/trigger', async (_req, res, next) => {
   try {
     const result = await runBackup();
+    return res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+router.get('/admin/backup/trigger', async (_req, res, next) => {
+  try {
+    const result = await runBackup();
+    return res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Daily Reminders Cron Endpoint (Triggered automatically every day 9:00 AM)
+router.post('/cron/daily-reminders', handleDailyRemindersCron);
+router.get('/cron/daily-reminders', handleDailyRemindersCron);
+
+// Admin manual daily reminders trigger / test
+router.post('/admin/reminders/trigger', async (_req, res, next) => {
+  try {
+    const result = await repostActiveComplaints();
+    return res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+router.get('/admin/reminders/trigger', async (_req, res, next) => {
+  try {
+    const result = await repostActiveComplaints();
     return res.json(result);
   } catch (err) {
     next(err);

@@ -61,6 +61,8 @@ ${senderName}
 "SiAP Menerima, SiAP Bertindak"
   `.trim();
 
+  const logoUrl = 'https://siapkkbs.vercel.app/logo.png';
+
   const bodyHtml = `
 <!DOCTYPE html>
 <html>
@@ -69,9 +71,10 @@ ${senderName}
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; color: #1e293b; margin: 0; padding: 24px; }
     .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-    .header { background: #1e40af; color: white; padding: 24px 32px; }
-    .header h1 { margin: 0 0 6px 0; font-size: 22px; font-weight: 700; }
-    .header p { margin: 0; font-size: 14px; opacity: 0.9; }
+    .header { background: #1e40af; color: white; padding: 20px 28px; }
+    .header-table { width: 100%; border-collapse: collapse; }
+    .header h1 { margin: 0 0 2px 0; font-size: 22px; font-weight: 700; color: #ffffff; }
+    .header p { margin: 0; font-size: 13px; opacity: 0.9; color: #e2e8f0; }
     .content { padding: 32px; }
     .lead { font-size: 16px; line-height: 1.6; margin-bottom: 24px; color: #334155; }
     .card { background: #f1f5f9; border-radius: 8px; padding: 20px; margin-bottom: 28px; border: 1px solid #e2e8f0; }
@@ -87,8 +90,17 @@ ${senderName}
 <body>
   <div class="container">
     <div class="header">
-      <h1>SiAP</h1>
-      <p>Sistem Aduan Pelanggan</p>
+      <table class="header-table" role="presentation" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="width: 58px; vertical-align: middle;">
+            <img src="${logoUrl}" alt="SiAP Logo" width="48" height="48" style="display: block; border-radius: 10px; background: #ffffff; padding: 2px; border: 1px solid rgba(255,255,255,0.2);" />
+          </td>
+          <td style="vertical-align: middle; padding-left: 14px;">
+            <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ffffff;">SiAP</h1>
+            <p style="margin: 0; font-size: 13px; color: #dbeafe;">Sistem Aduan Pelanggan – KK Beaufort</p>
+          </td>
+        </tr>
+      </table>
     </div>
     <div class="content">
       <h2 style="color: #0f172a; margin-top: 0; font-size: 18px;">${headerTitle}</h2>

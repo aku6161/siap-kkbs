@@ -673,7 +673,7 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
                     outerRadius={80}
                     paddingAngle={4}
                     dataKey="count"
-                    onClick={(data) => handleFacilityClick(data.name)}
+                    onClick={(data: any) => handleFacilityClick(String(data.name))}
                     className="cursor-pointer"
                   >
                     {priorityChartData.map((entry, index) => (

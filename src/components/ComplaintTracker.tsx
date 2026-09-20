@@ -416,14 +416,14 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
                   <FileText className="w-4 h-4 text-blue-600" />
                   <span className="font-semibold">{complaint.lampiranNama || 'Fail Lampiran Disertakan'}</span>
                 </div>
-                {complaint.lampiranDriveUrl ? (
+                {complaint.lampiranDriveUrl && !complaint.lampiranDriveUrl.includes('/drive/folders/') ? (
                   <a
                     href={complaint.lampiranDriveUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[11px] text-blue-600 hover:text-blue-800 font-bold bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200 transition-all flex items-center gap-1"
+                    className="text-[11px] text-blue-600 hover:text-blue-800 font-bold bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200 transition-all flex items-center gap-1 shadow-xs active:scale-95"
                   >
-                    <span>Buka Lampiran</span>
+                    <span>Buka Fail Lampiran</span>
                     <ArrowRight className="w-3 h-3" />
                   </a>
                 ) : (

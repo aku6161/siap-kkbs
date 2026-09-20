@@ -6,6 +6,8 @@ import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { app } from './server/app';
 import { db } from './server/db';
+import { initBackupScheduler } from './server/backup';
+import { initDailyReminderScheduler } from './server/reminders';
 
 
 async function startServer() {
@@ -13,6 +15,12 @@ async function startServer() {
 
   // Load data from Supabase into memory (if configured)
   await db.initFromSupabase();
+
+  // Inisialisasi Penjadual Sandaran Mingguan Automatik (Ahad 2:00 AM)
+  initBackupScheduler();
+
+  // Inisialisasi Penjadual Peringatan Harian Telegram Automatik (Setiap Hari 9:00 AM)
+  initDailyReminderScheduler();
 
   // ==========================================
   // VITE MIDDLEWARE (SPA & DEV)

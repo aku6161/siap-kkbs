@@ -92,6 +92,9 @@ function onOpen() {
       .addItem("🚀 Tarik Semua Data & Simpan Gambar ke Drive", "syncFromSiAPWeb")
       .addItem("📥 Tampal Data JSON SiAP (Manual Import)", "showImportDialog")
       .addSeparator()
+      .addItem("💾 Jalankan Sandaran Supabase -> Drive (CSV)", "jalankanSandaranSekarang")
+      .addItem("⏰ Aktifkan Jadual Sandaran (Setiap Ahad 2:00 AM)", "ciptaTriggerMingguanAhad")
+      .addSeparator()
       .addItem("⚙️ Tetapkan Struktur 5 Sheet Database", "setupDatabaseSheets")
       .addItem("📁 Uji Akses Folder Google Drive", "testDrivePermission")
       .addToUi();
@@ -110,9 +113,6 @@ function saveAttachmentToDrive(noRujukan, fileName, base64Data, contentType) {
     var folder;
     try {
       folder = DriveApp.getFolderById(GOOGLE_DRIVE_FOLDER_ID);
-      // Uji jika kita boleh menulis dengan membuat fail dummy
-      var testFile = folder.createFile("temp_check.txt", "check");
-      folder.removeFile(testFile);
     } catch (e) {
       // Fallback: Gunakan atau buat folder "SiAP_Lampiran" sendiri di root Drive
       var folders = DriveApp.getFoldersByName("SiAP_Lampiran");
@@ -142,16 +142,22 @@ function saveAttachmentToDrive(noRujukan, fileName, base64Data, contentType) {
     // Periksa jika fail sama telah wujud untuk mengelakkan penduaan
     var existingFiles = folder.getFilesByName(safeName);
     if (existingFiles.hasNext()) {
-      return existingFiles.next().getUrl();
+      var existingFile = existingFiles.next();
+      try { existingFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) {}
+      return "https://drive.google.com/file/d/" + existingFile.getId() + "/view?usp=sharing";
     }
 
     var blob = Utilities.newBlob(decoded, mimeType, safeName);
     var file = folder.createFile(blob);
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    return file.getUrl();
+    try {
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    } catch (e) {}
+    
+    // Kembalikan pautan terus ke fail individu (bukan folder)
+    return "https://drive.google.com/file/d/" + file.getId() + "/view?usp=sharing";
   } catch (err) {
     Logger.log("Ralat Google Drive: " + err.toString());
-    return GOOGLE_DRIVE_FOLDER_URL;
+    return "";
   }
 }
 
@@ -581,8 +587,8 @@ function doPost(e) {
         payload.contentType || ""
       );
       return ContentService.createTextOutput(JSON.stringify({
-        status: "success",
-        fileUrl: fileUrl || GOOGLE_DRIVE_FOLDER_URL
+        status: fileUrl ? "success" : "error",
+        fileUrl: fileUrl || ""
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -646,74 +652,172 @@ function doPost(e) {
       }
     }
 
-    // 5. Aksi Sandaran CSV / JSON ke Google Drive (CREATE_BACKUP)
-    // Simpan snapshot data penuh ke Google Drive dan padam sandaran lama (kekal 2 minggu / 2 sandaran terkini sahaja)
-    if (action === "CREATE_BACKUP") {
-      try {
-        var folderId = payload.folderId || "";
-        var fileName = payload.fileName || ("siap_backup_" + new Date().toISOString().substring(0, 10) + ".csv");
-        var content = payload.content || "";
-        var maxBackups = payload.maxBackups || 2;
+/**
+ * =========================================================================
+ * SANDARAN CLOUD-TO-CLOUD (SUPABASE TERUS KE GOOGLE DRIVE)
+ * =========================================================================
+ */
+var SUPABASE_BACKUP_URL = "https://dliiscfkrzxdjtgphyoq.supabase.co";
+var SUPABASE_BACKUP_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsaWlzY2Zrcnp4ZGp0Z3BoeW9xIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4Nzg4NTgwMiwiZXhwIjoyMTAzNDYxODAyfQ.UE-yGkUitm6jx5bHVYmuOyqoOTTEUumQN-VvWf5OTAw";
+var DRIVE_BACKUP_FOLDER_ID = "1f2VTd_dug6ANOkyRqHtC7LaNcBJWoU28";
+var BACKUP_RETENTION_COPIES = 2;
 
-        var folder;
-        try {
-          folder = DriveApp.getFolderById(folderId);
-        } catch (folderErr) {
-          // Fallback: cari atau buat folder SiAP_Backups
-          var backupFolders = DriveApp.getFoldersByName("SiAP_Backups");
-          if (backupFolders.hasNext()) {
-            folder = backupFolders.next();
-          } else {
-            folder = DriveApp.createFolder("SiAP_Backups");
-          }
-        }
+function jalankanSandaranSekarang() {
+  var now = new Date();
+  var pad = function(n) { return (n < 10 ? '0' : '') + n; };
+  var dateStr = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + '_' + pad(now.getHours()) + '-' + pad(now.getMinutes()) + '-' + pad(now.getSeconds());
 
-        // Cipta fail sandaran baharu (.csv atau .json)
-        var mimeType = (fileName.indexOf(".csv") > -1) ? MimeType.CSV : "application/json";
-        var blob = Utilities.newBlob(content, mimeType, fileName);
-        var newFile = folder.createFile(blob);
-        newFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  Logger.log("🚀 Memulakan Sandaran Cloud-to-Cloud SiAP pada " + now.toString());
 
-        // Padam fail sandaran lama – kekal maxBackups terkini sahaja (2 minggu)
-        var allFiles = [];
-        var fileIter = folder.getFiles();
-        while (fileIter.hasNext()) {
-          var f = fileIter.next();
-          // Hanya proses fail sandaran SiAP (bermula dengan siap_backup_)
-          if (f.getName().indexOf("siap_backup_") === 0) {
-            allFiles.push({ name: f.getName(), id: f.getId(), date: f.getDateCreated() });
-          }
-        }
+  var complaints = fetchSupabaseTableDirect("siap_complaints");
+  var surveys = fetchSupabaseTableDirect("siap_student_satisfaction");
 
-        // Isih mengikut tarikh (terbaru dahulu)
-        allFiles.sort(function(a, b) { return b.date - a.date; });
+  var compCsv = generateComplaintsCsvDirect(complaints);
+  var surveyCsv = generateSurveysCsvDirect(surveys);
 
-        // Padam sandaran yang melebihi had maxBackups (2 terkini)
-        var deleted = [];
-        for (var i = maxBackups; i < allFiles.length; i++) {
-          try {
-            DriveApp.getFileById(allFiles[i].id).setTrashed(true);
-            deleted.push(allFiles[i].name);
-          } catch(delErr) {
-            Logger.log("Gagal padam: " + allFiles[i].name + " - " + delErr.toString());
-          }
-        }
+  var compFileName = "SiAP_Sandaran_Aduan_" + dateStr + ".csv";
+  var surveyFileName = "SiAP_Sandaran_Kepuasan_Pelajar_" + dateStr + ".csv";
 
-        return ContentService.createTextOutput(JSON.stringify({
-          status: "success",
-          message: "Sandaran \"" + fileName + "\" berjaya disimpan ke Google Drive! " + (deleted.length > 0 ? "Dipadam lama: " + deleted.join(", ") : ""),
-          fileName: fileName,
-          fileUrl: newFile.getUrl(),
-          deleted: deleted
-        })).setMimeType(ContentService.MimeType.JSON);
+  var folder = DriveApp.getFolderById(DRIVE_BACKUP_FOLDER_ID);
 
-      } catch (backupErr) {
-        return ContentService.createTextOutput(JSON.stringify({
-          status: "error",
-          message: "Ralat sandaran: " + backupErr.toString()
-        })).setMimeType(ContentService.MimeType.JSON);
+  var compBlob = Utilities.newBlob(compCsv, MimeType.CSV, compFileName);
+  var compFile = folder.createFile(compBlob);
+  compFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  var surveyBlob = Utilities.newBlob(surveyCsv, MimeType.CSV, surveyFileName);
+  var surveyFile = folder.createFile(surveyBlob);
+  surveyFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  autoPurgeOldBackupsDirect(folder, BACKUP_RETENTION_COPIES);
+
+  showAlert("✅ Sandaran Berjaya!", "Sandaran Cloud-to-Cloud berjaya disimpan terus ke Google Drive!\\n- Aduan: " + complaints.length + " rekod\\n- Kepuasan: " + surveys.length + " rekod");
+}
+
+function ciptaTriggerMingguanAhad() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === "jalankanSandaranSekarang") {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+
+  ScriptApp.newTrigger("jalankanSandaranSekarang")
+    .timeBased()
+    .onWeekDay(ScriptApp.WeekDay.SUNDAY)
+    .atHour(2)
+    .inTimezone("Asia/Kuala_Lumpur")
+    .create();
+
+  showAlert("⏰ Jadual Diaktifkan", "Sandaran automatik akan dijalankan setiap hari Ahad jam 2:00 Pagi (Waktu Malaysia) terus dari Supabase ke Google Drive.");
+}
+
+function fetchSupabaseTableDirect(tableName) {
+  var url = SUPABASE_BACKUP_URL + "/rest/v1/" + tableName + "?select=*&order=id.desc";
+  var options = {
+    method: "get",
+    headers: {
+      "apikey": SUPABASE_BACKUP_KEY,
+      "Authorization": "Bearer " + SUPABASE_BACKUP_KEY,
+      "Content-Type": "application/json"
+    },
+    muteHttpExceptions: true
+  };
+  try {
+    var response = UrlFetchApp.fetch(url, options);
+    if (response.getResponseCode() === 200) {
+      return JSON.parse(response.getContentText());
+    }
+  } catch (e) {}
+  return [];
+}
+
+function generateComplaintsCsvDirect(complaints) {
+  var headers = [
+    "No Rujukan","Tarikh & Masa Aduan","Nama Pengadu","No Telefon",
+    "Emel","Kod Kategori","Nama Kategori","Tajuk Aduan","Butiran Aduan",
+    "Lokasi Kejadian","Tarikh Kejadian","Status Aduan","Kumpulan Telegram",
+    "ID Kumpulan Telegram","ID Telegram Pegawai","Nama Pegawai Bertanggungjawab",
+    "Tarikh Tindakan Diambil","Tarikh Selesai","Tindakan Terkini",
+    "Penilaian Bintang (1-5)","Ulasan Pelanggan","Tarikh Penilaian",
+    "Nama Lampiran","Pautan Lampiran (Google Drive)"
+  ];
+  var csvLines = [headers.map(escapeCsvFieldDirect).join(",")];
+  for (var i = 0; i < complaints.length; i++) {
+    var c = complaints[i];
+    var row = [
+      c.noRujukan || "", c.tarikhMasa || "", c.namaPengadu || "",
+      c.telefon || "", c.emel || "", c.kategori || "",
+      c.kategoriNama || "", c.tajukAduan || "", c.butiranAduan || "",
+      c.lokasi || "", c.tarikhKejadian || "", c.status || "",
+      c.telegramGroup || "", c.telegramGroupId || "", c.telegramUserId || "",
+      c.namaPegawai || "", c.tarikhDiambilTindakan || "", c.tarikhSelesai || "",
+      c.tindakanTerkini || "", c.rating || "", c.ulasanPelanggan || "",
+      c.ratingTarikh || "", c.lampiranNama || "", c.lampiranDriveUrl || ""
+    ];
+    csvLines.push(row.map(escapeCsvFieldDirect).join(","));
+  }
+  return "\uFEFF" + csvLines.join("\r\n");
+}
+
+function generateSurveysCsvDirect(surveys) {
+  var headers = [
+    "ID Soal Selidik","Tarikh & Masa","Tahun","Jantina","Program Pengajian","Semester",
+    "Skor Bilik Kuliah","Skor Perpustakaan","Skor Bengkel Amali","Skor Bengkel Dapur",
+    "Skor Makmal Komputer","Skor Dewan Kuliah","Skor Immersive Centre","Skor eTech Centre",
+    "Skor Kafe","Skor Kemudahan Sokongan","Skor WiFi","Purata Skor Keseluruhan (1-5)",
+    "Keutamaan Penambahbaikan","Cadangan Pelajar"
+  ];
+  var csvLines = [headers.map(escapeCsvFieldDirect).join(",")];
+  for (var i = 0; i < surveys.length; i++) {
+    var s = surveys[i];
+    var sc = s.scores || {};
+    var row = [
+      s.id || "", s.timestamp || "", s.year || "", s.jantina || "",
+      s.programPengajian || "", s.semester || "",
+      sc.bilikKuliah || "", sc.perpustakaan || "", sc.bengkelAmali || "",
+      sc.bengkelDapur || "", sc.makmalKomputer || "", sc.dewanKuliah || "",
+      sc.immersiveCentre || "", sc.eTechCentre || "", sc.kafe || "",
+      sc.kemudahanSokongan || "", sc.wifi || "", sc.purataKeseluruhan || "",
+      s.kemudahanPenambahbaikan || "", s.cadangan || ""
+    ];
+    csvLines.push(row.map(escapeCsvFieldDirect).join(","));
+  }
+  return "\uFEFF" + csvLines.join("\r\n");
+}
+
+function escapeCsvFieldDirect(field) {
+  if (field === null || field === undefined) return '""';
+  var str = field.toString().replace(/"/g, '""');
+  return '"' + str + '"';
+}
+
+function autoPurgeOldBackupsDirect(folder, maxCopies) {
+  var prefixes = ["SiAP_Sandaran_Aduan_", "SiAP_Sandaran_Kepuasan_Pelajar_"];
+  for (var p = 0; p < prefixes.length; p++) {
+    var prefix = prefixes[p];
+    var matchingFiles = [];
+    var files = folder.getFiles();
+    while (files.hasNext()) {
+      var f = files.next();
+      if (f.getName().indexOf(prefix) === 0 && f.getName().indexOf(".csv") > -1) {
+        matchingFiles.push({ id: f.getId(), name: f.getName(), created: f.getDateCreated().getTime() });
       }
     }
+    matchingFiles.sort(function(a, b) { return b.created - a.created; });
+    if (matchingFiles.length > maxCopies) {
+      for (var i = maxCopies; i < matchingFiles.length; i++) {
+        try { DriveApp.getFileById(matchingFiles[i].id).setTrashed(true); } catch (e) {}
+      }
+    }
+  }
+  var allFiles = folder.getFiles();
+  while (allFiles.hasNext()) {
+    var jsonFile = allFiles.next();
+    if (jsonFile.getName().indexOf(".json") > -1) {
+      try { jsonFile.setTrashed(true); } catch (e) {}
+    }
+  }
+}
 
     return ContentService.createTextOutput(JSON.stringify({
       status: "error",

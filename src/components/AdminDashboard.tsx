@@ -20,7 +20,6 @@ import {
   FileSpreadsheet,
   Lock,
   LogOut,
-  Search,
   Filter,
   RefreshCw,
   Eye,
@@ -66,7 +65,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [isLoading, setIsLoading] = useState(false);
 
   // Filters for complaints list
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('ALL');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('ALL');
   const [startDateFilter, setStartDateFilter] = useState('');
@@ -79,7 +77,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setIsLoading(true);
     try {
       const [compRes, statsRes] = await Promise.all([
-        fetch(`/api/admin/complaints?search=${encodeURIComponent(searchQuery)}&kategori=${selectedCategoryFilter}&status=${selectedStatusFilter}&startDate=${startDateFilter}&endDate=${endDateFilter}`),
+        fetch(`/api/admin/complaints?kategori=${selectedCategoryFilter}&status=${selectedStatusFilter}&startDate=${startDateFilter}&endDate=${endDateFilter}`),
         fetch('/api/admin/stats'),
       ]);
 
@@ -134,11 +132,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     } finally {
       setIsLoggingIn(false);
     }
-  };
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    fetchAdminData();
   };
 
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
@@ -534,20 +527,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="glass-card rounded-3xl p-6 sm:p-8 space-y-6">
           
           {/* Filters Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
-            <div>
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Cari Ref / Tajuk / Pengadu / Pegawai..."
-                  className="w-full pl-9 pr-3 py-2 text-xs glass-input rounded-xl focus:outline-none"
-                />
-              </div>
-            </div>
-
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
             <div>
               <label className="block text-xs font-bold text-slate-600 mb-1">Filter Kategori:</label>
               <select

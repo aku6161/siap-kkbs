@@ -339,6 +339,7 @@ export async function processTelegramOfficerAction(params: {
 
     const sIcon = statusIcons[targetStatus] || '⚡';
     const sLabel = statusLabels[targetStatus] || targetStatus;
+    const isCompleted = targetStatus === 'SELESAI' || targetStatus === 'TIDAK_DAPAT_DISELESAIKAN';
 
     const replyMessage =
       `✅ <b>STATUS BERJAYA DIKEMASKINI</b>\n\n` +
@@ -347,11 +348,13 @@ export async function processTelegramOfficerAction(params: {
       `👮 <b>Pegawai PIC:</b> ${escapeHtml(officerName)}\n` +
       `🕐 <b>Masa:</b> ${new Date().toLocaleTimeString('ms-MY')}\n` +
       `📝 <b>Catatan:</b> ${escapeHtml(note)}\n\n` +
-      `<i>Status telah dikemaskini secara automatik ke dalam database SiAP. Anda boleh menukar status semula pada bila-bila masa.</i>`;
+      (isCompleted
+        ? `<i>🗑️ Aduan telah ditutup. Notifikasi Telegram ini akan dipadam secara automatik dalam masa 5 saat untuk memastikan kumpulan sentiasa kemas.</i>`
+        : `<i>Status telah dikemaskini secara automatik ke dalam database SiAP. Anda boleh menukar status semula pada bila-bila masa.</i>`);
 
     return {
       success: true,
-      message: `Status aduan ${noRujukan} dikemaskini kepada "${sLabel}".`,
+      message: `Status aduan ${noRujukan} dikemaskini kepada "${sLabel}".` + (isCompleted ? ' Notifikasi akan dipadam secara auto.' : ''),
       complaint: updated || undefined,
       replyMessage,
     };
@@ -395,3 +398,29 @@ export async function processTelegramOfficerAction(params: {
 
   return { success: false, message: 'Tindakan tidak sah.' };
 }
+
+/**
+ * Padam mesej notifikasi Telegram (cth: selepas aduan SELESAI / TIDAK DAPAT DISELESAIKAN)
+ */
+export async function deleteTelegramMessage(chatId: string | number, messageId: string | number): Promise<boolean> {
+  const config = db.getConfig();
+  const token = config.telegramBotToken || process.env.TELEGRAM_BOT_TOKEN || '8238304961:AAG44pdgon1zFkqacccsk7da8iEPv83HPkQ';
+  if (!token || !chatId || !messageId) return false;
+
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/deleteMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        message_id: messageId,
+      }),
+    });
+    const data = await res.json();
+    return !!data.ok;
+  } catch (err: any) {
+    console.error(`Gagal memadam mesej Telegram (chat: ${chatId}, msg: ${messageId}):`, err.message);
+    return false;
+  }
+}
+
