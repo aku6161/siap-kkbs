@@ -597,14 +597,14 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Chart 1: Skor Purata Mengikut Dimensi Kemudahan */}
-        <div className="lg:col-span-7 glass-card p-6 sm:p-8 rounded-3xl border border-white/80 shadow-md flex flex-col justify-between text-left">
-          <div className="text-left w-full">
-            <div className="mb-4 text-left w-full">
-              <h3 className="text-sm sm:text-base font-bold text-slate-900 text-left flex items-center justify-start gap-2">
+        <div style={{ textAlign: 'left' }} className="lg:col-span-7 glass-card p-6 sm:p-8 rounded-3xl border border-white/80 shadow-md flex flex-col justify-between text-left">
+          <div style={{ textAlign: 'left' }} className="text-left w-full">
+            <div style={{ textAlign: 'left' }} className="mb-4 text-left w-full">
+              <h3 style={{ textAlign: 'left', justifyContent: 'flex-start' }} className="text-sm sm:text-base font-bold text-slate-900 text-left flex items-center justify-start gap-2">
                 <BarChart className="w-4 h-4 text-blue-600 shrink-0" />
                 <span>Purata Skor Mengikut Kategori Kemudahan (/5.0)</span>
               </h3>
-              <p className="text-xs text-slate-500 text-left mt-1">
+              <p style={{ textAlign: 'left' }} className="text-xs text-slate-500 text-left mt-1">
                 Penilaian tertinggi: Bilik Kuliah &amp; Perpustakaan • Perlu perhatian: E-Tech Centre &amp; WiFi
               </p>
             </div>
@@ -640,14 +640,14 @@ export const AdminStudentSatisfaction: React.FC<AdminStudentSatisfactionProps> =
         </div>
 
         {/* Chart 2: Keperluan Penambahbaikan Segera (Pie Chart) */}
-        <div className="lg:col-span-5 glass-card p-6 sm:p-8 rounded-3xl border border-white/80 shadow-md flex flex-col justify-between text-left">
-          <div className="text-left w-full">
-            <div className="mb-4 text-left w-full">
-              <h3 className="text-sm sm:text-base font-bold text-slate-900 text-left flex items-center justify-start gap-2">
+        <div style={{ textAlign: 'left' }} className="lg:col-span-5 glass-card p-6 sm:p-8 rounded-3xl border border-white/80 shadow-md flex flex-col justify-between text-left">
+          <div style={{ textAlign: 'left' }} className="text-left w-full">
+            <div style={{ textAlign: 'left' }} className="mb-4 text-left w-full">
+              <h3 style={{ textAlign: 'left', justifyContent: 'flex-start' }} className="text-sm sm:text-base font-bold text-slate-900 text-left flex items-center justify-start gap-2">
                 <PieChart className="w-4 h-4 text-rose-600 shrink-0" />
                 <span>Kemudahan Perlu Penambahbaikan Segera</span>
               </h3>
-              <p className="text-xs text-slate-500 text-left mt-1">
+              <p style={{ textAlign: 'left' }} className="text-xs text-slate-500 text-left mt-1">
                 Peratusan maklum balas mengikut fasiliti yang paling kritikal
               </p>
             </div>
