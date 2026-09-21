@@ -1,6 +1,25 @@
 import { Complaint, TindakanItem } from '../types';
 import { STATUS_CONFIG } from '../data/categories';
 
+function getDirectImageUrl(complaint: Complaint): string | null {
+  if (complaint.lampiran && complaint.lampiran.startsWith('data:image')) {
+    return complaint.lampiran;
+  }
+  if (complaint.lampiranDriveUrl) {
+    const fileIdMatch =
+      complaint.lampiranDriveUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
+      complaint.lampiranDriveUrl.match(/id=([a-zA-Z0-9_-]+)/);
+    if (fileIdMatch && fileIdMatch[1]) {
+      const fileId = fileIdMatch[1];
+      return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+    }
+    if (complaint.lampiranDriveUrl.startsWith('http') && !complaint.lampiranDriveUrl.includes('/drive/folders/')) {
+      return complaint.lampiranDriveUrl;
+    }
+  }
+  return null;
+}
+
 export function printComplaintReport(complaint: Complaint, tindakanList: TindakanItem[] = []): void {
   if (!complaint) return;
   const printWin = window.open('', '_blank');
@@ -10,6 +29,43 @@ export function printComplaintReport(complaint: Complaint, tindakanList: Tindaka
   }
 
   const currentStatusConfig = STATUS_CONFIG[complaint.status];
+  const hasAttachment = Boolean(complaint.lampiran || complaint.lampiranNama || complaint.lampiranDriveUrl);
+  const imgSrc = getDirectImageUrl(complaint);
+  const isImageAttachment = Boolean(
+    imgSrc ||
+    (complaint.lampiranNama && /\.(jpg|jpeg|png|webp|gif|bmp|svg)$/i.test(complaint.lampiranNama))
+  );
+
+  let sectionNumber = 3;
+  let attachmentHtml = '';
+  if (hasAttachment) {
+    if (imgSrc) {
+      attachmentHtml = `
+        <div class="section-title">${sectionNumber}. LAMPIRAN BUKTI ADUAN</div>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px 8px; margin-bottom: 6px; text-align: center;">
+          <div style="font-size: 10px; font-weight: 600; color: #475569; margin-bottom: 5px; text-align: left; display: flex; justify-content: space-between; align-items: center;">
+            <span>📷 Fail: <strong>${complaint.lampiranNama || 'Gambar Lampiran'}</strong></span>
+            ${complaint.lampiranDriveUrl ? `<span style="color: #2563eb; font-size: 9px; font-family: monospace;">Tersimpan di Google Drive</span>` : ''}
+          </div>
+          <div style="display: inline-block; max-width: 100%; border: 1px solid #cbd5e1; border-radius: 4px; padding: 3px; background: #ffffff;">
+            <img src="${imgSrc}" alt="${complaint.lampiranNama || 'Lampiran Aduan'}" style="max-width: 100%; max-height: 220px; object-fit: contain; display: block; margin: 0 auto;" />
+          </div>
+        </div>
+      `;
+    } else {
+      attachmentHtml = `
+        <div class="section-title">${sectionNumber}. LAMPIRAN BUKTI ADUAN</div>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px 8px; margin-bottom: 6px; font-size: 10.5px;">
+          <div>📄 Fail Lampiran Disertakan: <strong>${complaint.lampiranNama || 'Dokumen Lampiran'}</strong></div>
+          ${complaint.lampiranDriveUrl ? `<div style="margin-top: 3px; font-size: 9.5px; color: #2563eb; word-break: break-all;">Pautan Google Drive: ${complaint.lampiranDriveUrl}</div>` : ''}
+        </div>
+      `;
+    }
+    sectionNumber++;
+  }
+
+  const tindakanSectionNum = sectionNumber++;
+  const ratingSectionNum = sectionNumber++;
 
   const tindakanRows = tindakanList.length > 0
     ? tindakanList.map((t) => `
@@ -177,7 +233,9 @@ export function printComplaintReport(complaint: Complaint, tindakanList: Tindaka
         <div>${complaint.butiranAduan}</div>
       </div>
 
-      <div class="section-title">3. SEJARAH TINDAKAN & CATATAN PEGAWAI</div>
+      ${attachmentHtml}
+
+      <div class="section-title">${tindakanSectionNum}. SEJARAH TINDAKAN & CATATAN PEGAWAI</div>
       <table class="history-table">
         <thead>
           <tr>
@@ -192,7 +250,7 @@ export function printComplaintReport(complaint: Complaint, tindakanList: Tindaka
       </table>
 
       ${complaint.rating ? `
-        <div class="section-title" style="margin-top: 8px;">4. PENILAIAN MAKLUM BALAS PELANGGAN</div>
+        <div class="section-title" style="margin-top: 8px;">${ratingSectionNum}. PENILAIAN MAKLUM BALAS PELANGGAN</div>
         <div class="grid-2col">
           <div class="grid-item"><div class="grid-lbl">Tahap Kepuasan:</div><div class="grid-val"><strong>${complaint.rating} / 5 Bintang</strong></div></div>
           <div class="grid-item"><div class="grid-lbl">Tarikh Penilaian:</div><div class="grid-val">${complaint.ratingTarikh || '-'}</div></div>
@@ -203,9 +261,45 @@ export function printComplaintReport(complaint: Complaint, tindakanList: Tindaka
       <div class="footer">
         Laporan dijana secara automatik oleh SiAP (Sistem Aduan Pelanggan). Tandatangan tidak diperlukan.
       </div>
-      <script>window.onload = function() { window.print(); }</script>
+      <script>
+        function doPrint() {
+          setTimeout(function() {
+            window.print();
+          }, 300);
+        }
+        if (document.images.length > 0) {
+          var loaded = 0;
+          var total = document.images.length;
+          var printTriggered = false;
+          function checkAll() {
+            loaded++;
+            if (loaded >= total && !printTriggered) {
+              printTriggered = true;
+              doPrint();
+            }
+          }
+          for (var i = 0; i < total; i++) {
+            if (document.images[i].complete) {
+              checkAll();
+            } else {
+              document.images[i].addEventListener('load', checkAll);
+              document.images[i].addEventListener('error', checkAll);
+            }
+          }
+          // Safety fallback timeout
+          setTimeout(function() {
+            if (!printTriggered) {
+              printTriggered = true;
+              doPrint();
+            }
+          }, 1500);
+        } else {
+          window.onload = doPrint;
+        }
+      </script>
     </body>
     </html>
   `);
   printWin.document.close();
 }
+
