@@ -24,6 +24,7 @@ import {
 import { RATING_SCALE, STATUS_CONFIG } from '../data/categories';
 import { Complaint, ComplaintStatus, TindakanItem } from '../types';
 import { printComplaintReport } from '../utils/printReport';
+import { formatDate, formatDateTime } from '../utils/dateFormatter';
 
 interface ComplaintTrackerProps {
   initialRef?: string;
@@ -379,11 +380,11 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
               </div>
               <div>
                 <span className="text-slate-500 font-semibold block mb-1">Tarikh Kejadian:</span>
-                <span className="font-bold text-slate-800">{complaint.tarikhKejadian}</span>
+                <span className="font-bold text-slate-800">{formatDate(complaint.tarikhKejadian)}</span>
               </div>
               <div>
                 <span className="text-slate-500 font-semibold block mb-1">Tarikh Diterima:</span>
-                <span className="font-medium text-slate-800">{complaint.tarikhMasa}</span>
+                <span className="font-medium text-slate-800">{formatDateTime(complaint.tarikhMasa)}</span>
               </div>
               <div>
                 <span className="text-slate-500 font-semibold block mb-1">Pengadu:</span>
@@ -460,7 +461,7 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
                           {item.namaPegawai}
                         </span>
                         <span className="text-[11px] text-slate-400 font-mono">
-                          {item.tarikhMasa}
+                          {formatDateTime(item.tarikhMasa)}
                         </span>
                       </div>
                       <p className="text-slate-700 leading-relaxed font-medium">

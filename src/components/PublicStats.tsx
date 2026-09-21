@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BarChart3, CheckCircle2, Clock, Star, Users, ArrowRight, ShieldCheck } from 'lucide-react';
 import { RATING_SCALE } from '../data/categories';
 import { RatingSummary, SystemStats } from '../types';
+import { formatDate } from '../utils/dateFormatter';
 
 interface PublicStatsProps {
   onNavigateToCreate: () => void;
@@ -160,7 +161,7 @@ export const PublicStats: React.FC<PublicStatsProps> = ({ onNavigateToCreate }) 
                   </div>
                   <p className="text-slate-700 italic">"{fb.ulasan}"</p>
                   <span className="block text-[10px] text-slate-400 mt-2 font-medium">
-                    Kategori: {fb.kategori} • {fb.tarikh}
+                    Kategori: {fb.kategori} • {formatDate(fb.tarikh)}
                   </span>
                 </div>
               ))}

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { STATUS_CONFIG, CATEGORIES } from '../data/categories';
 import { Complaint, ComplaintStatus, TindakanItem } from '../types';
+import { formatDateTime } from '../utils/dateFormatter';
 
 interface AdminTelegramSimulatorProps {
   complaints: Complaint[];
@@ -76,7 +77,7 @@ export const AdminTelegramSimulator: React.FC<AdminTelegramSimulatorProps> = ({
       `📝 <b>Tajuk:</b> ${selectedComplaint.tajukAduan}\n` +
       `📍 <b>Lokasi:</b> ${selectedComplaint.lokasi}\n` +
       `👤 <b>Pengadu:</b> ${selectedComplaint.namaPengadu} (${selectedComplaint.telefon || '-'})\n` +
-      `🕐 <b>Tarikh:</b> ${selectedComplaint.tarikhMasa}\n` +
+      `🕐 <b>Tarikh:</b> ${formatDateTime(selectedComplaint.tarikhMasa)}\n` +
       `<b>Status Semasa:</b> ${statusCfg.emoji} <b>${statusCfg.label.toUpperCase()}</b>\n\n` +
       `📄 <b>Butiran:</b> ${selectedComplaint.butiranAduan}`;
 
@@ -104,7 +105,7 @@ export const AdminTelegramSimulator: React.FC<AdminTelegramSimulatorProps> = ({
           `<b>Status Semasa:</b> ${statusCfg.emoji} <b>${statusCfg.label.toUpperCase()}</b>\n` +
           `👮 <b>Pegawai PIC:</b> ${pic}\n` +
           `📝 <b>Tindakan:</b> ${selectedComplaint.tindakanTerkini || 'Sedang dikendalikan.'}\n` +
-          `🕐 <b>Kemas Kini Terakhir:</b> ${selectedComplaint.tarikhSelesai || selectedComplaint.tarikhDiambilTindakan || selectedComplaint.tarikhMasa}\n\n` +
+          `🕐 <b>Kemas Kini Terakhir:</b> ${formatDateTime(selectedComplaint.tarikhSelesai || selectedComplaint.tarikhDiambilTindakan || selectedComplaint.tarikhMasa)}\n\n` +
           `<i>Status ini disimpan secara langsung ke dalam pangkalan data Supabase.</i>`,
         time: (selectedComplaint.tarikhSelesai || selectedComplaint.tarikhDiambilTindakan || '').split(' ')[1] || nowTime,
         isHtml: true,

@@ -1,5 +1,6 @@
 import { Complaint, TindakanItem } from '../types';
 import { STATUS_CONFIG } from '../data/categories';
+import { formatDate, formatDateTime } from './dateFormatter';
 
 function getDirectImageUrl(complaint: Complaint): string | null {
   if (complaint.lampiran && complaint.lampiran.startsWith('data:image')) {
@@ -75,7 +76,7 @@ export function printComplaintReport(complaint: Complaint, tindakanList: Tindaka
   const tindakanRows = tindakanList.length > 0
     ? tindakanList.map((t) => `
         <tr>
-          <td style="padding: 5px 8px; border: 1px solid #e2e8f0; font-size: 10.5px; font-family: monospace; white-space: nowrap;">${t.tarikhMasa || '-'}</td>
+          <td style="padding: 5px 8px; border: 1px solid #e2e8f0; font-size: 10.5px; font-family: monospace; white-space: nowrap;">${formatDateTime(t.tarikhMasa)}</td>
           <td style="padding: 5px 8px; border: 1px solid #e2e8f0; font-size: 10.5px;"><span class="badge status-${t.status}">${t.status}</span></td>
           <td style="padding: 5px 8px; border: 1px solid #e2e8f0; font-size: 10.5px; color: #334155; line-height: 1.35;">${cleanCatatan(t.catatanTindakan)}</td>
         </tr>
@@ -228,8 +229,8 @@ export function printComplaintReport(complaint: Complaint, tindakanList: Tindaka
         <div class="grid-item"><div class="grid-lbl">Lokasi Kejadian:</div><div class="grid-val">${complaint.lokasi}</div></div>
         <div class="grid-item"><div class="grid-lbl">Nama Pengadu:</div><div class="grid-val">${complaint.namaPengadu}${complaint.telefon ? ` (${complaint.telefon})` : ''}</div></div>
         <div class="grid-item"><div class="grid-lbl">Emel Pengadu:</div><div class="grid-val">${complaint.emel}</div></div>
-        <div class="grid-item"><div class="grid-lbl">Tarikh Aduan:</div><div class="grid-val">${complaint.tarikhMasa}</div></div>
-        <div class="grid-item"><div class="grid-lbl">Tarikh Kejadian:</div><div class="grid-val">${complaint.tarikhKejadian || '-'}</div></div>
+        <div class="grid-item"><div class="grid-lbl">Tarikh Aduan:</div><div class="grid-val">${formatDateTime(complaint.tarikhMasa)}</div></div>
+        <div class="grid-item"><div class="grid-lbl">Tarikh Kejadian:</div><div class="grid-val">${formatDate(complaint.tarikhKejadian)}</div></div>
       </div>
 
       <div class="section-title">2. TAJUK & BUTIRAN ADUAN PENGADU</div>
@@ -258,7 +259,7 @@ export function printComplaintReport(complaint: Complaint, tindakanList: Tindaka
         <div class="section-title" style="margin-top: 8px;">${ratingSectionNum}. PENILAIAN MAKLUM BALAS PELANGGAN</div>
         <div class="grid-2col">
           <div class="grid-item"><div class="grid-lbl">Tahap Kepuasan:</div><div class="grid-val"><strong>${complaint.rating} / 5 Bintang</strong></div></div>
-          <div class="grid-item"><div class="grid-lbl">Tarikh Penilaian:</div><div class="grid-val">${complaint.ratingTarikh || '-'}</div></div>
+          <div class="grid-item"><div class="grid-lbl">Tarikh Penilaian:</div><div class="grid-val">${formatDateTime(complaint.ratingTarikh)}</div></div>
           <div class="grid-item" style="width: 100%; border-right: none;"><div class="grid-lbl">Ulasan Pelanggan:</div><div class="grid-val">${complaint.ulasanPelanggan || 'Tiada ulasan tambahan.'}</div></div>
         </div>
       ` : ''}

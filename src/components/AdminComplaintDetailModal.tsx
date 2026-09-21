@@ -23,6 +23,7 @@ import {
 import { STATUS_CONFIG } from '../data/categories';
 import { Complaint, ComplaintStatus, TindakanItem } from '../types';
 import { printComplaintReport } from '../utils/printReport';
+import { formatDate, formatDateTime } from '../utils/dateFormatter';
 
 interface AdminComplaintDetailModalProps {
   complaint: Complaint;
@@ -270,11 +271,11 @@ export const AdminComplaintDetailModal: React.FC<AdminComplaintDetailModalProps>
               </div>
               <div>
                 <span className="text-slate-500 font-semibold block mb-1">Tarikh Kejadian:</span>
-                <span className="font-bold text-slate-800">{complaint.tarikhKejadian}</span>
+                <span className="font-bold text-slate-800">{formatDate(complaint.tarikhKejadian)}</span>
               </div>
               <div>
                 <span className="text-slate-500 font-semibold block mb-1">Tarikh Diterima:</span>
-                <span className="font-medium text-slate-800">{complaint.tarikhMasa}</span>
+                <span className="font-medium text-slate-800">{formatDateTime(complaint.tarikhMasa)}</span>
               </div>
               <div>
                 <span className="text-slate-500 font-semibold block mb-1">Pengadu:</span>
@@ -371,7 +372,7 @@ export const AdminComplaintDetailModal: React.FC<AdminComplaintDetailModalProps>
                             {t.status}
                           </span>
                           <span className="text-[11px] font-mono text-slate-400">
-                            {t.tarikhMasa}
+                            {formatDateTime(t.tarikhMasa)}
                           </span>
                         </div>
                       </div>
@@ -416,7 +417,7 @@ export const AdminComplaintDetailModal: React.FC<AdminComplaintDetailModalProps>
                   </div>
                   {complaint.ratingTarikh && (
                     <span className="text-[11px] font-mono text-slate-400 shrink-0">
-                      Dinilai pada: {complaint.ratingTarikh}
+                      Dinilai pada: {formatDateTime(complaint.ratingTarikh)}
                     </span>
                   )}
                 </div>

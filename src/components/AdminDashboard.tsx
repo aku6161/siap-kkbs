@@ -38,6 +38,7 @@ import {
 import { CATEGORIES, STATUS_CONFIG } from '../data/categories';
 import { Complaint, ComplaintCategory, ComplaintStatus, SystemStats, TindakanItem } from '../types';
 import { printComplaintReport } from '../utils/printReport';
+import { formatDate, formatDateTime } from '../utils/dateFormatter';
 import { AdminComplaintDetailModal } from './AdminComplaintDetailModal';
 import { AdminStudentSatisfaction } from './AdminStudentSatisfaction';
 
@@ -192,7 +193,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <td style="padding: 8px; border: 1px solid #cbd5e1;">${c.kategoriNama}</td>
           <td style="padding: 8px; border: 1px solid #cbd5e1;"><strong>${c.tajukAduan}</strong><br><small style="color: #64748b;">📍 ${c.lokasi}</small></td>
           <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${c.status}</td>
-          <td style="padding: 8px; border: 1px solid #cbd5e1;">${c.tarikhMasa.substring(0, 10)}</td>
+          <td style="padding: 8px; border: 1px solid #cbd5e1;">${formatDate(c.tarikhMasa)}</td>
         </tr>
       `
       )
@@ -216,7 +217,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       <body>
         <div class="header">
           <h1>SiAP – LAPORAN SENARAI ADUAN</h1>
-          <p>Jumlah Rekod: ${complaints.length} | Tarikh Cetakan: ${new Date().toLocaleString('ms-MY')}</p>
+          <p>Jumlah Rekod: ${complaints.length} | Tarikh Cetakan: ${formatDateTime(new Date().toISOString())}</p>
         </div>
         <table>
           <thead>
@@ -612,7 +613,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <tr key={c.id} className="hover:bg-white/60 transition-colors">
                       <td className="p-3.5 font-mono font-bold text-blue-600 whitespace-nowrap">
                         {c.noRujukan}
-                        <span className="block text-[10px] text-slate-400 font-sans">{c.tarikhMasa.substring(0, 10)}</span>
+                        <span className="block text-[10px] text-slate-400 font-sans">{formatDate(c.tarikhMasa)}</span>
                       </td>
 
                       <td className="p-3.5 whitespace-nowrap">
