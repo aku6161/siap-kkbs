@@ -68,6 +68,20 @@ export const CATEGORIES: Record<ComplaintCategory, CategoryInfo> = {
   },
 };
 
+export const DEFAULT_OFFICER_BY_CATEGORY: Record<ComplaintCategory, string> = {
+  KEBERSIHAN: 'Pegawai Kebersihan',
+  KEMUDAHAN: 'Pegawai Pembangunan',
+  SISTEM: 'Pegawai ICT',
+  PERKHIDMATAN: 'Pegawai Perhubungan Industri',
+  LAIN_LAIN: 'Pegawai Perhubungan Industri',
+};
+
+export function getDefaultOfficerForCategory(kategori?: string): string {
+  if (!kategori) return 'Pegawai Bertugas';
+  const key = kategori.trim().toUpperCase() as ComplaintCategory;
+  return DEFAULT_OFFICER_BY_CATEGORY[key] || 'Pegawai Bertugas';
+}
+
 export const STATUS_CONFIG: Record<
   ComplaintStatus,
   {

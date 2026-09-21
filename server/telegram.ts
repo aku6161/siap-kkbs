@@ -14,9 +14,9 @@ export interface TelegramDispatchResult {
 export const CATEGORY_OFFICER_MAP: Record<string, string> = {
   KEMUDAHAN: 'Pegawai Pembangunan',
   SISTEM: 'Pegawai ICT',
-  PERKHIDMATAN: 'Pegawai Perhubungan Pelanggan',
+  PERKHIDMATAN: 'Pegawai Perhubungan Industri',
   KEBERSIHAN: 'Pegawai Kebersihan',
-  LAIN_LAIN: 'Pegawai Perhubungan Pelanggan',
+  LAIN_LAIN: 'Pegawai Perhubungan Industri',
 };
 
 function escapeHtml(text: string): string {

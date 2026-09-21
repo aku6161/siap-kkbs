@@ -13,7 +13,7 @@ import {
   getStatusMenuText,
   deleteTelegramMessage,
 } from './telegram.js';
-import { CATEGORIES } from '../src/data/categories.js';
+import { CATEGORIES, getDefaultOfficerForCategory } from '../src/data/categories.js';
 import { ComplaintCategory, ComplaintStatus } from '../src/types.js';
 import { handleBackupCron, runBackup } from './backup.js';
 import { handleDailyRemindersCron, repostActiveComplaints } from './reminders.js';
@@ -809,31 +809,39 @@ router.patch('/admin/complaints/:noRujukan', async (req, res, next) => {
       updates.telegramUserId = undefined;
       updates.status = 'MENUNGGU';
       updates.tarikhDiambilTindakan = undefined;
+      const defaultOfficer = getDefaultOfficerForCategory(comp.kategori);
       await db.addLog({
         jenisAktiviti: 'STATUS_DIKEMASKINI',
         noRujukan,
-        keterangan: 'Admin melepaskan tugasan pegawai. Status dikembalikan kepada Menunggu Tindakan.',
-        dilakukanOleh: 'Admin SiAP',
+        keterangan: `Tugasan pegawai dilepaskan. Status dikembalikan kepada Menunggu Tindakan.`,
+        dilakukanOleh: defaultOfficer,
       });
     } else {
       if (status) updates.status = status as ComplaintStatus;
-      if (namaPegawai !== undefined) updates.namaPegawai = namaPegawai;
-      if (telegramUserId !== undefined) updates.telegramUserId = telegramUserId;
-      if (!updates.namaPegawai && !comp.namaPegawai && status && status !== 'MENUNGGU') {
-        updates.namaPegawai = 'Admin SiAP';
+      if (namaPegawai !== undefined && String(namaPegawai).trim() !== '' && namaPegawai !== 'Admin SiAP') {
+        updates.namaPegawai = String(namaPegawai).trim();
       }
+      if (telegramUserId !== undefined) updates.telegramUserId = telegramUserId;
+      
+      // Auto-assign default officer based on complaint category if unassigned or previously 'Admin SiAP'
+      if (!updates.namaPegawai && (!comp.namaPegawai || comp.namaPegawai === 'Admin SiAP' || comp.namaPegawai === '-' || comp.namaPegawai === 'Pegawai Bertugas')) {
+        updates.namaPegawai = getDefaultOfficerForCategory(comp.kategori);
+      }
+
+      const assignedOfficer = updates.namaPegawai || comp.namaPegawai || getDefaultOfficerForCategory(comp.kategori);
       if (adminNote) {
         updates.tindakanTerkini = adminNote;
         await db.addTindakan({
           noRujukan,
-          namaPegawai: updates.namaPegawai || comp.namaPegawai || 'Admin SiAP',
+          namaPegawai: assignedOfficer,
           status: updates.status || comp.status,
           catatanTindakan: adminNote,
         });
       }
     }
 
-    const updated = await db.updateComplaint(noRujukan, updates, 'Admin SiAP');
+    const effectiveOfficer = updates.namaPegawai || comp.namaPegawai || getDefaultOfficerForCategory(comp.kategori);
+    const updated = await db.updateComplaint(noRujukan, updates, effectiveOfficer);
 
     if (status && status !== comp.status && updated) {
       sendEmailNotification(updated, status as ComplaintStatus, adminNote).catch(() => {});

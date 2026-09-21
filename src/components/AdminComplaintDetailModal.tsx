@@ -20,7 +20,7 @@ import {
   Star,
   ArrowRight,
 } from 'lucide-react';
-import { STATUS_CONFIG } from '../data/categories';
+import { STATUS_CONFIG, getDefaultOfficerForCategory } from '../data/categories';
 import { Complaint, ComplaintStatus, TindakanItem } from '../types';
 import { printComplaintReport } from '../utils/printReport';
 import { formatDate, formatDateTime } from '../utils/dateFormatter';
@@ -41,6 +41,8 @@ export const AdminComplaintDetailModal: React.FC<AdminComplaintDetailModalProps>
   
   const [newStatus, setNewStatus] = useState<ComplaintStatus>(complaint.status);
   const [adminNote, setAdminNote] = useState('');
+  const defaultOfficer = complaint.namaPegawai && complaint.namaPegawai !== 'Admin SiAP' ? complaint.namaPegawai : getDefaultOfficerForCategory(complaint.kategori);
+  const [officerName, setOfficerName] = useState(defaultOfficer);
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateMsg, setUpdateMsg] = useState<string | null>(null);
 
@@ -95,6 +97,7 @@ export const AdminComplaintDetailModal: React.FC<AdminComplaintDetailModalProps>
         body: JSON.stringify({
           status: newStatus,
           adminNote: adminNote.trim() || undefined,
+          namaPegawai: officerName.trim() || getDefaultOfficerForCategory(complaint.kategori),
         }),
       });
 
@@ -432,9 +435,9 @@ export const AdminComplaintDetailModal: React.FC<AdminComplaintDetailModalProps>
 
           {/* Admin Manual Override Form */}
           <div className="bg-white/60 backdrop-blur-sm p-6 rounded-3xl border border-white/80 text-xs space-y-4 shadow-xs">
-            <h3 className="font-bold text-slate-900 text-sm">Kemaskini Manual Status / Catatan Pentadbir</h3>
+            <h3 className="font-bold text-slate-900 text-sm">Kemaskini Manual Status / Catatan Tindakan</h3>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block font-bold text-slate-700 mb-1.5">Tukar Status:</label>
                 <select
@@ -451,12 +454,23 @@ export const AdminComplaintDetailModal: React.FC<AdminComplaintDetailModalProps>
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1.5">Catatan Pentadbir (Pilihan):</label>
+                <label className="block font-bold text-slate-700 mb-1.5">Pegawai Bertanggungjawab:</label>
+                <input
+                  type="text"
+                  value={officerName}
+                  onChange={(e) => setOfficerName(e.target.value)}
+                  placeholder="cth: Pegawai Pembangunan"
+                  className="w-full p-3 glass-input rounded-xl focus:outline-none font-semibold text-slate-800"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1.5">Catatan Tindakan (Pilihan):</label>
                 <input
                   type="text"
                   value={adminNote}
                   onChange={(e) => setAdminNote(e.target.value)}
-                  placeholder="cth: Arahan disalurkan kepada unit senggara..."
+                  placeholder="cth: Siasatan awal telah dibuat..."
                   className="w-full p-3 glass-input rounded-xl focus:outline-none"
                 />
               </div>
@@ -467,7 +481,7 @@ export const AdminComplaintDetailModal: React.FC<AdminComplaintDetailModalProps>
               disabled={isUpdating}
               className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs shadow-xl shadow-blue-500/25 transition-all cursor-pointer disabled:opacity-50 active:scale-98 border border-white/20"
             >
-              {isUpdating ? 'Sedang Mengemaskini...' : 'Simpan Kemaskini Pentadbir'}
+              {isUpdating ? 'Sedang Mengemaskini...' : 'Simpan Kemaskini & Rekod Tindakan'}
             </button>
           </div>
 
