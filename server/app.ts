@@ -819,11 +819,14 @@ router.patch('/admin/complaints/:noRujukan', async (req, res, next) => {
       if (status) updates.status = status as ComplaintStatus;
       if (namaPegawai !== undefined) updates.namaPegawai = namaPegawai;
       if (telegramUserId !== undefined) updates.telegramUserId = telegramUserId;
+      if (!updates.namaPegawai && !comp.namaPegawai && status && status !== 'MENUNGGU') {
+        updates.namaPegawai = 'Admin SiAP';
+      }
       if (adminNote) {
         updates.tindakanTerkini = adminNote;
         await db.addTindakan({
           noRujukan,
-          namaPegawai: 'Admin SiAP',
+          namaPegawai: updates.namaPegawai || comp.namaPegawai || 'Admin SiAP',
           status: updates.status || comp.status,
           catatanTindakan: adminNote,
         });

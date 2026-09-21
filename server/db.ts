@@ -712,7 +712,7 @@ class Database {
       else if (c.status === 'SELESAI') selesai++;
       else if (c.status === 'TIDAK_DAPAT_DISELESAIKAN') tidakDapatDiselesaikan++;
 
-      if (!c.namaPegawai && c.status !== 'SELESAI' && c.status !== 'TIDAK_DAPAT_DISELESAIKAN') {
+      if (c.status === 'MENUNGGU') {
         unassignedCount++;
       }
 
