@@ -43,10 +43,6 @@ export function printComplaintReport(complaint: Complaint, tindakanList: Tindaka
       attachmentHtml = `
         <div class="section-title">${sectionNumber}. LAMPIRAN BUKTI ADUAN</div>
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px 8px; margin-bottom: 6px; text-align: center;">
-          <div style="font-size: 10px; font-weight: 600; color: #475569; margin-bottom: 5px; text-align: left; display: flex; justify-content: space-between; align-items: center;">
-            <span>📷 Fail: <strong>${complaint.lampiranNama || 'Gambar Lampiran'}</strong></span>
-            ${complaint.lampiranDriveUrl ? `<span style="color: #2563eb; font-size: 9px; font-family: monospace;">Tersimpan di Google Drive</span>` : ''}
-          </div>
           <div style="display: inline-block; max-width: 100%; border: 1px solid #cbd5e1; border-radius: 4px; padding: 3px; background: #ffffff;">
             <img src="${imgSrc}" alt="${complaint.lampiranNama || 'Lampiran Aduan'}" style="max-width: 100%; max-height: 220px; object-fit: contain; display: block; margin: 0 auto;" />
           </div>
@@ -64,6 +60,15 @@ export function printComplaintReport(complaint: Complaint, tindakanList: Tindaka
     sectionNumber++;
   }
 
+  const cleanCatatan = (text?: string) => {
+    if (!text) return '-';
+    return text
+      .replace(/^\[Catatan Pentadbir\]:\s*/i, '')
+      .replace(/^\[Admin Note\]:\s*/i, '')
+      .replace(/\[Catatan Pentadbir\]:\s*/gi, '')
+      .replace(/\[Admin Note\]:\s*/gi, '');
+  };
+
   const tindakanSectionNum = sectionNumber++;
   const ratingSectionNum = sectionNumber++;
 
@@ -72,7 +77,7 @@ export function printComplaintReport(complaint: Complaint, tindakanList: Tindaka
         <tr>
           <td style="padding: 5px 8px; border: 1px solid #e2e8f0; font-size: 10.5px; font-family: monospace; white-space: nowrap;">${t.tarikhMasa || '-'}</td>
           <td style="padding: 5px 8px; border: 1px solid #e2e8f0; font-size: 10.5px;"><span class="badge status-${t.status}">${t.status}</span></td>
-          <td style="padding: 5px 8px; border: 1px solid #e2e8f0; font-size: 10.5px; color: #334155; line-height: 1.35;">${t.catatanTindakan || '-'}</td>
+          <td style="padding: 5px 8px; border: 1px solid #e2e8f0; font-size: 10.5px; color: #334155; line-height: 1.35;">${cleanCatatan(t.catatanTindakan)}</td>
         </tr>
       `).join('')
     : `<tr><td colspan="3" style="padding: 10px; text-align: center; color: #94a3b8; font-style: italic; border: 1px solid #e2e8f0;">Tiada catatan tindakan tambahan direkodkan.</td></tr>`;

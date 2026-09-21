@@ -820,12 +820,12 @@ router.patch('/admin/complaints/:noRujukan', async (req, res, next) => {
       if (namaPegawai !== undefined) updates.namaPegawai = namaPegawai;
       if (telegramUserId !== undefined) updates.telegramUserId = telegramUserId;
       if (adminNote) {
-        updates.tindakanTerkini = `[Admin Note]: ${adminNote}`;
+        updates.tindakanTerkini = adminNote;
         await db.addTindakan({
           noRujukan,
           namaPegawai: 'Admin SiAP',
           status: updates.status || comp.status,
-          catatanTindakan: `[Catatan Pentadbir]: ${adminNote}`,
+          catatanTindakan: adminNote,
         });
       }
     }
