@@ -124,17 +124,21 @@ router.post('/complaints', async (req, res, next) => {
       telegramGroupId: telegramGroupId,
     });
 
-    // 1. Upload attachment to Google Drive in background (if present)
+    // 1. Upload attachment to Google Drive (if present)
     if (lampiran) {
-      uploadAttachmentToGoogleDrive({
-        noRujukan: newComplaint.noRujukan,
-        fileName: lampiranNama || `${newComplaint.noRujukan}.jpg`,
-        fileData: lampiran,
-      }).then(async (fileUrl) => {
+      try {
+        const fileUrl = await uploadAttachmentToGoogleDrive({
+          noRujukan: newComplaint.noRujukan,
+          fileName: lampiranNama || `${newComplaint.noRujukan}.jpg`,
+          fileData: lampiran,
+        });
         if (fileUrl) {
+          newComplaint.lampiranDriveUrl = fileUrl;
           await db.updateComplaint(newComplaint.noRujukan, { lampiranDriveUrl: fileUrl }, 'Google Drive Uploader');
         }
-      }).catch((e) => console.error('Attachment upload notice:', e.message));
+      } catch (e: any) {
+        console.error('Attachment upload notice:', e.message);
+      }
     }
 
     // 2. Dispatch Telegram notification & Email notification (awaited with safe error boundaries so Serverless functions won't terminate early)

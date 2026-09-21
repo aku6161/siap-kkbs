@@ -303,23 +303,24 @@ export const AdminComplaintDetailModal: React.FC<AdminComplaintDetailModalProps>
 
             {/* Lampiran Info */}
             {(complaint.lampiran || complaint.lampiranNama || complaint.lampiranDriveUrl) && (
-              <div className="mt-4 p-3.5 bg-white/70 backdrop-blur-xs rounded-xl border border-white/80 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2 text-slate-700">
-                  <FileText className="w-4 h-4 text-blue-600" />
-                  <span className="font-semibold">{complaint.lampiranNama || 'Fail Lampiran Disertakan'}</span>
+              <div className="mt-4 p-3.5 bg-white/70 backdrop-blur-xs rounded-xl border border-white/80 flex items-center justify-between text-xs gap-2">
+                <div className="flex items-center gap-2 text-slate-700 min-w-0">
+                  <FileText className="w-4 h-4 text-blue-600 shrink-0" />
+                  <span className="font-semibold truncate">{complaint.lampiranNama || 'Fail Lampiran Disertakan'}</span>
                 </div>
                 {complaint.lampiranDriveUrl && !complaint.lampiranDriveUrl.includes('/drive/folders/') ? (
                   <a
                     href={complaint.lampiranDriveUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[11px] text-blue-600 hover:text-blue-800 font-bold bg-blue-50 px-3 py-1.5 rounded-full border border-blue-200 transition-all flex items-center gap-1 shadow-xs active:scale-95"
+                    className="text-[11px] text-blue-600 hover:text-blue-800 font-bold bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-full border border-blue-200 transition-all flex items-center gap-1 shadow-xs active:scale-95 shrink-0"
+                    title="Buka fail lampiran terus dalam Google Drive"
                   >
                     <span>Buka Fail Lampiran</span>
-                    <ArrowRight className="w-3 h-3" />
+                    <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 ) : (
-                  <span className="text-[11px] text-emerald-600 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  <span className="text-[11px] text-emerald-600 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 shrink-0">
                     Tersimpan di Arkib SiAP
                   </span>
                 )}
