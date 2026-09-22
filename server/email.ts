@@ -9,7 +9,7 @@ export function generateEmailHtml(complaint: Complaint, type: 'DITERIMA' | Compl
 } {
   let appUrl = process.env.APP_URL || '';
   if (!appUrl || appUrl.includes('localhost') || appUrl.includes('127.0.0.1') || appUrl.includes('MY_APP_URL')) {
-    appUrl = 'https://sudin.my';
+    appUrl = 'https://siapkkbs.sudin.my';
   }
   const checkUrl = `${appUrl}/?ref=${encodeURIComponent(complaint.noRujukan)}`;
   const senderName = db.getConfig().emailSenderName || 'SiAP – Sistem Aduan Pelanggan';
@@ -61,7 +61,7 @@ ${senderName}
 "SiAP Menerima, SiAP Bertindak"
   `.trim();
 
-  const logoUrl = 'https://sudin.my/logo.png';
+  const logoUrl = 'https://siapkkbs.sudin.my/logo.png';
 
   const bodyHtml = `
 <!DOCTYPE html>

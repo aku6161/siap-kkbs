@@ -41,9 +41,9 @@ export function formatTelegramDailyReminderMessage(complaint: Complaint, appUrl:
   const sLabel = statusLabels[complaint.status] || complaint.status;
   const pic = complaint.namaPegawai || CATEGORY_OFFICER_MAP[complaint.kategori] || 'Pegawai Bertugas';
 
-  let cleanUrl = appUrl || 'https://sudin.my';
+  let cleanUrl = appUrl || 'https://siapkkbs.sudin.my';
   if (cleanUrl.includes('localhost') || cleanUrl.includes('127.0.0.1') || cleanUrl.includes('MY_APP_URL')) {
-    cleanUrl = 'https://sudin.my';
+    cleanUrl = 'https://siapkkbs.sudin.my';
   }
   const checkUrl = `${cleanUrl}/?ref=${encodeURIComponent(complaint.noRujukan)}`;
 
@@ -87,8 +87,8 @@ export async function repostActiveComplaints(): Promise<{
 
   const config = db.getConfig();
   const token = config.telegramBotToken || process.env.TELEGRAM_BOT_TOKEN || '8238304961:AAG44pdgon1zFkqacccsk7da8iEPv83HPkQ';
-  let appUrl = process.env.APP_URL || 'https://sudin.my';
-  if (appUrl.includes('MY_APP_URL') || appUrl.includes('localhost')) appUrl = 'https://sudin.my';
+  let appUrl = process.env.APP_URL || 'https://siapkkbs.sudin.my';
+  if (appUrl.includes('MY_APP_URL') || appUrl.includes('localhost')) appUrl = 'https://siapkkbs.sudin.my';
 
   // Dapatkan senarai aduan aktif yang belum selesai
   const activeComplaints = db.getComplaints().filter(c => 

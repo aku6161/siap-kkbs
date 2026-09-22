@@ -27,7 +27,7 @@ function escapeHtml(text: string): string {
     .replace(/>/g, '&gt;');
 }
 
-export function getStatusMenuMarkup(noRujukan: string, appUrl: string = 'https://sudin.my') {
+export function getStatusMenuMarkup(noRujukan: string, appUrl: string = 'https://siapkkbs.sudin.my') {
   const checkUrl = `${appUrl}/?ref=${encodeURIComponent(noRujukan)}`;
   return {
     inline_keyboard: [
@@ -86,7 +86,7 @@ export function formatTelegramNewComplaintMessage(complaint: Complaint, appUrl: 
 
   let cleanUrl = appUrl || 'http://localhost:3000';
   if (cleanUrl.includes('localhost') || cleanUrl.includes('127.0.0.1') || cleanUrl.includes('MY_APP_URL')) {
-    cleanUrl = 'https://sudin.my';
+    cleanUrl = 'https://siapkkbs.sudin.my';
   }
   const checkUrl = `${cleanUrl}/?ref=${encodeURIComponent(complaint.noRujukan)}`;
 
@@ -134,7 +134,7 @@ export async function sendTelegramNotification(complaint: Complaint): Promise<Te
   const chatId = complaint.telegramGroupId;
   let appUrl = process.env.APP_URL || '';
   if (!appUrl.startsWith('http://') && !appUrl.startsWith('https://') || appUrl.includes('MY_APP_URL')) {
-    appUrl = 'https://sudin.my';
+    appUrl = 'https://siapkkbs.sudin.my';
   }
 
   const { text, plainText, replyMarkup } = formatTelegramNewComplaintMessage(complaint, appUrl);
@@ -451,7 +451,7 @@ export async function ensureTelegramWebhook(targetUrl?: string): Promise<{ ok: b
   const token = config.telegramBotToken || process.env.TELEGRAM_BOT_TOKEN || '8238304961:AAG44pdgon1zFkqacccsk7da8iEPv83HPkQ';
   if (!token) return { ok: false, error: 'Tiada token Telegram' };
 
-  const webhookUrl = targetUrl || process.env.APP_URL?.replace(/\/$/, '') + '/api/telegram/webhook' || 'https://sudin.my/api/telegram/webhook';
+  const webhookUrl = targetUrl || process.env.APP_URL?.replace(/\/$/, '') + '/api/telegram/webhook' || 'https://siapkkbs.sudin.my/api/telegram/webhook';
   try {
     const infoRes = await fetch(`https://api.telegram.org/bot${token}/getWebhookInfo`);
     const infoData = await infoRes.json();
