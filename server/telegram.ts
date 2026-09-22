@@ -68,7 +68,63 @@ export function getStatusMenuText(complaint: Complaint): string {
   );
 }
 
-export function formatTelegramNewComplaintMessage(complaint: Complaint, appUrl: string): {
+export function getComplaintActionKeyboard(complaint: Complaint, appUrl: string = 'https://siapkkbs.sudin.my') {
+  let cleanUrl = appUrl || 'https://siapkkbs.sudin.my';
+  if (cleanUrl.includes('localhost') || cleanUrl.includes('127.0.0.1') || cleanUrl.includes('MY_APP_URL')) {
+    cleanUrl = 'https://siapkkbs.sudin.my';
+  }
+  const checkUrl = `${cleanUrl}/?ref=${encodeURIComponent(complaint.noRujukan)}`;
+  const status = complaint.status || 'MENUNGGU';
+
+  // 1. Status MENUNGGU: Dua butang -> [👁 LIHAT ADUAN] & [🔵 DALAM SEMAKAN]
+  if (status === 'MENUNGGU') {
+    return {
+      inline_keyboard: [
+        [
+          { text: '👁 LIHAT ADUAN', url: checkUrl },
+          { text: '🔵 DALAM SEMAKAN', callback_data: `status:${complaint.noRujukan}:DALAM_SEMAKAN` },
+        ],
+      ],
+    };
+  }
+
+  // 2. Status DALAM_SEMAKAN: Dua butang -> [👁 LIHAT ADUAN] & [🟠 DALAM TINDAKAN]
+  if (status === 'DALAM_SEMAKAN') {
+    return {
+      inline_keyboard: [
+        [
+          { text: '👁 LIHAT ADUAN', url: checkUrl },
+          { text: '🟠 DALAM TINDAKAN', callback_data: `status:${complaint.noRujukan}:DALAM_TINDAKAN` },
+        ],
+      ],
+    };
+  }
+
+  // 3. Status DALAM_TINDAKAN: Pilihan tindakan -> [🟢 SELESAI] & [🔴 TIDAK DAPAT DISELESAIKAN] (+ [👁 LIHAT ADUAN])
+  if (status === 'DALAM_TINDAKAN') {
+    return {
+      inline_keyboard: [
+        [
+          { text: '🟢 SELESAI', callback_data: `status:${complaint.noRujukan}:SELESAI` },
+          { text: '🔴 TIDAK DAPAT DISELESAIKAN', callback_data: `status:${complaint.noRujukan}:TIDAK_DAPAT_DISELESAIKAN` },
+        ],
+        [
+          { text: '👁 LIHAT ADUAN', url: checkUrl },
+        ],
+      ],
+    };
+  }
+
+  return {
+    inline_keyboard: [
+      [
+        { text: '👁 LIHAT ADUAN', url: checkUrl },
+      ],
+    ],
+  };
+}
+
+export function formatTelegramComplaintCard(complaint: Complaint, appUrl: string = 'https://siapkkbs.sudin.my'): {
   text: string;
   plainText: string;
   replyMarkup: any;
@@ -81,51 +137,68 @@ export function formatTelegramNewComplaintMessage(complaint: Complaint, appUrl: 
     LAIN_LAIN: '📌',
   };
 
-  const icon = categoryIcons[complaint.kategori] || '📌';
-  const pic = CATEGORY_OFFICER_MAP[complaint.kategori] || 'Pegawai Perhubungan Pelanggan';
+  const statusIcons: Record<string, string> = {
+    MENUNGGU: '🟡',
+    DALAM_SEMAKAN: '🔵',
+    DALAM_TINDAKAN: '🟠',
+    SELESAI: '🟢',
+    TIDAK_DAPAT_DISELESAIKAN: '🔴',
+  };
 
-  let cleanUrl = appUrl || 'http://localhost:3000';
+  const statusLabels: Record<string, string> = {
+    MENUNGGU: 'MENUNGGU TINDAKAN',
+    DALAM_SEMAKAN: 'DALAM SEMAKAN',
+    DALAM_TINDAKAN: 'DALAM TINDAKAN',
+    SELESAI: 'SELESAI',
+    TIDAK_DAPAT_DISELESAIKAN: 'TIDAK DAPAT DISELESAIKAN',
+  };
+
+  const icon = categoryIcons[complaint.kategori] || '📌';
+  const pic = complaint.namaPegawai || CATEGORY_OFFICER_MAP[complaint.kategori] || 'Pegawai Bertugas';
+  const sIcon = statusIcons[complaint.status] || '🟡';
+  const sLabel = statusLabels[complaint.status] || complaint.status;
+
+  let cleanUrl = appUrl || 'https://siapkkbs.sudin.my';
   if (cleanUrl.includes('localhost') || cleanUrl.includes('127.0.0.1') || cleanUrl.includes('MY_APP_URL')) {
     cleanUrl = 'https://siapkkbs.sudin.my';
   }
-  const checkUrl = `${cleanUrl}/?ref=${encodeURIComponent(complaint.noRujukan)}`;
 
   // Safe HTML formatting
   const text =
-    `🚨 <b>ADUAN BAHARU – SiAP</b>\n\n` +
+    `🚨 <b>ADUAN SiAP</b>\n\n` +
     `<b>No. Rujukan:</b> <code>${escapeHtml(complaint.noRujukan)}</code>\n` +
-    `${icon} <b>Kategori:</b> ${escapeHtml(complaint.kategoriNama)}\n` +
+    `${icon} <b>Kategori:</b> ${escapeHtml(complaint.kategoriNama || complaint.kategori)}\n` +
     `👮 <b>Pegawai Bertanggungjawab (PIC):</b> ${escapeHtml(pic)}\n` +
+    `📊 <b>Status:</b> ${sIcon} <b>${escapeHtml(sLabel)}</b>\n` +
     `📝 <b>Tajuk:</b> ${escapeHtml(complaint.tajukAduan)}\n` +
     `📍 <b>Lokasi:</b> ${escapeHtml(complaint.lokasi)}\n` +
     `👤 <b>Pengadu:</b> ${escapeHtml(complaint.namaPengadu)} (${escapeHtml(complaint.telefon || '-')})\n` +
-    `🕐 <b>Tarikh:</b> ${escapeHtml(complaint.tarikhMasa)}\n` +
-    `<b>Status:</b> 🟡 MENUNGGU TINDAKAN\n\n` +
+    `🕐 <b>Tarikh Aduan:</b> ${escapeHtml(complaint.tarikhMasa)}\n\n` +
     `📄 <b>Butiran:</b> ${escapeHtml(complaint.butiranAduan.substring(0, 250))}${complaint.butiranAduan.length > 250 ? '...' : ''}`;
 
-  // Plain text fallback (no markup formatting)
   const plainText =
-    `🚨 ADUAN BAHARU – SiAP\n\n` +
+    `🚨 ADUAN SiAP\n\n` +
     `No. Rujukan: ${complaint.noRujukan}\n` +
-    `Kategori: ${complaint.kategoriNama}\n` +
-    `Pegawai Bertanggungjawab (PIC): ${pic}\n` +
+    `Kategori: ${complaint.kategoriNama || complaint.kategori}\n` +
+    `Pegawai PIC: ${pic}\n` +
+    `Status: ${sLabel}\n` +
     `Tajuk: ${complaint.tajukAduan}\n` +
     `Lokasi: ${complaint.lokasi}\n` +
     `Pengadu: ${complaint.namaPengadu} (${complaint.telefon || '-'})\n` +
-    `Tarikh: ${complaint.tarikhMasa}\n` +
-    `Status: MENUNGGU TINDAKAN\n\n` +
+    `Tarikh: ${complaint.tarikhMasa}\n\n` +
     `Butiran: ${complaint.butiranAduan.substring(0, 250)}${complaint.butiranAduan.length > 250 ? '...' : ''}`;
 
-  const replyMarkup = {
-    inline_keyboard: [
-      [
-        { text: '👁 LIHAT ADUAN', url: checkUrl },
-        { text: '⚡ AMBIL TINDAKAN', callback_data: `menu:${complaint.noRujukan}` },
-      ],
-    ],
-  };
+  const replyMarkup = getComplaintActionKeyboard(complaint, cleanUrl);
 
   return { text, plainText, replyMarkup };
+}
+
+export function formatTelegramNewComplaintMessage(complaint: Complaint, appUrl: string): {
+  text: string;
+  plainText: string;
+  replyMarkup: any;
+} {
+  return formatTelegramComplaintCard(complaint, appUrl);
 }
 
 export async function sendTelegramNotification(complaint: Complaint): Promise<TelegramDispatchResult> {

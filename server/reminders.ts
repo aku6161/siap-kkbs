@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { db } from './db.js';
-import { CATEGORY_OFFICER_MAP, deleteTelegramMessage } from './telegram.js';
+import { CATEGORY_OFFICER_MAP, deleteTelegramMessage, getComplaintActionKeyboard } from './telegram.js';
 import { Complaint } from '../src/types.js';
 
 function escapeHtml(text: string): string {
@@ -45,7 +45,6 @@ export function formatTelegramDailyReminderMessage(complaint: Complaint, appUrl:
   if (cleanUrl.includes('localhost') || cleanUrl.includes('127.0.0.1') || cleanUrl.includes('MY_APP_URL')) {
     cleanUrl = 'https://siapkkbs.sudin.my';
   }
-  const checkUrl = `${cleanUrl}/?ref=${encodeURIComponent(complaint.noRujukan)}`;
 
   const text =
     `⏰ <b>PERINGATAN HARIAN ADUAN – SiAP (9:00 AM)</b>\n\n` +
@@ -58,16 +57,9 @@ export function formatTelegramDailyReminderMessage(complaint: Complaint, appUrl:
     `👤 <b>Pengadu:</b> ${escapeHtml(complaint.namaPengadu)} (${escapeHtml(complaint.telefon || '-')})\n` +
     `🕐 <b>Tarikh Aduan:</b> ${escapeHtml(complaint.tarikhMasa)}\n\n` +
     `📄 <b>Butiran:</b> ${escapeHtml(complaint.butiranAduan.substring(0, 250))}${complaint.butiranAduan.length > 250 ? '...' : ''}\n\n` +
-    `⚠️ <i>Peringatan: Aduan ini masih belum selesai. Sila ambil tindakan segera atau kemaskini status melalui butang di bawah.</i>`;
+    `⚠️ <i>Peringatan: Aduan ini masih belum selesai. Sila pilih tindakan seterusnya melalui butang di bawah.</i>`;
 
-  const replyMarkup = {
-    inline_keyboard: [
-      [
-        { text: '👁 LIHAT ADUAN', url: checkUrl },
-        { text: '⚡ AMBIL TINDAKAN', callback_data: `menu:${complaint.noRujukan}` },
-      ],
-    ],
-  };
+  const replyMarkup = getComplaintActionKeyboard(complaint, cleanUrl);
 
   return { text, replyMarkup };
 }

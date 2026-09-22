@@ -9,6 +9,8 @@ import {
   CATEGORY_OFFICER_MAP,
   processTelegramOfficerAction,
   sendTelegramNotification,
+  formatTelegramComplaintCard,
+  getComplaintActionKeyboard,
   getStatusMenuMarkup,
   getStatusMenuText,
   deleteTelegramMessage,
@@ -301,47 +303,22 @@ router.post(['/telegram/webhook', '/telegram-webhook', '/webhook'], async (req, 
           }
 
           const chatId = cq.message?.chat?.id || complaint?.telegramGroupId;
-          if (chatId && complaint) {
-            const menuText = getStatusMenuText(complaint);
-            const menuMarkup = getStatusMenuMarkup(noRujukan);
-
-            // Try editing the current message in place first for smooth UX
-            let edited = false;
-            if (cq.message?.message_id) {
-              try {
-                const editRes = await fetch(`https://api.telegram.org/bot${token}/editMessageText`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    chat_id: chatId,
-                    message_id: cq.message.message_id,
-                    text: menuText,
-                    parse_mode: 'HTML',
-                    reply_markup: menuMarkup,
-                  }),
-                });
-                const editData = await editRes.json();
-                if (editData.ok) edited = true;
-              } catch (e) {}
-            }
-
-            // If not edited in place, send as reply or new message
-            if (!edited) {
-              try {
-                await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    chat_id: chatId,
-                    text: menuText,
-                    parse_mode: 'HTML',
-                    reply_markup: menuMarkup,
-                    reply_to_message_id: cq.message?.message_id,
-                  }),
-                });
-              } catch (err: any) {
-                console.error('Failed to send status menu to Telegram:', err?.message);
-              }
+          if (chatId && complaint && cq.message?.message_id) {
+            const card = formatTelegramComplaintCard(complaint, 'https://siapkkbs.sudin.my');
+            try {
+              await fetch(`https://api.telegram.org/bot${token}/editMessageText`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  chat_id: chatId,
+                  message_id: cq.message.message_id,
+                  text: card.text,
+                  parse_mode: 'HTML',
+                  reply_markup: card.replyMarkup,
+                }),
+              });
+            } catch (err: any) {
+              console.error('Failed to update card via menu callback:', err?.message);
             }
           }
         }
@@ -386,7 +363,7 @@ router.post(['/telegram/webhook', '/telegram-webhook', '/webhook'], async (req, 
               body: JSON.stringify({
                 callback_query_id: cq.id,
                 text: result.message,
-                show_alert: true,
+                show_alert: isCompleted,
               }),
             }).catch(() => {});
           }
@@ -394,7 +371,7 @@ router.post(['/telegram/webhook', '/telegram-webhook', '/webhook'], async (req, 
           const chatId = cq.message?.chat?.id || complaint?.telegramGroupId;
 
           if (isCompleted) {
-            // 2. For completed / closed complaints, delete the cards and menus immediately without leaving zombie messages
+            // 2. Apabila SELESAI / TIDAK DAPAT DISELESAIKAN: Mesej dipadam secara automatik
             if (chatId) {
               const menuMsgId = cq.message?.message_id;
               const replyToMsgId = cq.message?.reply_to_message?.message_id;
@@ -410,76 +387,25 @@ router.post(['/telegram/webhook', '/telegram-webhook', '/webhook'], async (req, 
               await Promise.allSettled(delTasks);
             }
           } else {
-            // 3. For active complaints in progress, update menu in place
-            if (chatId && result.replyMessage && cq.message?.message_id) {
-              const checkUrl = `https://siapkkbs.sudin.my/?ref=${encodeURIComponent(noRujukan)}`;
-              const actionKeyboard = {
-                inline_keyboard: [
-                  [
-                    { text: '🔄 TUKAR STATUS SEMULA', callback_data: `menu:${noRujukan}` },
-                    { text: '👁 LIHAT ADUAN', url: checkUrl },
-                  ],
-                ],
-              };
+            // 3. Apabila DALAM_SEMAKAN atau DALAM_TINDAKAN: Kad aduan dikemaskini terus dengan status terkini & butang tindakan seterusnya
+            const updatedComplaint = result.complaint || db.getComplaintByRef(noRujukan) || complaint;
+            if (chatId && updatedComplaint && cq.message?.message_id) {
+              const updatedCard = formatTelegramComplaintCard(updatedComplaint, 'https://siapkkbs.sudin.my');
 
               try {
-                const editRes = await fetch(`https://api.telegram.org/bot${token}/editMessageText`, {
+                await fetch(`https://api.telegram.org/bot${token}/editMessageText`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     chat_id: chatId,
                     message_id: cq.message.message_id,
-                    text: result.replyMessage,
+                    text: updatedCard.text,
                     parse_mode: 'HTML',
-                    reply_markup: actionKeyboard,
+                    reply_markup: updatedCard.replyMarkup,
                   }),
                 });
-                const editData = await editRes.json();
-                if (!editData.ok) {
-                  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      chat_id: chatId,
-                      text: result.replyMessage,
-                      parse_mode: 'HTML',
-                      reply_markup: actionKeyboard,
-                    }),
-                  });
-                }
               } catch (err: any) {
                 console.error('Telegram editMessageText error:', err?.message);
-              }
-            }
-
-            // 4. Update original card buttons if available
-            if (chatId && result.success) {
-              const statusLabels: Record<string, string> = {
-                MENUNGGU: '🟡 MENUNGGU',
-                DALAM_SEMAKAN: '🔵 SEMAKAN',
-                DALAM_TINDAKAN: '🟠 TINDAKAN',
-                SELESAI: '🟢 SELESAI',
-                TIDAK_DAPAT_DISELESAIKAN: '🔴 DITUTUP',
-              };
-              const shortLabel = statusLabels[newStatus] || newStatus;
-              const targetMsgId = cq.message?.reply_to_message?.message_id;
-              if (targetMsgId) {
-                await fetch(`https://api.telegram.org/bot${token}/editMessageReplyMarkup`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    chat_id: chatId,
-                    message_id: targetMsgId,
-                    reply_markup: {
-                      inline_keyboard: [
-                        [
-                          { text: '👁 LIHAT ADUAN', url: `https://siapkkbs.sudin.my/?ref=${encodeURIComponent(noRujukan)}` },
-                          { text: `⚡ STATUS: ${shortLabel}`, callback_data: `menu:${noRujukan}` },
-                        ],
-                      ],
-                    },
-                  }),
-                }).catch(() => {});
               }
             }
           }
