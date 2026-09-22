@@ -73,8 +73,26 @@ export function printComplaintReport(complaint: Complaint, tindakanList: Tindaka
   const tindakanSectionNum = sectionNumber++;
   const ratingSectionNum = sectionNumber++;
 
-  const tindakanRows = tindakanList.length > 0
-    ? tindakanList.map((t) => `
+  // Susun tindakan mengikut tarikh terawal & pastikan setiap status hanya muncul 1 kali sahaja (no repetition, pilih terawal)
+  const sortedTindakan = [...tindakanList].sort((a, b) => {
+    const timeA = new Date(a.tarikhMasa).getTime() || 0;
+    const timeB = new Date(b.tarikhMasa).getTime() || 0;
+    return timeA - timeB;
+  });
+
+  const seenStatusSet = new Set<string>();
+  const uniqueTindakanList: TindakanItem[] = [];
+
+  for (const item of sortedTindakan) {
+    const normalizedStatus = (item.status || '').trim().toUpperCase();
+    if (normalizedStatus && !seenStatusSet.has(normalizedStatus)) {
+      seenStatusSet.add(normalizedStatus);
+      uniqueTindakanList.push(item);
+    }
+  }
+
+  const tindakanRows = uniqueTindakanList.length > 0
+    ? uniqueTindakanList.map((t) => `
         <tr>
           <td style="padding: 5px 8px; border: 1px solid #e2e8f0; font-size: 10.5px; font-family: monospace; white-space: nowrap;">${formatDateTime(t.tarikhMasa)}</td>
           <td style="padding: 5px 8px; border: 1px solid #e2e8f0; font-size: 10.5px;"><span class="badge status-${t.status}">${t.status}</span></td>
