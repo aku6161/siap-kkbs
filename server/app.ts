@@ -12,6 +12,7 @@ import {
   getStatusMenuMarkup,
   getStatusMenuText,
   deleteTelegramMessage,
+  ensureTelegramWebhook,
 } from './telegram.js';
 import { CATEGORIES, getDefaultOfficerForCategory } from '../src/data/categories.js';
 import { ComplaintCategory, ComplaintStatus } from '../src/types.js';
@@ -24,11 +25,16 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 let lastSyncTime = 0;
+let webhookChecked = false;
 const ensureDbSynced = async () => {
   const now = Date.now();
   if (now - lastSyncTime < 2000) return;
   lastSyncTime = now;
   await db.initFromSupabase();
+  if (!webhookChecked) {
+    webhookChecked = true;
+    ensureTelegramWebhook().catch((e) => console.warn('Telegram webhook auto-check notice:', e?.message));
+  }
 };
 
 const router = express.Router();
@@ -256,8 +262,8 @@ router.post('/public/rating', async (req, res, next) => {
 // TELEGRAM WEBHOOK & SIMULATOR APIS
 // ==========================================
 
-// Real Telegram Webhook Receiver
-router.post('/telegram/webhook', async (req, res, next) => {
+// Real Telegram Webhook Receiver (supports multiple endpoint paths)
+router.post(['/telegram/webhook', '/telegram-webhook', '/webhook'], async (req, res, next) => {
   try {
     await ensureDbSynced();
     const update = req.body || {};
@@ -265,13 +271,19 @@ router.post('/telegram/webhook', async (req, res, next) => {
 
     if (update.callback_query) {
       const cq = update.callback_query;
-      const data = cq.data || '';
+      const data = String(cq.data || '').trim();
       const user = cq.from || {};
       const officerId = String(user.id || 'tg_unknown');
 
-      // Case 1: Open interactive status selection menu
-      if (data.startsWith('claim:') || data.startsWith('menu:')) {
-        const noRujukan = data.replace(/^(claim|menu):/, '').trim();
+      // Case 1: Open interactive status selection menu (AMBIL TINDAKAN)
+      if (
+        data.startsWith('claim:') ||
+        data.startsWith('menu:') ||
+        data.startsWith('take:') ||
+        data.startsWith('ambil:') ||
+        data.startsWith('tindakan:')
+      ) {
+        const noRujukan = data.replace(/^(claim|menu|take|ambil|tindakan):/, '').trim();
         let complaint = db.getComplaintByRef(noRujukan);
         if (!complaint) complaint = await db.findComplaintByRef(noRujukan);
 
@@ -313,7 +325,7 @@ router.post('/telegram/webhook', async (req, res, next) => {
               } catch (e) {}
             }
 
-            // If not edited in place (e.g. from original card), send as reply
+            // If not edited in place, send as reply or new message
             if (!edited) {
               try {
                 await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
@@ -345,13 +357,23 @@ router.post('/telegram/webhook', async (req, res, next) => {
 
         const designatedPic = (complaint && CATEGORY_OFFICER_MAP[complaint.kategori]) || 'Pegawai Bertugas';
 
-        const result = await processTelegramOfficerAction({
-          action: 'KEMASKINI_STATUS',
-          noRujukan,
-          telegramUserId: officerId,
-          namaPegawai: designatedPic,
-          newStatus: newStatus || 'DALAM_TINDAKAN',
-        });
+        let result: { success: boolean; message: string; complaint?: any; replyMessage?: string } = {
+          success: false,
+          message: 'Ralat mengemaskini status.',
+        };
+
+        try {
+          result = await processTelegramOfficerAction({
+            action: 'KEMASKINI_STATUS',
+            noRujukan,
+            telegramUserId: officerId,
+            namaPegawai: designatedPic,
+            newStatus: newStatus || 'DALAM_TINDAKAN',
+          });
+        } catch (err: any) {
+          console.error('processTelegramOfficerAction error:', err?.message);
+          result = { success: false, message: `Ralat: ${err?.message || 'Gagal'}` };
+        }
 
         if (token) {
           // 1. Answer Telegram popup alert
@@ -394,7 +416,6 @@ router.post('/telegram/webhook', async (req, res, next) => {
               });
               const editData = await editRes.json();
               if (!editData.ok) {
-                // If in-place edit failed, fallback to sendMessage
                 await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -493,11 +514,8 @@ router.post('/telegram/webhook', async (req, res, next) => {
 // Helper route to register Telegram Webhook to production URL
 router.get('/telegram/set-webhook', async (req, res) => {
   try {
-    const token = db.getConfig().telegramBotToken || process.env.TELEGRAM_BOT_TOKEN || '8238304961:AAG44pdgon1zFkqacccsk7da8iEPv83HPkQ';
-    const webhookUrl = 'https://siapkkbs.vercel.app/api/telegram/webhook';
-    const tgRes = await fetch(`https://api.telegram.org/bot${token}/setWebhook?url=${encodeURIComponent(webhookUrl)}`);
-    const data = await tgRes.json();
-    res.json(data);
+    const result = await ensureTelegramWebhook();
+    res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

@@ -424,3 +424,43 @@ export async function deleteTelegramMessage(chatId: string | number, messageId: 
   }
 }
 
+/**
+ * Memastikan webhook Telegram sentiasa didaftarkan dengan URL Vercel dan allowed_updates yang lengkap
+ */
+export async function ensureTelegramWebhook(targetUrl?: string): Promise<{ ok: boolean; info?: any; error?: string }> {
+  const config = db.getConfig();
+  const token = config.telegramBotToken || process.env.TELEGRAM_BOT_TOKEN || '8238304961:AAG44pdgon1zFkqacccsk7da8iEPv83HPkQ';
+  if (!token) return { ok: false, error: 'Tiada token Telegram' };
+
+  const webhookUrl = targetUrl || 'https://siapkkbs.vercel.app/api/telegram/webhook';
+  try {
+    const infoRes = await fetch(`https://api.telegram.org/bot${token}/getWebhookInfo`);
+    const infoData = await infoRes.json();
+
+    if (
+      infoData.ok &&
+      infoData.result?.url === webhookUrl &&
+      Array.isArray(infoData.result?.allowed_updates) &&
+      infoData.result.allowed_updates.includes('callback_query')
+    ) {
+      return { ok: true, info: infoData.result };
+    }
+
+    const setRes = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: webhookUrl,
+        allowed_updates: ['message', 'edited_message', 'channel_post', 'callback_query'],
+        drop_pending_updates: false,
+      }),
+    });
+    const setData = await setRes.json();
+    return { ok: !!setData.ok, info: setData };
+  } catch (err: any) {
+    console.error('Failed to ensure Telegram webhook:', err?.message);
+    return { ok: false, error: err?.message };
+  }
+}
+
+
