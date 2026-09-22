@@ -67,7 +67,24 @@ const INITIAL_TINDAKAN: TindakanItem[] = [];
 const INITIAL_LOGS: LogItem[] = [];
 const INITIAL_EMAILS: EmailLog[] = [];
 
-// fs and path are imported at top of file
+export function getMalaysiaNow(): string {
+  const formatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Kuala_Lumpur',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+  const parts = formatter.formatToParts(new Date());
+  const map: Record<string, string> = {};
+  for (const p of parts) {
+    map[p.type] = p.value;
+  }
+  return `${map.year}-${map.month}-${map.day} ${map.hour}:${map.minute}:${map.second}`;
+}
 
 const SERVER_DB_PATH = path.join(process.cwd(), 'server', 'db-store.json');
 // Use /tmp for writable storage in serverless environments (Vercel, etc.)
@@ -311,7 +328,7 @@ class Database {
     const year = new Date().getFullYear();
     const seqStr = String(this.store.lastSequenceNumber).padStart(5, '0');
     const noRujukan = `SIAP-${year}-${seqStr}`;
-    const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    const now = getMalaysiaNow();
 
     // Save attachment locally if present to bypass Google Drive access restrictions
     let fileUrl = undefined;
@@ -438,7 +455,7 @@ class Database {
       };
     }
 
-    const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    const now = getMalaysiaNow();
     comp.telegramUserId = officerInfo.telegramUserId;
     comp.namaPegawai = officerInfo.namaPegawai;
     comp.tarikhDiambilTindakan = now;
@@ -467,7 +484,7 @@ class Database {
   }
 
   public async addTindakan(item: Omit<TindakanItem, 'id' | 'tarikhMasa'>): Promise<TindakanItem> {
-    const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    const now = getMalaysiaNow();
     const tindakan: TindakanItem = {
       id: `t_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       noRujukan: item.noRujukan,
@@ -556,7 +573,7 @@ class Database {
       return { success: false, message: 'Penilaian hanya boleh diberikan untuk aduan yang telah Selesai atau Tidak Dapat Diselesaikan.' };
     }
 
-    const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    const now = getMalaysiaNow();
     comp.rating = Math.max(1, Math.min(5, Math.round(rating)));
     comp.ulasanPelanggan = ulasan || '';
     comp.ratingTarikh = now;
@@ -575,7 +592,7 @@ class Database {
 
   public async addPublicRating(rating: number, ulasan?: string, nama?: string): Promise<{ success: boolean; message: string }> {
     const validRating = Math.max(1, Math.min(5, Math.round(rating)));
-    const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    const now = getMalaysiaNow();
     const ref = `RATING-${Date.now().toString().slice(-6)}`;
 
     const comp: Complaint = {
@@ -614,7 +631,7 @@ class Database {
   }
 
   public async addLog(item: Omit<LogItem, 'id' | 'tarikhMasa'>): Promise<LogItem> {
-    const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    const now = getMalaysiaNow();
     const log: LogItem = {
       id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       tarikhMasa: now,
@@ -631,7 +648,7 @@ class Database {
   }
 
   public async addEmailLog(email: Omit<EmailLog, 'id' | 'tarikhMasa'>): Promise<EmailLog> {
-    const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    const now = getMalaysiaNow();
     const item: EmailLog = {
       id: `em_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       tarikhMasa: now,

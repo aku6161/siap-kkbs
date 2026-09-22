@@ -1,5 +1,5 @@
 import { Complaint, ComplaintStatus } from '../src/types.js';
-import { db } from './db.js';
+import { db, getMalaysiaNow } from './db.js';
 import { sendEmailNotification } from './email.js';
 
 export interface TelegramDispatchResult {
@@ -304,7 +304,7 @@ export async function processTelegramOfficerAction(params: {
       catatanTindakan: note,
     });
 
-    const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    const now = getMalaysiaNow();
     const updated = await db.updateComplaint(
       noRujukan,
       {
@@ -346,7 +346,7 @@ export async function processTelegramOfficerAction(params: {
       `<b>No. Rujukan:</b> <code>${escapeHtml(noRujukan)}</code>\n` +
       `<b>Status Baharu:</b> ${sIcon} <b>${escapeHtml(sLabel.toUpperCase())}</b>\n` +
       `👮 <b>Pegawai PIC:</b> ${escapeHtml(officerName)}\n` +
-      `🕐 <b>Masa:</b> ${new Date().toLocaleTimeString('ms-MY')}\n` +
+      `🕐 <b>Masa:</b> ${new Intl.DateTimeFormat('ms-MY', { timeZone: 'Asia/Kuala_Lumpur', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date())}\n` +
       `📝 <b>Catatan:</b> ${escapeHtml(note)}\n\n` +
       (isCompleted
         ? `<i>🗑️ Aduan telah ditutup. Notifikasi Telegram ini akan dipadam secara automatik dalam masa 5 saat untuk memastikan kumpulan sentiasa kemas.</i>`
@@ -375,7 +375,7 @@ export async function processTelegramOfficerAction(params: {
       `<b>No. Rujukan:</b> <code>${escapeHtml(noRujukan)}</code>\n` +
       `👮 <b>Pegawai PIC:</b> ${escapeHtml(officerName)}\n` +
       `<b>Catatan:</b> ${escapeHtml(note)}\n` +
-      `<b>Masa:</b> ${new Date().toLocaleTimeString('ms-MY')}`;
+      `<b>Masa:</b> ${new Intl.DateTimeFormat('ms-MY', { timeZone: 'Asia/Kuala_Lumpur', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date())}`;
 
     return {
       success: true,
