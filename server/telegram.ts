@@ -407,19 +407,38 @@ export async function deleteTelegramMessage(chatId: string | number, messageId: 
   const token = config.telegramBotToken || process.env.TELEGRAM_BOT_TOKEN || '8238304961:AAG44pdgon1zFkqacccsk7da8iEPv83HPkQ';
   if (!token || !chatId || !messageId) return false;
 
+  let targetChatId = String(chatId);
   try {
-    const res = await fetch(`https://api.telegram.org/bot${token}/deleteMessage`, {
+    let res = await fetch(`https://api.telegram.org/bot${token}/deleteMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        chat_id: chatId,
-        message_id: messageId,
+        chat_id: targetChatId,
+        message_id: Number(messageId),
       }),
     });
-    const data = await res.json();
+    let data = await res.json();
+
+    // Self-healing for supergroup ID format (e.g. -3546212661 -> -1003546212661)
+    if (!data.ok && targetChatId.startsWith('-') && !targetChatId.startsWith('-100')) {
+      const fallbackChatId = `-100${targetChatId.substring(1)}`;
+      res = await fetch(`https://api.telegram.org/bot${token}/deleteMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: fallbackChatId,
+          message_id: Number(messageId),
+        }),
+      });
+      data = await res.json();
+    }
+
+    if (!data.ok) {
+      console.warn(`Telegram deleteMessage response for chat ${targetChatId} msg ${messageId}:`, data.description || data);
+    }
     return !!data.ok;
   } catch (err: any) {
-    console.error(`Gagal memadam mesej Telegram (chat: ${chatId}, msg: ${messageId}):`, err.message);
+    console.error(`Gagal memadam mesej Telegram (chat: ${chatId}, msg: ${messageId}):`, err?.message);
     return false;
   }
 }

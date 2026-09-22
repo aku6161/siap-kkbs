@@ -473,18 +473,16 @@ router.post(['/telegram/webhook', '/telegram-webhook', '/webhook'], async (req, 
             const cardMsgId = complaint?.telegramMessageId;
             const targetGroup = complaint?.telegramGroupId || chatId;
 
-            // Wait 5 seconds so the officer sees the confirmation alert/card, then clean up
-            setTimeout(async () => {
-              try {
-                if (menuMsgId) await deleteTelegramMessage(chatId, menuMsgId);
-                if (replyToMsgId && replyToMsgId !== menuMsgId) await deleteTelegramMessage(chatId, replyToMsgId);
-                if (cardMsgId && String(cardMsgId) !== String(menuMsgId) && String(cardMsgId) !== String(replyToMsgId)) {
-                  await deleteTelegramMessage(targetGroup, cardMsgId);
-                }
-              } catch (delErr: any) {
-                console.error('Error auto-deleting Telegram messages:', delErr?.message);
-              }
-            }, 5000);
+            // Wait 1.5 seconds so officer sees the popup notification, then delete messages synchronously before response ends
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+
+            const delTasks: Promise<any>[] = [];
+            if (menuMsgId) delTasks.push(deleteTelegramMessage(chatId, menuMsgId));
+            if (replyToMsgId && replyToMsgId !== menuMsgId) delTasks.push(deleteTelegramMessage(chatId, replyToMsgId));
+            if (cardMsgId && String(cardMsgId) !== String(menuMsgId) && String(cardMsgId) !== String(replyToMsgId)) {
+              delTasks.push(deleteTelegramMessage(targetGroup, cardMsgId));
+            }
+            await Promise.allSettled(delTasks);
           }
         }
       } else if (data.startsWith('info:')) {
@@ -869,7 +867,7 @@ router.patch('/admin/complaints/:noRujukan', async (req, res, next) => {
         const targetGroup = updated.telegramGroupId || comp.telegramGroupId;
         const targetMsgId = updated.telegramMessageId || comp.telegramMessageId;
         if (targetGroup && targetMsgId) {
-          deleteTelegramMessage(targetGroup, targetMsgId).catch(() => {});
+          await deleteTelegramMessage(targetGroup, targetMsgId);
         }
       }
     }
