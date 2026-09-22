@@ -72,8 +72,8 @@ export const DEFAULT_OFFICER_BY_CATEGORY: Record<ComplaintCategory, string> = {
   KEBERSIHAN: 'Pegawai Kebersihan',
   KEMUDAHAN: 'Pegawai Pembangunan',
   SISTEM: 'Pegawai ICT',
-  PERKHIDMATAN: 'Pegawai Perhubungan Industri',
-  LAIN_LAIN: 'Pegawai Perhubungan Industri',
+  PERKHIDMATAN: 'Pegawai Perhubungan Pelanggan',
+  LAIN_LAIN: 'Pegawai Perhubungan Pelanggan',
 };
 
 export function getDefaultOfficerForCategory(kategori?: string): string {
