@@ -147,11 +147,11 @@ class Database {
       telegramChatIdSistem: process.env.TELEGRAM_CHAT_ID_SISTEM || '-1003763181014',
       telegramChatIdPerkhidmatan: process.env.TELEGRAM_CHAT_ID_PERKHIDMATAN || '-1004423616468',
       telegramChatIdKebersihan: process.env.TELEGRAM_CHAT_ID_KEBERSIHAN || '-1003921165191',
-      emailSenderName: process.env.EMAIL_SENDER_NAME || 'SiAP – Sistem Aduan Pelanggan',
-      smtpHost: process.env.SMTP_HOST || '',
+      emailSenderName: process.env.EMAIL_SENDER_NAME || 'SiAP – Sistem Aduan Pelanggan KKBS',
+      smtpHost: process.env.SMTP_HOST || 'smtp.gmail.com',
       smtpPort: process.env.SMTP_PORT || '587',
-      smtpUser: process.env.SMTP_USER || 'aku6161@gmail.com',
-      smtpPass: process.env.SMTP_PASS || 'wjir zsas zjfw iwpi',
+      smtpUser: process.env.SMTP_USER || 'aduan@kkbeaufort.edu.my',
+      smtpPass: process.env.SMTP_PASS || 'ydbq mifv wysn yqtd',
     };
   }
 

@@ -301,11 +301,11 @@
     "telegramChatIdSistem": "-1003763181014",
     "telegramChatIdPerkhidmatan": "-1004423616468",
     "telegramChatIdKebersihan": "-1003921165191",
-    "emailSenderName": "SiAP – Sistem Aduan Pelanggan",
-    "smtpHost": "",
+    "emailSenderName": "SiAP – Sistem Aduan Pelanggan KKBS",
+    "smtpHost": "smtp.gmail.com",
     "smtpPort": "587",
-    "smtpUser": "aku6161@gmail.com",
-    "smtpPass": "wjir zsas zjfw iwpi"
+    "smtpUser": "aduan@kkbeaufort.edu.my",
+    "smtpPass": "ydbq mifv wysn yqtd"
   },
   "lastSequenceNumber": 6
 }

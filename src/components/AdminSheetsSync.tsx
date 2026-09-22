@@ -539,7 +539,7 @@ export const AdminSheetsSync: React.FC<AdminSheetsSyncProps> = ({ complaints }) 
                     type="text"
                     value={smtpUser}
                     onChange={(e) => setSmtpUser(e.target.value)}
-                    placeholder="pengirim@gmail.com"
+                    placeholder="aduan@kkbeaufort.edu.my"
                     className="w-full p-3 font-mono text-slate-900 glass-input rounded-xl focus:outline-none"
                   />
                 </div>
