@@ -392,7 +392,7 @@ router.post(['/telegram/webhook', '/telegram-webhook', '/webhook'], async (req, 
           // 2. Update the menu message in place with confirmation & quick re-toggle button
           const chatId = cq.message?.chat?.id || complaint?.telegramGroupId;
           if (chatId && result.replyMessage && cq.message?.message_id) {
-            const checkUrl = `https://siapkkbs.vercel.app/?ref=${encodeURIComponent(noRujukan)}`;
+            const checkUrl = `https://sudin.my/?ref=${encodeURIComponent(noRujukan)}`;
             const actionKeyboard = {
               inline_keyboard: [
                 [
@@ -434,7 +434,7 @@ router.post(['/telegram/webhook', '/telegram-webhook', '/webhook'], async (req, 
 
           // 3. Update original message buttons to show updated status
           if (chatId && result.success) {
-            const checkUrl = `https://siapkkbs.vercel.app/?ref=${encodeURIComponent(noRujukan)}`;
+            const checkUrl = `https://sudin.my/?ref=${encodeURIComponent(noRujukan)}`;
             const statusLabels: Record<string, string> = {
               MENUNGGU: '🟡 MENUNGGU',
               DALAM_SEMAKAN: '🔵 SEMAKAN',
@@ -456,7 +456,7 @@ router.post(['/telegram/webhook', '/telegram-webhook', '/webhook'], async (req, 
                   reply_markup: {
                     inline_keyboard: [
                       [
-                        { text: '👁 LIHAT ADUAN', url: checkUrl },
+                        { text: '👁 LIHAT ADUAN', url: `https://sudin.my/?ref=${encodeURIComponent(noRujukan)}` },
                         { text: `⚡ STATUS: ${shortLabel}`, callback_data: `menu:${noRujukan}` },
                       ],
                     ],
