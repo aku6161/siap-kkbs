@@ -451,7 +451,15 @@ export async function ensureTelegramWebhook(targetUrl?: string): Promise<{ ok: b
   const token = config.telegramBotToken || process.env.TELEGRAM_BOT_TOKEN || '8238304961:AAG44pdgon1zFkqacccsk7da8iEPv83HPkQ';
   if (!token) return { ok: false, error: 'Tiada token Telegram' };
 
-  const webhookUrl = targetUrl || process.env.APP_URL?.replace(/\/$/, '') + '/api/telegram/webhook' || 'https://siapkkbs.sudin.my/api/telegram/webhook';
+  let baseUrl = 'https://siapkkbs.sudin.my';
+  const rawAppUrl = process.env.APP_URL;
+  if (rawAppUrl && !rawAppUrl.includes('MY_APP_URL') && !rawAppUrl.includes('localhost') && !rawAppUrl.includes('127.0.0.1')) {
+    baseUrl = rawAppUrl.replace(/\/$/, '');
+    if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+      baseUrl = `https://${baseUrl}`;
+    }
+  }
+  const webhookUrl = targetUrl || `${baseUrl}/api/telegram/webhook`;
   try {
     const infoRes = await fetch(`https://api.telegram.org/bot${token}/getWebhookInfo`);
     const infoData = await infoRes.json();
